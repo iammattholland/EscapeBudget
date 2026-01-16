@@ -1,0 +1,604 @@
+import SwiftUI
+import SwiftData
+import Charts
+
+struct CashFlowForecastView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.appColorMode) private var appColorMode
+
+    @AppStorage("currencyCode") private var currencyCode = "USD"
+    @AppStorage("cashflow.horizonDays") private var horizonDays = 90
+    @AppStorage("cashflow.includeIncome") private var includeIncome = true
+    @AppStorage("cashflow.monthlyIncome") private var monthlyIncomeDouble: Double = 0
+    @AppStorage("cashflow.includeChequing") private var includeChequing = true
+    @AppStorage("cashflow.includeSavings") private var includeSavings = true
+    @AppStorage("cashflow.includeOtherCash") private var includeOtherCash = true
+
+    @Query(sort: \Account.name) private var accounts: [Account]
+    @Query(sort: \RecurringPurchase.nextDate) private var recurringPurchases: [RecurringPurchase]
+    @Query(sort: \PurchasePlan.purchaseDate) private var purchasePlans: [PurchasePlan]
+    @Query(sort: \MonthlyCashflowTotal.monthStart, order: .reverse) private var monthlyTotals: [MonthlyCashflowTotal]
+    @State private var suggestedMonthlyIncomeFromStats: Decimal = 0
+
+    private var horizonEnd: Date {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        return calendar.date(byAdding: .day, value: max(1, horizonDays), to: today) ?? today
+    }
+
+    private var includedCashAccounts: [Account] {
+        accounts.filter { account in
+            switch account.type {
+            case .chequing:
+                return includeChequing
+            case .savings:
+                return includeSavings
+            case .other:
+                return includeOtherCash
+            case .creditCard, .investment, .lineOfCredit, .mortgage, .loans:
+                return false
+            }
+        }
+    }
+
+    private var startingCash: Decimal {
+        includedCashAccounts.reduce(0) { $0 + $1.balance }
+    }
+
+    private var suggestedMonthlyIncome: Decimal {
+        suggestedMonthlyIncomeFromStats
+    }
+
+    private var monthlyIncome: Decimal {
+        Decimal(monthlyIncomeDouble)
+    }
+
+    private var monthlyIncomeBinding: Binding<Decimal> {
+        Binding(
+            get: { Decimal(monthlyIncomeDouble) },
+            set: { newValue in
+                monthlyIncomeDouble = NSDecimalNumber(decimal: max(0, newValue)).doubleValue
+            }
+        )
+    }
+
+    private struct ForecastEvent: Identifiable {
+        enum Kind {
+            case income
+            case bill
+            case planned
+        }
+
+        let id: String
+        let date: Date
+        let title: String
+        let kind: Kind
+        let amount: Decimal // + inflow / - outflow
+        let subtitle: String?
+    }
+
+    private var forecastEvents: [ForecastEvent] {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: Date())
+        let end = calendar.startOfDay(for: horizonEnd)
+
+        var events: [ForecastEvent] = []
+
+        // Recurring bills (project occurrences)
+        func advance(_ date: Date, frequency: RecurrenceFrequency) -> Date {
+            switch frequency {
+            case .weekly:
+                return calendar.date(byAdding: .weekOfYear, value: 1, to: date) ?? date
+            case .biweekly:
+                return calendar.date(byAdding: .weekOfYear, value: 2, to: date) ?? date
+            case .monthly:
+                return calendar.date(byAdding: .month, value: 1, to: date) ?? date
+            case .quarterly:
+                return calendar.date(byAdding: .month, value: 3, to: date) ?? date
+            case .yearly:
+                return calendar.date(byAdding: .year, value: 1, to: date) ?? date
+            }
+        }
+
+        for purchase in recurringPurchases where purchase.isActive {
+            var date = calendar.startOfDay(for: purchase.nextDate)
+            while date <= end {
+                if date >= start {
+                    let id = "recurring-\(purchase.persistentModelID)-\(date.timeIntervalSince1970)"
+                    events.append(
+                        ForecastEvent(
+                            id: id,
+                            date: date,
+                            title: purchase.name,
+                            kind: .bill,
+                            amount: -abs(purchase.amount),
+                            subtitle: purchase.recurrenceFrequency.rawValue
+                        )
+                    )
+                }
+                let next = advance(date, frequency: purchase.recurrenceFrequency)
+                let advanced = calendar.startOfDay(for: next)
+                if advanced == date { break }
+                date = advanced
+            }
+        }
+
+        // Planned purchases
+        for plan in purchasePlans where !plan.isPurchased {
+            guard let date = plan.purchaseDate else { continue }
+            let day = calendar.startOfDay(for: date)
+            guard day >= start && day <= end else { continue }
+            let id = "planned-\(plan.persistentModelID)"
+            events.append(
+                ForecastEvent(
+                    id: id,
+                    date: day,
+                    title: plan.itemName,
+                    kind: .planned,
+                    amount: -abs(plan.expectedPrice),
+                    subtitle: "Planned"
+                )
+            )
+        }
+
+        // Income estimate (monthly, 1st of month)
+        if includeIncome, monthlyIncome > 0 {
+            var cursor = calendar.date(from: calendar.dateComponents([.year, .month], from: start)) ?? start
+            if cursor < start {
+                cursor = calendar.date(byAdding: .month, value: 1, to: cursor) ?? start
+            }
+            while cursor <= end {
+                let id = "income-\(cursor.timeIntervalSince1970)"
+                events.append(
+                    ForecastEvent(
+                        id: id,
+                        date: cursor,
+                        title: "Estimated Income",
+                        kind: .income,
+                        amount: abs(monthlyIncome),
+                        subtitle: "Monthly estimate"
+                    )
+                )
+                cursor = calendar.date(byAdding: .month, value: 1, to: cursor) ?? end.addingTimeInterval(86400)
+            }
+        }
+
+        return events.sorted { $0.date < $1.date }
+    }
+
+    private struct BalancePoint: Identifiable {
+        let id: TimeInterval
+        let date: Date
+        let balance: Double
+    }
+
+    private var balanceSeries: [BalancePoint] {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: Date())
+        let end = calendar.startOfDay(for: horizonEnd)
+
+        let byDay = Dictionary(grouping: forecastEvents, by: { calendar.startOfDay(for: $0.date) })
+
+        var points: [BalancePoint] = []
+        var running = startingCash
+        var day = start
+
+        while day <= end {
+            if let events = byDay[day] {
+                for event in events {
+                    running += event.amount
+                }
+            }
+
+            points.append(
+                BalancePoint(
+                    id: day.timeIntervalSince1970,
+                    date: day,
+                    balance: NSDecimalNumber(decimal: running).doubleValue
+                )
+            )
+
+            day = calendar.date(byAdding: .day, value: 1, to: day) ?? end.addingTimeInterval(86400)
+        }
+
+        return points
+    }
+
+    private var totals: (inflows: Decimal, outflows: Decimal, projectedEnd: Decimal, lowest: Decimal) {
+        var inflows: Decimal = 0
+        var outflows: Decimal = 0
+        for event in forecastEvents {
+            if event.amount >= 0 {
+                inflows += event.amount
+            } else {
+                outflows += abs(event.amount)
+            }
+        }
+
+        let endBalance = Decimal(balanceSeries.last?.balance ?? 0)
+        let lowestBalance = Decimal(balanceSeries.map(\.balance).min() ?? 0)
+        return (inflows, outflows, endBalance, lowestBalance)
+    }
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 14) {
+                summaryRow
+                chartCard
+                assumptionsCard
+                accountsCard
+                eventsCard
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Cash Flow")
+        .navigationBarTitleDisplayMode(.inline)
+        .globalKeyboardDoneToolbar()
+        .onAppear {
+            Task { @MainActor in
+                await MonthlyCashflowTotalsService.ensureUpToDateAsync(modelContext: modelContext)
+            }
+            suggestedMonthlyIncomeFromStats = computeSuggestedMonthlyIncome()
+            if monthlyIncomeDouble == 0, suggestedMonthlyIncome > 0 {
+                monthlyIncomeDouble = NSDecimalNumber(decimal: suggestedMonthlyIncome).doubleValue
+            }
+        }
+    }
+
+    private func computeSuggestedMonthlyIncome() -> Decimal {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let currentMonthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: today)) ?? today
+        let threeMonthsAgo = calendar.date(byAdding: .month, value: -3, to: today) ?? today
+        let windowStart = calendar.date(from: calendar.dateComponents([.year, .month], from: threeMonthsAgo)) ?? threeMonthsAgo
+
+        let fullMonthsIncome = monthlyTotals
+            .filter { $0.monthStart >= windowStart && $0.monthStart < currentMonthStart }
+            .reduce(Decimal.zero) { $0 + $1.incomeTotal }
+
+        let partialCurrentMonthIncome: Decimal = {
+            let standardRaw = TransactionKind.standard.rawValue
+            let descriptor = FetchDescriptor<Transaction>(
+                predicate: #Predicate<Transaction> { tx in
+                    tx.kindRawValue == standardRaw &&
+                    tx.amount > 0 &&
+                    tx.date >= currentMonthStart
+                }
+            )
+            let txs = (try? modelContext.fetch(descriptor)) ?? []
+            return txs
+                .filter { $0.account?.isTrackingOnly != true }
+                .filter { $0.category?.group?.type == .income }
+                .reduce(Decimal.zero) { $0 + $1.amount }
+        }()
+
+        let totalIncome = fullMonthsIncome + partialCurrentMonthIncome
+        guard totalIncome > 0 else { return 0 }
+        return totalIncome / 3
+    }
+
+    private var summaryRow: some View {
+        HStack(spacing: 12) {
+            MetricCard(
+                title: "Start",
+                value: startingCash,
+                currencyCode: currencyCode,
+                tint: AppColors.tint(for: appColorMode)
+            )
+            MetricCard(
+                title: "End (\(horizonDays)d)",
+                value: totals.projectedEnd,
+                currencyCode: currencyCode,
+                tint: totals.projectedEnd >= startingCash ? AppColors.success(for: appColorMode) : AppColors.warning(for: appColorMode)
+            )
+        }
+    }
+
+    private var chartCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Cash Flow Forecast")
+                    .font(.headline)
+                Spacer()
+                Picker("Range", selection: $horizonDays) {
+                    Text("30d").tag(30)
+                    Text("60d").tag(60)
+                    Text("90d").tag(90)
+                }
+                .pickerStyle(.segmented)
+                .frame(maxWidth: 220)
+            }
+
+            if balanceSeries.isEmpty {
+                ContentUnavailableView(
+                    "No forecast data",
+                    systemImage: "chart.line.uptrend.xyaxis",
+                    description: Text("Add recurring bills or planned purchases to see your projected balance.")
+                )
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 18)
+            } else {
+                Chart(balanceSeries) { point in
+                    LineMark(
+                        x: .value("Date", point.date),
+                        y: .value("Balance", point.balance)
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(AppColors.tint(for: appColorMode))
+
+                    AreaMark(
+                        x: .value("Date", point.date),
+                        y: .value("Balance", point.balance)
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [
+                                AppColors.tint(for: appColorMode).opacity(0.22),
+                                AppColors.tint(for: appColorMode).opacity(0.02)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                }
+                .chartYAxis {
+                    AxisMarks(position: .leading) { value in
+                        AxisGridLine()
+                        AxisTick()
+                        AxisValueLabel {
+                            if let number = value.as(Double.self) {
+                                Text(number, format: .currency(code: currencyCode))
+                                    .font(.caption2)
+                            }
+                        }
+                    }
+                }
+                .chartXAxis {
+                    AxisMarks(values: .automatic(desiredCount: 4)) { _ in
+                        AxisGridLine()
+                        AxisTick()
+                        AxisValueLabel(format: .dateTime.month().day(), centered: true)
+                            .font(.caption2)
+                    }
+                }
+                .frame(height: 220)
+
+                HStack(spacing: 12) {
+                    MetricPill(label: "In", value: totals.inflows, currencyCode: currencyCode, tint: AppColors.success(for: appColorMode))
+                    MetricPill(label: "Out", value: totals.outflows, currencyCode: currencyCode, tint: AppColors.danger(for: appColorMode))
+                    MetricPill(label: "Lowest", value: totals.lowest, currencyCode: currencyCode, tint: AppColors.warning(for: appColorMode))
+                }
+                .padding(.top, 2)
+
+                Text("This forecast uses your current cash balances plus upcoming recurring bills and planned purchases. Income is an estimate (optional).")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(14)
+        .background(.background)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color(.separator).opacity(0.35))
+        )
+    }
+
+    private var assumptionsCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Assumptions")
+                .font(.headline)
+
+            Toggle("Include income estimate", isOn: $includeIncome)
+
+            if includeIncome {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Estimated monthly income")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    TextField("Monthly income", value: monthlyIncomeBinding, format: .currency(code: currencyCode))
+                        .keyboardType(.decimalPad)
+
+                    Button("Use last 3 months average") {
+                        let suggested = suggestedMonthlyIncome
+                        monthlyIncomeDouble = NSDecimalNumber(decimal: max(0, suggested)).doubleValue
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(suggestedMonthlyIncome <= 0)
+                }
+            }
+        }
+        .padding(14)
+        .background(.background)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color(.separator).opacity(0.35))
+        )
+    }
+
+    private var accountsCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Starting Cash")
+                .font(.headline)
+
+            Toggle("Chequing", isOn: $includeChequing)
+            Toggle("Savings", isOn: $includeSavings)
+            Toggle("Other cash accounts", isOn: $includeOtherCash)
+
+            if includedCashAccounts.isEmpty {
+                Text("No cash accounts selected.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(includedCashAccounts) { account in
+                    HStack {
+                        Label(account.name, systemImage: account.type.icon)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Text(account.balance, format: .currency(code: currencyCode))
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.subheadline)
+                }
+            }
+        }
+        .padding(14)
+        .background(.background)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color(.separator).opacity(0.35))
+        )
+    }
+
+    private var eventsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Upcoming Events")
+                    .font(.headline)
+                Spacer()
+                Text("\(forecastEvents.count)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if forecastEvents.isEmpty {
+                Text("Add recurring bills or planned purchases to see a cash flow timeline.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(forecastEvents.prefix(24)) { event in
+                    HStack(alignment: .top, spacing: 10) {
+                        Circle()
+                            .fill(color(for: event.kind).opacity(0.18))
+                            .frame(width: 30, height: 30)
+                            .overlay(
+                                Image(systemName: icon(for: event.kind))
+                                    .font(.caption)
+                                    .foregroundStyle(color(for: event.kind))
+                            )
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(event.title)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+
+                            HStack(spacing: 6) {
+                                Text(event.date, format: .dateTime.month(.abbreviated).day().year())
+                                if let subtitle = event.subtitle {
+                                    Text("•")
+                                    Text(subtitle)
+                                }
+                            }
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Text(event.amount, format: .currency(code: currencyCode))
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(event.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                            .monospacedDigit()
+                    }
+                    .padding(.vertical, 4)
+                }
+
+                if forecastEvents.count > 24 {
+                    Text("Showing the next 24 events.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 2)
+                }
+            }
+        }
+        .padding(14)
+        .background(.background)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color(.separator).opacity(0.35))
+        )
+    }
+
+    private func icon(for kind: ForecastEvent.Kind) -> String {
+        switch kind {
+        case .income: return "arrow.down.circle.fill"
+        case .bill: return "calendar.badge.clock"
+        case .planned: return "cart.fill"
+        }
+    }
+
+    private func color(for kind: ForecastEvent.Kind) -> Color {
+        switch kind {
+        case .income: return AppColors.success(for: appColorMode)
+        case .bill: return AppColors.warning(for: appColorMode)
+        case .planned: return AppColors.tint(for: appColorMode)
+        }
+    }
+}
+
+private struct MetricCard: View {
+    let title: String
+    let value: Decimal
+    let currencyCode: String
+    let tint: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(value, format: .currency(code: currencyCode))
+                .font(.title3)
+                .fontWeight(.semibold)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .monospacedDigit()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(.background)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(tint.opacity(0.25))
+        )
+    }
+}
+
+private struct MetricPill: View {
+    let label: String
+    let value: Decimal
+    let currencyCode: String
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(value, format: .currency(code: currencyCode))
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(.primary)
+                .monospacedDigit()
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .background(tint.opacity(0.12))
+        .clipShape(Capsule())
+    }
+}
+
+#Preview {
+    CashFlowForecastView()
+        .modelContainer(for: [Account.self, Transaction.self, TransactionHistoryEntry.self, TransactionTag.self, RecurringPurchase.self, PurchasePlan.self, CategoryGroup.self, Category.self, MonthlyCashflowTotal.self], inMemory: true)
+}

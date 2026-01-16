@@ -1,0 +1,71 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Xcode
+DerivedData/
+build/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+*.xcarchive
+*.dSYM
+*.dSYM.zip
+*.dSYM.tar
+*.ipa
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+# Local binaries/tools
+EscapeBudgetApp/dup
+EscapeBudgetApp/querytest
+
+# Internal assistant/process docs
+CLAUDE.md
+AGENTS.md
+
+# Editor/IDE
+.idea/
+.vscode/
+*.swp
+*~
+
+# Credentials / secrets (keep out of git)
+.env
+.env.*
+*.p8
+*.p12
+*.pem
+*.key
+*.mobileprovision
+*.cer
+*.crt
+**/Secrets*.plist
+**/*Secrets*.xcconfig
+**/*secret*.xcconfig
+
+# Xcode (misc generated)
+**/IDEWorkspaceChecks.plist
+**/WorkspaceSettings.xcsettings

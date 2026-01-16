@@ -1,0 +1,71 @@
+import SwiftUI
+
+struct ImportTransferLinkEditor: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let transferID: UUID
+    let currencyCode: String
+    let onUnlink: () -> Void
+
+    let legsLookup: (UUID) -> [ImportedTransaction]
+    let accountNameFor: (ImportedTransaction) -> String
+
+    var body: some View {
+        List {
+            let legs = legsLookup(transferID)
+
+            if legs.count >= 2 {
+                Section("Linked Transfer") {
+                    ForEach(legs) { tx in
+                        HStack(spacing: 12) {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(accountNameFor(tx))
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                Text(tx.date, format: .dateTime.month(.abbreviated).day().year())
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(tx.payee)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+
+                            Spacer()
+
+                            Text(tx.amount, format: .currency(code: currencyCode))
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .monospacedDigit()
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+
+                Section {
+                    Button(role: .destructive) {
+                        onUnlink()
+                        dismiss()
+                    } label: {
+                        Label("Unlink Transfer", systemImage: "link.badge.minus")
+                    }
+                } footer: {
+                    Text("Unlinking makes both transactions standard again so they can be categorized normally.")
+                }
+            } else {
+                ContentUnavailableView(
+                    "Transfer",
+                    systemImage: "link",
+                    description: Text("That linked pair is no longer available.")
+                )
+            }
+        }
+        .navigationTitle("Transfer")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Done") { dismiss() }
+            }
+        }
+    }
+}
