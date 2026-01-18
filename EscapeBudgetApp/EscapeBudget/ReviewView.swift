@@ -2036,11 +2036,11 @@ private struct OverviewStatChip: View {
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
                 .fill(Color(.systemBackground))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
         )
     }
@@ -2132,11 +2132,11 @@ private struct OverviewLinkRow: View {
         }
         .padding(10)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
                 .fill(Color(.systemBackground))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
         )
     }
@@ -2147,16 +2147,30 @@ struct ReportsSpendingView: View {
     @AppStorage("currencyCode") private var currencyCode = "USD"
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
-    
+
     @Binding var selectedDate: Date
     @Binding var filterMode: DateRangeFilterHeader.FilterMode
     @Binding var customStartDate: Date
     @Binding var customEndDate: Date
     @State private var drilldown: ReviewTransactionDrilldown? = nil
-    @State private var transactionsInRange: [Transaction] = []
-    
+
+    // Use @Query to fetch all standard transactions, then filter in computed property
+    @Query(
+        filter: #Predicate<Transaction> { tx in
+            tx.kindRawValue == "standard"
+        },
+        sort: [SortDescriptor(\Transaction.date, order: .reverse)]
+    ) private var allStandardTransactions: [Transaction]
+
+    // Computed property replaces manual caching - filters by date range and expense type
     private var filteredTransactions: [Transaction] {
-        transactionsInRange.filter { $0.amount < 0 }
+        let (start, end) = dateRangeDates
+        return allStandardTransactions.filter { tx in
+            tx.date >= start &&
+            tx.date <= end &&
+            tx.amount < 0 &&
+            tx.account?.isTrackingOnly != true
+        }
     }
     
     private var dateRangeDates: (Date, Date) {
@@ -2240,11 +2254,6 @@ struct ReportsSpendingView: View {
         filteredTransactions.reduce(0) { $0 + abs($1.amount) }
     }
 
-    private var transactionsFetchKey: String {
-        let (start, end) = dateRangeDates
-        return "\(filterMode.rawValue)|\(start.timeIntervalSince1970)|\(end.timeIntervalSince1970)"
-    }
-    
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
@@ -2355,44 +2364,40 @@ struct ReportsSpendingView: View {
         .sheet(item: $drilldown) { drilldown in
             ReviewTransactionsSheet(drilldown: drilldown)
         }
-        .task(id: transactionsFetchKey) {
-            await refreshTransactions()
-        }
+        // No manual refresh needed - @Query automatically updates when data changes
     }
-
-	    @MainActor
-	    private func refreshTransactions() async {
-	        let (start, end) = dateRangeDates
-	        do {
-	            let fetched = try TransactionQueryService.fetchTransactions(
-	                modelContext: modelContext,
-	                start: start,
-	                end: end,
-	                kindRawValue: TransactionKind.standard.rawValue
-	            )
-	            transactionsInRange = fetched.filter { $0.account?.isTrackingOnly != true }
-	        } catch {
-	            // Fall back to empty on fetch failures; UI already handles empty-state gracefully.
-	            transactionsInRange = []
-	        }
-	    }
-	}
+}
 
 // MARK: - Income Trends
 struct ReportsIncomeView: View {
     @AppStorage("currencyCode") private var currencyCode = "USD"
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
-    
+
     @Binding var selectedDate: Date
     @Binding var filterMode: DateRangeFilterHeader.FilterMode
     @Binding var customStartDate: Date
     @Binding var customEndDate: Date
     @State private var drilldown: ReviewTransactionDrilldown? = nil
-    @State private var transactionsInRange: [Transaction] = []
-    
+
+    // Use @Query to fetch all standard transactions, then filter in computed property
+    @Query(
+        filter: #Predicate<Transaction> { tx in
+            tx.kindRawValue == "standard"
+        },
+        sort: [SortDescriptor(\Transaction.date, order: .reverse)]
+    ) private var allStandardTransactions: [Transaction]
+
+    // Computed property replaces manual caching - filters by date range and income type
     private var filteredTransactions: [Transaction] {
-        transactionsInRange.filter { $0.amount > 0 && $0.isCategorizedAsIncome }
+        let (start, end) = dateRangeDates
+        return allStandardTransactions.filter { tx in
+            tx.date >= start &&
+            tx.date <= end &&
+            tx.amount > 0 &&
+            tx.isCategorizedAsIncome &&
+            tx.account?.isTrackingOnly != true
+        }
     }
     
     private var dateRangeDates: (Date, Date) {
@@ -2422,11 +2427,6 @@ struct ReportsIncomeView: View {
         filteredTransactions.reduce(0) { $0 + $1.amount }
     }
 
-    private var transactionsFetchKey: String {
-        let (start, end) = dateRangeDates
-        return "\(filterMode.rawValue)|\(start.timeIntervalSince1970)|\(end.timeIntervalSince1970)"
-    }
-    
     private var incomeBySource: [(String, Decimal)] {
         var sourceTotals: [String: Decimal] = [:]
         filteredTransactions.forEach { transaction in
@@ -2593,27 +2593,9 @@ struct ReportsIncomeView: View {
         .sheet(item: $drilldown) { drilldown in
             ReviewTransactionsSheet(drilldown: drilldown)
         }
-        .task(id: transactionsFetchKey) {
-            await refreshTransactions()
-        }
+        // No manual refresh needed - @Query automatically updates when data changes
     }
-
-	    @MainActor
-	    private func refreshTransactions() async {
-	        let (start, end) = dateRangeDates
-	        do {
-	            let fetched = try TransactionQueryService.fetchTransactions(
-	                modelContext: modelContext,
-	                start: start,
-	                end: end,
-	                kindRawValue: TransactionKind.standard.rawValue
-	            )
-	            transactionsInRange = fetched.filter { $0.account?.isTrackingOnly != true }
-	        } catch {
-	            transactionsInRange = []
-	        }
-	    }
-	}
+}
 
 private struct ReviewTransactionDrilldown: Identifiable {
     let id = UUID()
@@ -3203,16 +3185,7 @@ private struct ReviewStoryCard: View {
                 .lineLimit(4)
                 .minimumScaleFactor(0.9)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-        )
+        .appCardSurface()
     }
 }
 
@@ -3221,13 +3194,30 @@ struct BudgetPerformanceView: View {
     @AppStorage("currencyCode") private var currencyCode = "USD"
     @Query private var categoryGroups: [CategoryGroup]
     @Environment(\.modelContext) private var modelContext
-    
+
 	@Binding var selectedDate: Date
 	@Binding var filterMode: DateRangeFilterHeader.FilterMode
 	@Binding var customStartDate: Date
 	@Binding var customEndDate: Date
 	@State private var selectedCategory: Category?
-    @State private var transactionsInRange: [Transaction] = []
+
+    // Use @Query to fetch all standard transactions, then filter in computed property
+    @Query(
+        filter: #Predicate<Transaction> { tx in
+            tx.kindRawValue == "standard"
+        },
+        sort: [SortDescriptor(\Transaction.date, order: .reverse)]
+    ) private var allStandardTransactions: [Transaction]
+
+    // Computed property replaces manual caching - filters by date range
+    private var transactionsInRange: [Transaction] {
+        let (start, end) = dateRangeDates
+        return allStandardTransactions.filter { tx in
+            tx.date >= start &&
+            tx.date <= end &&
+            tx.account?.isTrackingOnly != true
+        }
+    }
 
     private var expenseGroups: [CategoryGroup] {
         categoryGroups.filter { $0.type == .expense }
@@ -3375,11 +3365,6 @@ struct BudgetPerformanceView: View {
         hasBudgetGroups && hasBudgetData
     }
 
-    private var transactionsFetchKey: String {
-        let (start, end) = dateRangeDates
-        return "\(filterMode.rawValue)|\(start.timeIntervalSince1970)|\(end.timeIntervalSince1970)"
-    }
-    
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
@@ -3465,31 +3450,9 @@ struct BudgetPerformanceView: View {
             )
         }
         .background(Color(.systemGroupedBackground))
-        .task(id: transactionsFetchKey) {
-            await refreshTransactions()
-        }
+        // No manual refresh needed - @Query automatically updates when data changes
     }
-
 }
-
-	private extension BudgetPerformanceView {
-	    @MainActor
-	    func refreshTransactions() async {
-	        let (start, end) = dateRangeDates
-	        do {
-	            let fetched = try TransactionQueryService.fetchTransactions(
-	                modelContext: modelContext,
-	                start: start,
-	                end: end,
-	                kindRawValue: TransactionKind.standard.rawValue,
-	                requiresCategory: true
-	            )
-	            transactionsInRange = fetched.filter { $0.account?.isTrackingOnly != true }
-	        } catch {
-	            transactionsInRange = []
-	        }
-	    }
-	}
 
 private struct BudgetInsightsEmptyStateCard: View {
     let hasBudgetGroups: Bool
@@ -3513,19 +3476,8 @@ private struct BudgetReviewSectionCard<Content: View>: View {
 	@ViewBuilder var content: Content
 
 	var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            content
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-        )
+        VStack(alignment: .leading, spacing: 0) { content }
+            .appCardSurface()
     }
 }
 

@@ -579,19 +579,19 @@ struct AllTransactionsView: View {
                 Button("Done") {
                     exitBulkEdit()
                 }
-                .buttonStyle(.bordered)
+                .appSecondaryCTA()
 
                 Button("Select All") {
                     selectAllShown()
                 }
-                .buttonStyle(.bordered)
+                .appSecondaryCTA()
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
 
                 Button("Clear") {
                     selectedTransactionIDs.removeAll()
                 }
-                .buttonStyle(.bordered)
+                .appSecondaryCTA()
                 .disabled(selectedTransactionIDs.isEmpty)
 
                 Spacer()
@@ -599,7 +599,7 @@ struct AllTransactionsView: View {
                 Button("Edit (\(selectedTransactionIDs.count))") {
                     showingBulkEditSheet = true
                 }
-                .buttonStyle(.borderedProminent)
+                .appPrimaryCTA()
                 .disabled(selectedTransactionIDs.isEmpty)
             }
             .padding(.horizontal)
@@ -1179,7 +1179,7 @@ private struct UncategorizedTransactionsSheetContent: View {
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                     Button("Done") { onDismiss() }
-                        .buttonStyle(.borderedProminent)
+                        .appPrimaryCTA()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(.systemGroupedBackground))
@@ -1563,14 +1563,14 @@ private struct UncategorizedBanner: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
                 .fill(AppColors.warning(for: appColorMode).opacity(0.14))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
                 .stroke(AppColors.warning(for: appColorMode).opacity(0.25), lineWidth: 1)
         )
-        .contentShape(RoundedRectangle(cornerRadius: 14))
+        .contentShape(RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous))
     }
 }
 
@@ -1605,7 +1605,7 @@ private struct MonthIndexBar: View {
             }
             .padding(6)
             .background(.ultraThinMaterial)
-            .cornerRadius(14)
+            .cornerRadius(AppTheme.Radius.small)
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in

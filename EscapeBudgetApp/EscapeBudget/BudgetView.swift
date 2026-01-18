@@ -7,14 +7,19 @@ struct BudgetView: View {
     @Environment(\.appColorMode) private var appColorMode
 
     @Query(sort: \CategoryGroup.order) private var categoryGroups: [CategoryGroup]
+    @Query(
+        filter: #Predicate<Transaction> { tx in
+            tx.kindRawValue == "standard"
+        },
+        sort: [SortDescriptor(\Transaction.date, order: .reverse)]
+    ) private var allStandardTransactions: [Transaction]
+
     @AppStorage("currencyCode") private var currencyCode = "USD"
     @AppStorage("budgetAlerts") private var budgetAlerts = true
-    
+
     @State private var selectedDate = Date()
     @Binding var searchText: String
     @State private var isMonthHeaderCompact = false
-
-    @State private var monthTransactions: [Transaction] = []
     
     @State private var showingAddGroup = false
     @State private var newGroupName = ""
@@ -99,6 +104,36 @@ struct BudgetView: View {
         isMonthHeaderCompact ? 64 : 74
     }
 
+    // MARK: - Computed Data (Replaces N+1 Query Pattern)
+
+    /// Transactions for the selected month (computed once per render)
+    private var monthTransactions: [Transaction] {
+        let calendar = Calendar.current
+        let start = calendar.date(from: calendar.dateComponents([.year, .month], from: selectedDate)) ?? selectedDate
+        let end = calendar.date(byAdding: .month, value: 1, to: start) ?? selectedDate
+
+        return allStandardTransactions.filter { tx in
+            tx.date >= start &&
+            tx.date < end &&
+            tx.account?.isTrackingOnly != true
+        }
+    }
+
+    /// Transactions grouped by category ID for efficient lookup (computed once per render)
+    /// Replaces the N+1 anti-pattern where each row filtered all transactions
+    private var transactionsByCategory: [PersistentIdentifier: [Transaction]] {
+        var grouped: [PersistentIdentifier: [Transaction]] = [:]
+        grouped.reserveCapacity(categoryGroups.flatMap { $0.categories ?? [] }.count)
+
+        for transaction in monthTransactions {
+            if let categoryID = transaction.category?.persistentModelID {
+                grouped[categoryID, default: []].append(transaction)
+            }
+        }
+
+        return grouped
+    }
+
     private var monthChromeView: some View {
         MonthNavigationHeader(selectedDate: $selectedDate, isCompact: isMonthHeaderCompact)
             .padding(.horizontal, 12)
@@ -129,13 +164,12 @@ struct BudgetView: View {
             .environment(\.editMode, $editMode)
             .coordinateSpace(name: "BudgetView.scroll")
             .background(ScrollOffsetEmitter(id: "BudgetView.scroll", emitLegacy: true))
-            .background(
-                BudgetMonthTransactionsQuery(month: selectedDate) { fetched, startOfMonth in
-                    monthTransactions = fetched
-                    postBudgetAlertsIfNeeded(for: selectedDate, monthTransactions: fetched, startOfMonth: startOfMonth)
-                }
-                .id(selectedDate)
-            )
+            .task(id: selectedDate) {
+                // Post budget alerts when month changes
+                let calendar = Calendar.current
+                let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: selectedDate)) ?? selectedDate
+                postBudgetAlertsIfNeeded(for: selectedDate, monthTransactions: monthTransactions, startOfMonth: startOfMonth)
+            }
             .overlay(alignment: .top) {
                 monthChromeView
             }
@@ -603,10 +637,12 @@ struct BudgetView: View {
 
     private func categoryRow(for category: Category) -> some View {
         let isSelected = selectedCategoryIDs.contains(category.persistentModelID)
+        // Pass only transactions for THIS category (pre-grouped) - no filtering needed
+        let categoryTransactions = transactionsByCategory[category.persistentModelID] ?? []
         let row = BudgetCategoryRowView(
             category: category,
             selectedDate: selectedDate,
-            transactions: monthTransactions,
+            transactions: categoryTransactions,
             showsSelection: isBulkSelecting,
             isSelected: isSelected
         ) {
@@ -855,54 +891,6 @@ struct BudgetView: View {
     }
 }
 
-private struct BudgetMonthTransactionsQuery: View {
-    @Environment(\.modelContext) private var modelContext
-
-    @Query private var transactions: [Transaction]
-
-    private let month: Date
-    private let onUpdate: ([Transaction], Date) -> Void
-
-    init(month: Date, onUpdate: @escaping ([Transaction], Date) -> Void) {
-        self.month = month
-        self.onUpdate = onUpdate
-
-        let calendar = Calendar.current
-        let start = calendar.date(from: calendar.dateComponents([.year, .month], from: month)) ?? month
-        let endExclusive = calendar.date(byAdding: .month, value: 1, to: start) ?? month
-        let standardRaw = TransactionKind.standard.rawValue
-
-        _transactions = Query(
-            filter: #Predicate<Transaction> { tx in
-                tx.date >= start &&
-                tx.date <= endExclusive &&
-                tx.kindRawValue == standardRaw
-            },
-            sort: \Transaction.date,
-            order: .reverse
-        )
-    }
-
-    var body: some View {
-        let calendar = Calendar.current
-        let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: month)) ?? month
-        let endExclusive = calendar.date(byAdding: .month, value: 1, to: startOfMonth) ?? month
-
-        let filtered = transactions.filter { tx in
-            tx.date >= startOfMonth &&
-            tx.date < endExclusive &&
-            tx.account?.isTrackingOnly != true
-        }
-
-        let signature = filtered.map(\.persistentModelID).hashValue
-
-        Color.clear
-            .task(id: signature) {
-                onUpdate(filtered, startOfMonth)
-            }
-    }
-}
-
 // MARK: - Group Header View
 
 struct GroupHeaderView: View {
@@ -996,21 +984,11 @@ struct BudgetCategoryRowView: View {
     @Environment(\.appColorMode) private var appColorMode
     
     private var monthlyData: (spent: Decimal, remaining: Decimal) {
-        let calendar = Calendar.current
-        let start = calendar.date(from: calendar.dateComponents([.year, .month], from: selectedDate)) ?? selectedDate
-        let end = calendar.date(byAdding: .month, value: 1, to: start) ?? Date()
-        
-        let validTransactions = transactions.filter {
-            $0.kind == .standard &&
-            $0.category?.id == category.persistentModelID &&
-            $0.date >= start &&
-            $0.date < end
-        }
-        
-        let net = validTransactions.reduce(Decimal.zero) { $0 + $1.amount }
+        // Transactions are already filtered by category and month - just compute totals
+        let net = transactions.reduce(Decimal.zero) { $0 + $1.amount }
+
         // For expense, net is negative. Spent is positive abs(net).
         // For income, net is positive. "Spent" isn't really the term, but activity.
-        
         if category.group?.type == .income {
             return (spent: net, remaining: 0) // Income just shows what came in
         } else {

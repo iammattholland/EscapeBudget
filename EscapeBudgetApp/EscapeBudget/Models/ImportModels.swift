@@ -267,6 +267,25 @@ enum ImportSourceCategory {
     case paymentApp
 }
 
+// MARK: - Import Progress State
+
+/// State for displaying import progress UI
+struct ImportProgressState: Equatable {
+    enum Phase: String {
+        case parsing = "Parsing CSV"
+        case preparing = "Preparing"
+        case saving = "Saving"
+        case processing = "Processing"
+    }
+
+    var title: String
+    var phase: Phase
+    var message: String
+    var current: Int
+    var total: Int?
+    var canCancel: Bool
+}
+
 // MARK: - Import Parsing Utilities
 
 enum ImportParser {
