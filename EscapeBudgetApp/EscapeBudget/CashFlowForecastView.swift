@@ -223,6 +223,7 @@ struct CashFlowForecastView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 14) {
+                ScrollOffsetReader(coordinateSpace: "PlanForecastHubView.scroll", id: "PlanForecastHubView.scroll")
                 summaryRow
                 chartCard
                 assumptionsCard
@@ -232,6 +233,7 @@ struct CashFlowForecastView: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
         }
+        .coordinateSpace(name: "PlanForecastHubView.scroll")
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Cash Flow")
         .navigationBarTitleDisplayMode(.inline)

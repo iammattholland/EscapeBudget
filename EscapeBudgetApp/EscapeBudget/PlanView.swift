@@ -12,35 +12,51 @@ struct PlanView: View {
     }
     
     @State private var selectedSection: PlanSection = .goals
+    @State private var demoPillVisible = true
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Segmented Control
-                Picker("Section", selection: $selectedSection) {
-                    ForEach(PlanSection.allCases) { section in
-                        Text(section.rawValue).tag(section)
-                    }
+            planBody
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    TopChromeTabs(
+                        selection: $selectedSection,
+                        tabs: PlanSection.allCases.map { .init(id: $0, title: $0.rawValue) }
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.top, 6)
+                    .padding(.bottom, 6)
                 }
-                .pickerStyle(.segmented)
-                .padding()
-                
-                // Content
-                Group {
+                .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
+                    let key: String
                     switch selectedSection {
                     case .goals:
-                        SavingsGoalsView()
+                        key = "SavingsGoalsView.scroll"
                     case .purchases:
-                        PurchasePlannerView()
+                        key = "PurchasePlannerView.scroll"
                     case .forecast:
-                        PlanForecastHubView()
+                        key = "PlanForecastHubView.scroll"
                     case .retirement:
-                        RetirementView()
+                        key = "RetirementView.scroll"
                     }
+                    demoPillVisible = (offsets[key] ?? 0) > -20
                 }
-            }
             .navigationTitle("Plan")
             .withAppLogo()
+            .environment(\.demoPillVisible, demoPillVisible)
+        }
+    }
+
+    @ViewBuilder
+    private var planBody: some View {
+        switch selectedSection {
+        case .goals:
+            SavingsGoalsView()
+        case .purchases:
+            PurchasePlannerView()
+        case .forecast:
+            PlanForecastHubView()
+        case .retirement:
+            RetirementView()
         }
     }
 }
@@ -76,8 +92,10 @@ private struct PlanForecastHubView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.bottom, 8)
+                .topChromeSegmentedStyle(isCompact: true)
+                .padding(.horizontal, 16)
+                .padding(.top, 6)
+                .padding(.bottom, 6)
 
                 Group {
                     switch selectedTab {

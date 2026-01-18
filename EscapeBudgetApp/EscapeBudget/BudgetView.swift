@@ -89,15 +89,46 @@ struct BudgetView: View {
         guard isSearching else { return true }
         return categoryGroups.contains(where: matchesSearch(_:))
     }
+
+    private var monthChromeCornerRadius: CGFloat {
+        isMonthHeaderCompact ? 18 : 22
+    }
+
+    private var monthChromeSpacerHeight: CGFloat {
+        // Space reserved at top of the list so the floating month header doesn't cover first rows.
+        isMonthHeaderCompact ? 64 : 74
+    }
+
+    private var monthChromeView: some View {
+        MonthNavigationHeader(selectedDate: $selectedDate, isCompact: isMonthHeaderCompact)
+            .padding(.horizontal, 12)
+            .padding(.vertical, isMonthHeaderCompact ? 8 : 12)
+            .background(
+                RoundedRectangle(cornerRadius: monthChromeCornerRadius, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: monthChromeCornerRadius, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+            )
+            .padding(.horizontal, 16)
+            .padding(.top, 6)
+            .padding(.bottom, 6)
+    }
     
     var body: some View {
         List {
-            ScrollOffsetReader(coordinateSpace: "BudgetView.scroll")
+            Color.clear
+                .frame(height: monthChromeSpacerHeight)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             budgetListContent
             }
             .listStyle(.insetGrouped)
             .environment(\.editMode, $editMode)
             .coordinateSpace(name: "BudgetView.scroll")
+            .background(ScrollOffsetEmitter(id: "BudgetView.scroll", emitLegacy: true))
             .background(
                 BudgetMonthTransactionsQuery(month: selectedDate) { fetched, startOfMonth in
                     monthTransactions = fetched
@@ -105,16 +136,8 @@ struct BudgetView: View {
                 }
                 .id(selectedDate)
             )
-            .safeAreaInset(edge: .top, spacing: 0) {
-                HStack {
-                    MonthNavigationHeader(selectedDate: $selectedDate, isCompact: isMonthHeaderCompact)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, isMonthHeaderCompact ? 6 : 10)
-                }
-                .background(.ultraThinMaterial)
-                .overlay(alignment: .bottom) {
-                    Divider().opacity(0.7)
-                }
+            .overlay(alignment: .top) {
+                monthChromeView
             }
             .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
                 let shouldCompact = offset < -12
@@ -295,7 +318,7 @@ struct BudgetView: View {
                 }
             }
             .simultaneousGesture(
-                DragGesture(minimumDistance: 20)
+                DragGesture(minimumDistance: 45)
                     .onEnded { value in
                         let calendar = Calendar.current
 
@@ -324,7 +347,7 @@ struct BudgetView: View {
                             }
                         }
                     }
-            )
+            , including: .gesture)
     }
 
     private func postBudgetAlertsIfNeeded(for month: Date, monthTransactions: [Transaction], startOfMonth: Date) {
@@ -1372,12 +1395,6 @@ struct CategoryEditSheet: View {
                 } header: {
                     Text("Icon")
                 }
-                .sheet(isPresented: $showingEmojiPicker) {
-                    EmojiPickerSheet(selectedEmoji: Binding(
-                        get: { icon },
-                        set: { icon = $0 }
-                    ), categoryName: name)
-                }
                 
                 Section {
                     Button(role: .destructive) {
@@ -1449,6 +1466,15 @@ struct CategoryEditSheet: View {
             syncBudgetSectionFromCategory()
         }) {
             MoveCategorySheet(category: category, targetTypeOverride: moveTargetTypeOverride)
+        }
+        .sheet(isPresented: $showingEmojiPicker) {
+            EmojiPickerSheet(
+                selectedEmoji: Binding(
+                    get: { icon },
+                    set: { icon = $0 }
+                ),
+                categoryName: name
+            )
         }
     }
 

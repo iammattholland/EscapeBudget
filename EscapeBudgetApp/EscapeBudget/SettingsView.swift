@@ -49,6 +49,7 @@ struct SettingsView: View {
     @State private var showBiometricError = false
     @State private var appearanceMode: String = "System"
     @State private var showingNotificationOptions = false
+    @State private var hasInitializedServices = false
     
     // Currency options
     let currencies = [
@@ -122,6 +123,11 @@ struct SettingsView: View {
     @ViewBuilder
     private var settingsList: some View {
         List {
+            ScrollOffsetReader(coordinateSpace: "SettingsView.scroll", id: "SettingsView.scroll")
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+
             // Demo Mode Section - Prominent at top
             if isDemoMode {
                 Section {
@@ -581,7 +587,8 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                     }
                 }
-            }
+        }
+        .coordinateSpace(name: "SettingsView.scroll")
         .alert("Authentication Failed", isPresented: $showBiometricError) {
             Button("OK", role: .cancel) { }
         } message: {
@@ -619,6 +626,10 @@ struct SettingsView: View {
         }
         .onAppear {
             appearanceMode = userAppearanceString
+
+            guard !hasInitializedServices else { return }
+            hasInitializedServices = true
+
             premiumStatusService.ensureTrialStarted()
             userAccountService.reloadFromStorage()
         }
@@ -753,7 +764,11 @@ struct SettingsView: View {
             // Clear local notifications + delivered notifications.
             UNUserNotificationCenter.current().removeAllDeliveredNotifications()
             UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
-            UIApplication.shared.applicationIconBadgeNumber = 0
+            if #available(iOS 17.0, *) {
+                UNUserNotificationCenter.current().setBadgeCount(0) { _ in }
+            } else {
+                UIApplication.shared.applicationIconBadgeNumber = 0
+            }
 
             // Clear all keychain-held secrets and account state (e.g. backup password, sign-in token).
             KeychainService.shared.removeAll()
@@ -772,7 +787,7 @@ struct SettingsView: View {
 
             // Ensure the user lands on Home after the welcome flow.
             navigator.selectedTab = .home
-            navigator.manageSelectedSection = .transactions
+            navigator.manageNavigator.selectedSection = .transactions
 
             deleteConfirmationText = ""
             showingDeleteSheet = false

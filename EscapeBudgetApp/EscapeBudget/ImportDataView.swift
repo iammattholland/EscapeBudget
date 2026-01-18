@@ -2079,7 +2079,7 @@ struct ImportDataView: View {
 	                
 	                Button("Done") {
                         navigator.selectedTab = .manage
-                        navigator.manageSelectedSection = .transactions
+                        navigator.manageNavigator.selectedSection = .transactions
 	                    dismiss()
 	                }
 	                .buttonStyle(.borderedProminent)

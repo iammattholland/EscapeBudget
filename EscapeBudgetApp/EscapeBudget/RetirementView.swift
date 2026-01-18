@@ -107,6 +107,11 @@ struct RetirementView: View {
 	        Group {
 	            if showOnlyEmptyState {
 	                List {
+                        ScrollOffsetReader(coordinateSpace: "RetirementView.scroll", id: "RetirementView.scroll")
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+
 	                    if isConfigured {
 	                        noTransactionDataCard
 	                            .listRowInsets(EdgeInsets())
@@ -122,8 +127,11 @@ struct RetirementView: View {
 	                .listStyle(.plain)
 	                .scrollContentBackground(.hidden)
 	                .background(Color(.systemBackground))
+                    .coordinateSpace(name: "RetirementView.scroll")
 	            } else {
 	                ScrollView {
+                        ScrollOffsetReader(coordinateSpace: "RetirementView.scroll", id: "RetirementView.scroll")
+
 	                    LazyVStack(spacing: 14) {
 	                        headerCard
                         snapshotCard
@@ -136,6 +144,7 @@ struct RetirementView: View {
                     .padding(.vertical, 12)
                 }
                 .background(Color(.systemGroupedBackground))
+                .coordinateSpace(name: "RetirementView.scroll")
             }
         }
         .toolbar {

@@ -11,12 +11,25 @@ struct MonthlySpendComparisonCard: View {
     @State private var pendingMonthSelection: Set<Date> = []
     @State private var showAverageLine = false
     @State private var showingAverageLineRequirement = false
+    @State private var standardTransactionsByMonthStart: [Date: [Transaction]] = [:]
 
     private static let monthFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM yyyy"
         return formatter
     }()
+
+    private var transactionsSignature: Int {
+        var hasher = Hasher()
+        hasher.combine(allTransactions.count)
+        if let first = allTransactions.first?.persistentModelID {
+            hasher.combine(first.hashValue)
+        }
+        if let last = allTransactions.last?.persistentModelID {
+            hasher.combine(last.hashValue)
+        }
+        return hasher.finalize()
+    }
 
     private var series: [MonthSeries] {
         var result: [MonthSeries] = []
@@ -74,10 +87,9 @@ struct MonthlySpendComparisonCard: View {
 
     private var completedMonthStartDates: [Date] {
         let calendar = Calendar.current
-        let grouped = Dictionary(grouping: allTransactions.filter { $0.kind == .standard }) { monthStart(for: $0.date) }
         let now = Date()
         let toleranceDays = 2
-        return grouped.compactMap { entry -> Date? in
+        return standardTransactionsByMonthStart.compactMap { entry -> Date? in
             let start = entry.key
             guard let end = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: start) else { return nil }
             guard now > end else { return nil }
@@ -175,6 +187,13 @@ struct MonthlySpendComparisonCard: View {
                 }
             }
         }
+        .task(id: transactionsSignature) {
+            let calendar = Calendar.current
+            let standard = allTransactions.filter { $0.kind == .standard }
+            standardTransactionsByMonthStart = Dictionary(grouping: standard) { tx in
+                calendar.date(from: calendar.dateComponents([.year, .month], from: tx.date)) ?? tx.date
+            }
+        }
         .sheet(isPresented: $showingMonthSelection) {
             NavigationStack {
                 List {
@@ -233,11 +252,8 @@ struct MonthlySpendComparisonCard: View {
 
     private func hasSpendingData(for referenceDate: Date) -> Bool {
         let calendar = Calendar.current
-        guard let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: referenceDate)),
-              let monthEnd = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: monthStart) else {
-            return false
-        }
-        return allTransactions.contains { $0.date >= monthStart && $0.date <= monthEnd && $0.kind == .standard && $0.amount < 0 }
+        let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: referenceDate)) ?? referenceDate
+        return (standardTransactionsByMonthStart[monthStart] ?? []).contains { $0.amount < 0 }
     }
 
     private func spendingSeries(for referenceDate: Date) -> [DailySpending] {
@@ -250,7 +266,7 @@ struct MonthlySpendComparisonCard: View {
             return []
         }
 
-        let monthTransactions = allTransactions.filter { $0.date >= monthStart && $0.date <= monthEnd && $0.kind == .standard && $0.amount < 0 }
+        let monthTransactions = (standardTransactionsByMonthStart[monthStart] ?? []).filter { $0.date >= monthStart && $0.date <= monthEnd && $0.amount < 0 }
         var dailyTotals: [Int: Decimal] = [:]
         for transaction in monthTransactions {
             let day = calendar.component(.day, from: transaction.date)
@@ -298,12 +314,25 @@ struct MonthlyIncomeComparisonCard: View {
     @State private var pendingMonthSelection: Set<Date> = []
     @State private var showAverageLine = false
     @State private var showingAverageLineRequirement = false
+    @State private var standardTransactionsByMonthStart: [Date: [Transaction]] = [:]
 
     private static let monthFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM yyyy"
         return formatter
     }()
+
+    private var transactionsSignature: Int {
+        var hasher = Hasher()
+        hasher.combine(allTransactions.count)
+        if let first = allTransactions.first?.persistentModelID {
+            hasher.combine(first.hashValue)
+        }
+        if let last = allTransactions.last?.persistentModelID {
+            hasher.combine(last.hashValue)
+        }
+        return hasher.finalize()
+    }
 
     private var series: [MonthSeries] {
         var result: [MonthSeries] = []
@@ -360,10 +389,9 @@ struct MonthlyIncomeComparisonCard: View {
 
     private var completedMonthStartDates: [Date] {
         let calendar = Calendar.current
-        let grouped = Dictionary(grouping: allTransactions.filter { $0.kind == .standard }) { monthStart(for: $0.date) }
         let now = Date()
         let toleranceDays = 2
-        return grouped.compactMap { entry -> Date? in
+        return standardTransactionsByMonthStart.compactMap { entry -> Date? in
             let start = entry.key
             guard let end = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: start) else { return nil }
             guard now > end else { return nil }
@@ -453,6 +481,13 @@ struct MonthlyIncomeComparisonCard: View {
                 }
             }
         }
+        .task(id: transactionsSignature) {
+            let calendar = Calendar.current
+            let standard = allTransactions.filter { $0.kind == .standard }
+            standardTransactionsByMonthStart = Dictionary(grouping: standard) { tx in
+                calendar.date(from: calendar.dateComponents([.year, .month], from: tx.date)) ?? tx.date
+            }
+        }
         .sheet(isPresented: $showingMonthSelection) {
             NavigationStack {
                 List {
@@ -511,11 +546,8 @@ struct MonthlyIncomeComparisonCard: View {
 
     private func hasIncomeData(for referenceDate: Date) -> Bool {
         let calendar = Calendar.current
-        guard let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: referenceDate)),
-              let monthEnd = calendar.date(byAdding: DateComponents(month: 1, day: -1), to: monthStart) else {
-            return false
-        }
-        return allTransactions.contains { $0.date >= monthStart && $0.date <= monthEnd && $0.kind == .standard && $0.amount > 0 }
+        let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: referenceDate)) ?? referenceDate
+        return (standardTransactionsByMonthStart[monthStart] ?? []).contains { $0.amount > 0 }
     }
 
     private func incomeSeries(for referenceDate: Date) -> [DailySpending] {
@@ -528,7 +560,7 @@ struct MonthlyIncomeComparisonCard: View {
             return []
         }
 
-        let monthTransactions = allTransactions.filter { $0.date >= monthStart && $0.date <= monthEnd && $0.kind == .standard && $0.amount > 0 }
+        let monthTransactions = (standardTransactionsByMonthStart[monthStart] ?? []).filter { $0.date >= monthStart && $0.date <= monthEnd && $0.amount > 0 }
         var dailyTotals: [Int: Decimal] = [:]
         for transaction in monthTransactions {
             let day = calendar.component(.day, from: transaction.date)

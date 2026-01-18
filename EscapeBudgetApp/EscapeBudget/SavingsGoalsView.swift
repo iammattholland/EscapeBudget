@@ -16,6 +16,11 @@ struct SavingsGoalsView: View {
         Group {
             if savingsGoals.isEmpty {
                 List {
+                    ScrollOffsetReader(coordinateSpace: "SavingsGoalsView.scroll", id: "SavingsGoalsView.scroll")
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+
                 EmptyDataCard(
                     systemImage: "target",
                     title: "No Savings Goals",
@@ -30,8 +35,14 @@ struct SavingsGoalsView: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
                 .background(Color(.systemBackground))
+                .coordinateSpace(name: "SavingsGoalsView.scroll")
             } else {
                 List {
+                    ScrollOffsetReader(coordinateSpace: "SavingsGoalsView.scroll", id: "SavingsGoalsView.scroll")
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+
                     // Summary Card
                     Section {
                         VStack(spacing: 12) {
@@ -88,6 +99,7 @@ struct SavingsGoalsView: View {
                         }
                     }
                 }
+                .coordinateSpace(name: "SavingsGoalsView.scroll")
             }
         }
         .toolbar {

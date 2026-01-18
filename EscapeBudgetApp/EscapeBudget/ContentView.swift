@@ -7,20 +7,13 @@ struct ContentView: View {
     @AppStorage("isDemoMode") private var isDemoMode = false
 
     var body: some View {
-        ZStack(alignment: .top) {
-            Group {
-                if horizontalSizeClass == .regular {
-                    // iPad / Mac - Use sidebar navigation
-                    iPadMacLayout
-                } else {
-                    // iPhone - Use tabs
-                    iPhoneLayout
-                }
-            }
-
-            // Demo mode banner
-            if isDemoMode {
-                DemoModeBanner()
+        Group {
+            if horizontalSizeClass == .regular {
+                // iPad / Mac - Use sidebar navigation
+                iPadMacLayout
+            } else {
+                // iPhone - Use tabs
+                iPhoneLayout
             }
         }
         .onChange(of: navigator.selectedTab) { _, _ in
@@ -111,47 +104,6 @@ struct ContentView: View {
                 }
             }
             .undoRedoToolbar()
-        }
-    }
-}
-
-// MARK: - Demo Mode Banner
-
-struct DemoModeBanner: View {
-    @Environment(\.appColorMode) private var appColorMode
-    @AppStorage("isDemoMode") private var isDemoMode = false
-    @State private var showingDemoModeActions = false
-
-    var body: some View {
-        Button {
-            showingDemoModeActions = true
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.caption2)
-                Text("DEMO MODE")
-                    .font(.caption2)
-                    .fontWeight(.bold)
-                Text("- Sample data only")
-                    .font(.caption2)
-            }
-            .foregroundColor(.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(
-                Capsule()
-                    .fill(AppColors.warning(for: appColorMode))
-            )
-        }
-        .buttonStyle(.plain)
-        .padding(.top, 4)
-        .confirmationDialog("Demo Mode", isPresented: $showingDemoModeActions, titleVisibility: .visible) {
-            Button("Turn Off Demo Mode") {
-                isDemoMode = false
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Return to your real data and turn off demo mode.")
         }
     }
 }

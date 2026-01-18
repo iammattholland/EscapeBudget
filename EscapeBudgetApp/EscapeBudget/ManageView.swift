@@ -3,13 +3,15 @@ import SwiftData
 
 struct ManageView: View {
     @EnvironmentObject private var navigator: AppNavigator
+    @EnvironmentObject private var manageNavigator: ManageNavigator
     @State private var transactionsSearchText = ""
     @State private var budgetSearchText = ""
     @State private var accountsSearchText = ""
     @State private var filter = TransactionFilter()
+    @State private var demoPillVisible = true
 
     private var activeSearchText: Binding<String> {
-        switch navigator.manageSelectedSection {
+        switch manageNavigator.selectedSection {
         case .transactions:
             return $transactionsSearchText
         case .budget:
@@ -21,46 +23,72 @@ struct ManageView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Segmented Control
-                Picker("Section", selection: $navigator.manageSelectedSection) {
-                    ForEach(ManageSection.allCases, id: \.self) { section in
-                        Text(section.rawValue).tag(section)
+            manageBody
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    VStack(spacing: 8) {
+                        Picker("Section", selection: $manageNavigator.selectedSection) {
+                            ForEach(ManageSection.allCases, id: \.self) { section in
+                                Text(section.rawValue).tag(section)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .simultaneousGesture(TapGesture().onEnded {
+#if canImport(UIKit)
+                            KeyboardUtilities.dismiss()
+#endif
+                        })
+                        .onChange(of: manageNavigator.selectedSection) { _, _ in
+#if canImport(UIKit)
+                            KeyboardUtilities.dismiss()
+#endif
+                        }
+                        .topChromeSegmentedStyle()
+
+                        CompactSearchBar(text: activeSearchText, placeholder: "Search", showsBackground: false)
+                            .topChromeSegmentedStyle(isCompact: true)
                     }
+                    .padding(.top, 34)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 6)
+                    .padding(.bottom, 6)
                 }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.top, 8)
-                .padding(.bottom, 8)
-
-                CompactSearchBar(text: activeSearchText, placeholder: "Search")
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 8)
-
-                // Content
-                Group {
-                    switch navigator.manageSelectedSection {
+                .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
+                    let key: String
+                    switch manageNavigator.selectedSection {
                     case .transactions:
-                        AllTransactionsView(searchText: $transactionsSearchText, filter: $filter)
+                        key = "AllTransactionsView.scroll"
                     case .budget:
-                        ManageBudgetView(searchText: $budgetSearchText)
+                        key = "BudgetView.scroll"
                     case .accounts:
-                        AccountsView(searchText: $accountsSearchText)
+                        key = "AccountsView.scroll"
                     }
+                    demoPillVisible = (offsets[key] ?? 0) > -20
                 }
-            }
             .navigationTitle(navigationTitle)
             .globalKeyboardDoneToolbar()
             .withAppLogo()
+            .environment(\.demoPillVisible, demoPillVisible)
             .foregroundColor(.primary)
             .sheet(isPresented: $navigator.showingAddTransaction) {
                 TransactionFormView()
             }
         }
     }
+
+    @ViewBuilder
+    private var manageBody: some View {
+        switch manageNavigator.selectedSection {
+        case .transactions:
+            AllTransactionsView(searchText: $transactionsSearchText, filter: $filter)
+        case .budget:
+            ManageBudgetView(searchText: $budgetSearchText)
+        case .accounts:
+            AccountsView(searchText: $accountsSearchText)
+        }
+    }
     
     private var navigationTitle: String {
-        switch navigator.manageSelectedSection {
+        switch manageNavigator.selectedSection {
         case .transactions:
             return "Manage"
         case .budget:

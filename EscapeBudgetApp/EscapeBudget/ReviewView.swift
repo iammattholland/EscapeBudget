@@ -22,11 +22,26 @@ struct ReviewView: View {
     @State private var customStartDate = Date()
     @State private var customEndDate = Date()
     @State private var isTopChromeCompact = false
+    @State private var lastScrollOffset: CGFloat = 0
 
     private var topChromeLargeTitleClearance: CGFloat {
-        // When using a large navigation title, the title renders in the same vertical region as the
-        // scroll view's top safe area. Keep a small clearance so the "Review" large title remains visible.
-        isTopChromeCompact ? 0 : 34
+        0
+    }
+
+    private var compactThreshold: CGFloat { -80 }
+    private var expandThreshold: CGFloat { -20 }
+
+    private var activeScrollKey: String? {
+        switch selectedSection {
+        case .budget:
+            return "BudgetPerformanceView.scroll"
+        case .income:
+            return "ReportsIncomeView.scroll"
+        case .expenses:
+            return "ReportsSpendingView.scroll"
+        case .custom:
+            return "CustomDashboardView.scroll"
+        }
     }
     
     var body: some View {
@@ -34,21 +49,10 @@ struct ReviewView: View {
             reviewBody
                 .safeAreaInset(edge: .top, spacing: 0) {
                     VStack(spacing: 8) {
-                        Picker("Section", selection: $selectedSection) {
-                            ForEach(ReportSection.allCases, id: \.self) { section in
-                                Text(section.rawValue).tag(section)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .padding(.horizontal, isTopChromeCompact ? 12 : 14)
-                        .padding(.vertical, isTopChromeCompact ? 8 : 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: isTopChromeCompact ? 18 : 22, style: .continuous)
-                                .fill(.ultraThinMaterial)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: isTopChromeCompact ? 18 : 22, style: .continuous)
-                                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+                        TopChromeTabs(
+                            selection: $selectedSection,
+                            tabs: ReportSection.allCases.map { .init(id: $0, title: $0.rawValue) },
+                            isCompact: isTopChromeCompact
                         )
 
                         DateRangeFilterHeader(
@@ -58,27 +62,23 @@ struct ReviewView: View {
                             customEndDate: $customEndDate,
                             isCompact: isTopChromeCompact
                         )
-                        .padding(.horizontal, isTopChromeCompact ? 12 : 14)
-                        .padding(.vertical, isTopChromeCompact ? 8 : 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: isTopChromeCompact ? 18 : 22, style: .continuous)
-                                .fill(.ultraThinMaterial)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: isTopChromeCompact ? 18 : 22, style: .continuous)
-                                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-                        )
+                        .topChromeSegmentedStyle(isCompact: isTopChromeCompact)
                     }
                     .padding(.top, topChromeLargeTitleClearance)
                     .padding(.horizontal, 16)
                     .padding(.top, 6)
                     .padding(.bottom, 6)
                 }
-                .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
-                    let shouldCompact = offset < -12
-                    if shouldCompact != isTopChromeCompact {
+                .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
+                    let offset = activeScrollKey.flatMap { offsets[$0] } ?? 0
+                    lastScrollOffset = offset
+                    if !isTopChromeCompact, offset < compactThreshold {
                         withAnimation(.easeInOut(duration: 0.15)) {
-                            isTopChromeCompact = shouldCompact
+                            isTopChromeCompact = true
+                        }
+                    } else if isTopChromeCompact, offset > expandThreshold {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            isTopChromeCompact = false
                         }
                     }
                 }
@@ -86,8 +86,9 @@ struct ReviewView: View {
                     isTopChromeCompact = false
                 }
                 .navigationTitle("Review")
-                .navigationBarTitleDisplayMode(.large)
+                .navigationBarTitleDisplayMode(.inline)
                 .withAppLogo()
+                .environment(\.demoPillVisible, lastScrollOffset > -20)
         }
     }
 
@@ -537,7 +538,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
-                ScrollOffsetReader(coordinateSpace: "ReportsOverviewView.scroll")
+                ScrollOffsetReader(coordinateSpace: "ReportsOverviewView.scroll", id: "ReportsOverviewView.scroll")
 
                 BudgetReviewSectionCard {
                     OverviewHealthCard(
@@ -642,23 +643,25 @@ private struct MonthlyNetWorthPoint: Identifiable {
         )
         .coordinateSpace(name: "ReportsOverviewView.scroll")
         .safeAreaInset(edge: .top, spacing: 0) {
-            DateRangeFilterHeader(
-                filterMode: $filterMode,
-                date: $selectedDate,
-                customStartDate: $customStartDate,
-                customEndDate: $customEndDate,
-                isCompact: isRangeHeaderCompact
-            )
-            .padding(.horizontal, isRangeHeaderCompact ? 12 : 14)
-            .padding(.vertical, isRangeHeaderCompact ? 8 : 12)
-            .background(
-                RoundedRectangle(cornerRadius: isRangeHeaderCompact ? 18 : 22, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: isRangeHeaderCompact ? 18 : 22, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-            )
+            VStack(spacing: 8) {
+                DateRangeFilterHeader(
+                    filterMode: $filterMode,
+                    date: $selectedDate,
+                    customStartDate: $customStartDate,
+                    customEndDate: $customEndDate,
+                    isCompact: isRangeHeaderCompact
+                )
+                .padding(.horizontal, isRangeHeaderCompact ? 12 : 14)
+                .padding(.vertical, isRangeHeaderCompact ? 8 : 12)
+                .background(
+                    RoundedRectangle(cornerRadius: isRangeHeaderCompact ? 18 : 22, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: isRangeHeaderCompact ? 18 : 22, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+                )
+            }
             .padding(.horizontal, 16)
             .padding(.top, 0)
             .padding(.bottom, 8)
@@ -2245,7 +2248,7 @@ struct ReportsSpendingView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
-                ScrollOffsetReader(coordinateSpace: "ReportsSpendingView.scroll")
+                ScrollOffsetReader(coordinateSpace: "ReportsSpendingView.scroll", id: "ReportsSpendingView.scroll")
 
                 BudgetReviewSectionCard {
                     SpendingSummaryCard(
@@ -2482,7 +2485,7 @@ struct ReportsIncomeView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
-                ScrollOffsetReader(coordinateSpace: "ReportsIncomeView.scroll")
+                ScrollOffsetReader(coordinateSpace: "ReportsIncomeView.scroll", id: "ReportsIncomeView.scroll")
 
                 BudgetReviewSectionCard {
                     IncomeSummaryCard(
@@ -3380,7 +3383,7 @@ struct BudgetPerformanceView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
-                ScrollOffsetReader(coordinateSpace: "BudgetPerformanceView.scroll")
+                ScrollOffsetReader(coordinateSpace: "BudgetPerformanceView.scroll", id: "BudgetPerformanceView.scroll")
 
                 BudgetReviewSectionCard {
                     BudgetReviewSummaryCard(
@@ -3959,7 +3962,7 @@ struct MonthSwipeNavigationModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .simultaneousGesture(
-                DragGesture(minimumDistance: 20)
+                DragGesture(minimumDistance: 45)
                     .onChanged { value in
                         dragOffset = value.translation.width
                     }
@@ -3994,7 +3997,7 @@ struct MonthSwipeNavigationModifier: ViewModifier {
 
                         dragOffset = 0
                     }
-            )
+            , including: .gesture)
     }
 }
 

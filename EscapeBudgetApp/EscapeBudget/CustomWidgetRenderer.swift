@@ -11,10 +11,16 @@ struct CustomWidgetRenderer: View {
     @Query(sort: \RecurringPurchase.nextDate) private var recurringPurchases: [RecurringPurchase]
     @AppStorage("currencyCode") private var currencyCode = "USD"
     @Environment(\.appColorMode) private var appColorMode
+
+    @State private var filteredTransactionsCache: [Transaction] = []
     
     private var filteredTransactions: [Transaction] {
+        filteredTransactionsCache
+    }
+
+    private var filteredTransactionsKey: String {
         let (start, end) = widget.dateRange.dateRange()
-        return transactions.filter { $0.date >= start && $0.date <= end }
+        return "\(widget.id.uuidString)-\(start.timeIntervalSince1970)-\(end.timeIntervalSince1970)-\(transactions.count)"
     }
     
     var body: some View {
@@ -24,6 +30,10 @@ struct CustomWidgetRenderer: View {
             } else {
                 renderChart()
             }
+        }
+        .task(id: filteredTransactionsKey) {
+            let (start, end) = widget.dateRange.dateRange()
+            filteredTransactionsCache = transactions.filter { $0.date >= start && $0.date <= end }
         }
     }
     
@@ -106,7 +116,8 @@ struct CustomWidgetRenderer: View {
             renderTopListChart(data: buildTopExpenses(), emptyMessage: "No expenses")
 
         case .topCategories:
-            renderCategoryChart(data: buildTopCategories(), isEmpty: buildTopCategories().isEmpty, emptyMessage: "No categories")
+            let data = buildTopCategories()
+            renderCategoryChart(data: data, isEmpty: data.isEmpty, emptyMessage: "No categories")
 
         case .topMerchants:
             renderTopListChart(data: buildTopMerchants(), emptyMessage: "No merchants")

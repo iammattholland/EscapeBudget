@@ -14,10 +14,12 @@ struct CustomDashboardView: View {
     @State private var filterMode: DateRangeFilterHeader.FilterMode = .month
     @State private var customStartDate = Date()
     @State private var customEndDate = Date()
+    private let scrollCoordinateSpace = "CustomDashboardView.scroll"
     
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
+                ScrollOffsetReader(coordinateSpace: scrollCoordinateSpace, id: scrollCoordinateSpace)
                 // Header
                 ForEach(widgets) { widget in
                     CustomWidgetContainer(widget: widget) {
@@ -46,6 +48,7 @@ struct CustomDashboardView: View {
             }
             .padding()
         }
+        .coordinateSpace(name: scrollCoordinateSpace)
         .background(Color(.systemGroupedBackground))
         .sheet(isPresented: $showingAddWidget) {
             WidgetEditorView(widget: .constant(nil))

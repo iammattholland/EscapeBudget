@@ -5,6 +5,7 @@ import Combine
 /// Central navigation coordinator for the entire app
 /// Views observe these @Published properties and present their own sheet content
 class AppNavigator: ObservableObject {
+    let manageNavigator = ManageNavigator()
 
     // MARK: - Sheet State
 
@@ -20,14 +21,12 @@ class AppNavigator: ObservableObject {
     /// Other sheets
     @Published var showingSettings = false
     @Published var showingReports = false
+    @Published var showingImportData = false
 
     // MARK: - Root Navigation State
 
     /// Root tab selection (iPhone TabView / iPad sidebar)
     @Published var selectedTab: AppTab = .home
-
-    /// Manage segmented selection (Transactions/Budget/Accounts)
-    @Published var manageSelectedSection: ManageSection = .transactions
 
     // MARK: - Actions
 
@@ -47,6 +46,11 @@ class AppNavigator: ObservableObject {
         showingImportTransactions = true
     }
 
+    /// Present import wizard (no account required)
+    func importData() {
+        showingImportData = true
+    }
+
     /// Present uncategorized transactions
     func showUncategorized() {
         showingUncategorizedTransactions = true
@@ -59,6 +63,7 @@ class AppNavigator: ObservableObject {
         showingUncategorizedTransactions = false
         showingSettings = false
         showingReports = false
+        showingImportData = false
         editingTransaction = nil
     }
 }

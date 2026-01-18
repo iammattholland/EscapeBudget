@@ -16,6 +16,7 @@ struct SpendingForecastView: View {
     @State private var showingAddRecurring = false
     @State private var showingSettings = false
     @StateObject private var notificationService = NotificationService.shared
+    private let scrollCoordinateSpace = "PlanForecastHubView.scroll"
     
     enum ViewMode: String, CaseIterable {
         case list = "List"
@@ -257,6 +258,7 @@ struct SpendingForecastView: View {
     
     private var listView: some View {
         List {
+            ScrollOffsetReader(coordinateSpace: scrollCoordinateSpace, id: scrollCoordinateSpace)
             ForEach(upcomingPurchases, id: \.id) { item in
                 HStack(spacing: 12) {
                     // Urgency Indicator
@@ -294,10 +296,12 @@ struct SpendingForecastView: View {
                 .padding(.vertical, 4)
             }
         }
+        .coordinateSpace(name: scrollCoordinateSpace)
     }
 
     private var emptyForecastView: some View {
         List {
+            ScrollOffsetReader(coordinateSpace: scrollCoordinateSpace, id: scrollCoordinateSpace)
             EmptyDataCard(
                 systemImage: "chart.line.uptrend.xyaxis",
                 title: "No Forecast",
@@ -313,6 +317,7 @@ struct SpendingForecastView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(Color(.systemBackground))
+        .coordinateSpace(name: scrollCoordinateSpace)
     }
 
     private func daysUntilText(_ days: Int) -> String {
@@ -344,6 +349,7 @@ struct SpendingForecastView: View {
     private var calendarView: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
+                ScrollOffsetReader(coordinateSpace: scrollCoordinateSpace, id: scrollCoordinateSpace)
                 ForEach(groupedByMonth(), id: \.0) { month, items in
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
@@ -415,6 +421,7 @@ struct SpendingForecastView: View {
     private var timelineView: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
+                ScrollOffsetReader(coordinateSpace: scrollCoordinateSpace, id: scrollCoordinateSpace)
                 ForEach(upcomingPurchases, id: \.id) { item in
                     HStack(alignment: .top, spacing: 12) {
                         // Timeline indicator
@@ -476,6 +483,7 @@ struct SpendingForecastView: View {
             }
             .padding(.vertical)
         }
+        .coordinateSpace(name: scrollCoordinateSpace)
         .background(Color(.systemGroupedBackground))
     }
     

@@ -1,9 +1,16 @@
 import SwiftUI
 
 struct ToolsView: View {
+    @State private var demoPillVisible = true
+
     var body: some View {
         NavigationStack {
             List {
+                ScrollOffsetReader(coordinateSpace: "ToolsView.scroll", id: "ToolsView.scroll")
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+
                 Section {
                     HStack(spacing: 12) {
                         Image(systemName: "hammer")
@@ -37,6 +44,10 @@ struct ToolsView: View {
                         subtitle: "Build payoff plans, compare strategies, and track progress toward zero."
                     )
                     ToolComingItem(
+                        title: "Bills Dashboard",
+                        subtitle: "An overview of your repeating monthly bills with due dates, totals, and trends."
+                    )
+                    ToolComingItem(
                         title: "Receipt Scanner",
                         subtitle: "Capture receipts and auto-extract merchant, date, totals, and line items."
                     )
@@ -50,11 +61,16 @@ struct ToolsView: View {
                     )
                 }
             }
+            .coordinateSpace(name: "ToolsView.scroll")
+            .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
+                demoPillVisible = (offsets["ToolsView.scroll"] ?? 0) > -20
+            }
             .scrollContentBackground(.hidden)
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Tools")
             .navigationBarTitleDisplayMode(.inline)
             .withAppLogo()
+            .environment(\.demoPillVisible, demoPillVisible)
         }
     }
 }

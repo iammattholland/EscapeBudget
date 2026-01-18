@@ -88,6 +88,13 @@ struct EscapeBudgetApp: App {
                                 shouldShowWelcome = false
                                 navigator.selectedTab = .home
                             },
+                            onImport: {
+                                shouldShowWelcome = false
+                                isDemoMode = false
+                                navigator.selectedTab = .manage
+                                navigator.manageNavigator.selectedSection = .transactions
+                                navigator.importData()
+                            },
                             onTryDemo: {
                                 // Dismiss first to avoid any view hierarchy churn from demo mode switching.
                                 shouldShowWelcome = false
@@ -102,12 +109,16 @@ struct EscapeBudgetApp: App {
                     }
                 }
                 .globalKeyboardDoneToolbar()
+                .sheet(isPresented: $navigator.showingImportData) {
+                    ImportDataView()
+                }
                 .preferredColorScheme(appearanceColorScheme)
                 .tint(AppColors.tint(for: appColorMode))
                 .environment(\.appColorMode, appColorMode)
                 .environment(\.undoRedoManager, undoRedoManager)
                 .environmentObject(errorCenter)
                 .environmentObject(navigator)
+                .environmentObject(navigator.manageNavigator)
                 .environmentObject(authService)
                     .onAppear {
                         errorCenter.setDiagnosticsModelContext(activeContainer.mainContext)

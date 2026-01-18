@@ -43,68 +43,36 @@ struct AllTransactionsView: View {
     @State private var showingAddTransfer = false
     @State private var showingFilter = false
 
-    @State private var transactions: [Transaction] = []
-    @State private var searchIndexTransactions: [Transaction] = []
-    @State private var isLoadingTransactions = false
-    @State private var canLoadMoreTransactions = true
-    @State private var transactionFetchOffset = 0
-    @State private var didLoadOnce = false
-    @State private var fetchToken = UUID()
+    // Simplified state - let SwiftData @Query handle fetching
     @State private var uncategorizedCount: Int = 0
-
     @State private var isBulkEditing = false
     @State private var selectedTransactionIDs: Set<PersistentIdentifier> = []
     @State private var showingBulkEditSheet = false
     @State private var showingAutoRules = false
 
+    // UI state
+    @State private var showMonthIndexOverlay = false
+    @State private var monthIndexHideWorkItem: DispatchWorkItem?
+
     init(searchText: Binding<String>, filter: Binding<TransactionFilter>) {
         self._searchText = searchText
         self._filter = filter
     }
-    
-	    var filteredTransactions: [Transaction] {
-            let useSearchIndex = !searchText.isEmpty || filter.isActive
-	        var result = useSearchIndex ? searchIndexTransactions : transactions
-	        
-	        // Apply Search Text
-	        if !searchText.isEmpty {
-	            let query = searchText
-	            result = result.filter { TransactionQueryService.matchesSearch($0, query: query) }
-	        }
-	        
-		        // Apply Advanced Filters
-		        if filter.isActive {
-		            let filterValue = filter
-		            result = result.filter { TransactionQueryService.matchesFilter($0, filter: filterValue) }
-		        }
-	        
-	        // Hide parent transactions when split, only show individual split entries
-	        result = result.filter { transaction in
-	            if transaction.parentTransaction != nil {
-                return true
-            }
-            return (transaction.subtransactions ?? []).isEmpty
-        }
-        
-        return result
-    }
-    
+
+    // Sheet/modal state
     @State private var showingAccountPicker = false
     @State private var selectedAccountForImport: Account?
     @State private var showingTransferMatch = false
     @State private var transferBaseTransactionID: PersistentIdentifier?
     @State private var showingTransfersInbox = false
-    @State private var showMonthIndexOverlay = false
-    @State private var monthIndexHideWorkItem: DispatchWorkItem?
-    @State private var searchPrefetchTask: Task<Void, Never>?
 
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "EscapeBudget", category: "Transactions")
-    private let transactionPageSize = 250
-    private let initialLoadMonths = 12
-    private let initialLoadMaxTransactions = 5000
-    private let searchPrefetchMinMatches = 40
-    private let searchPrefetchMaxPages = 8
-    
+
+    // SwiftData @Query - automatically updates when data changes
+    @Query(
+        sort: [SortDescriptor(\Transaction.date, order: .reverse)]
+    ) private var allTransactions: [Transaction]
+
     @Query(sort: \Account.name) private var accounts: [Account]
     @Query(sort: \CategoryGroup.name) private var categoryGroups: [CategoryGroup]
 
@@ -119,72 +87,93 @@ struct AllTransactionsView: View {
         return "\(uncategorizedCount) transaction\(uncategorizedCount == 1 ? "" : "s") to categorize"
     }
     
+    // MARK: - Computed Filtered Data (replaces manual caching)
+
+    /// Filtered transactions based on search text and filter
+    /// This is efficient as it's computed only when accessed and SwiftUI will cache appropriately
+    private var filteredTransactions: [Transaction] {
+        var result = allTransactions
+
+        // Apply search text filter
+        if !searchText.isEmpty {
+            result = result.filter { TransactionQueryService.matchesSearch($0, query: searchText) }
+        }
+
+        // Apply advanced filter
+        if filter.isActive {
+            result = result.filter { TransactionQueryService.matchesFilter($0, filter: filter) }
+        }
+
+        // Filter out split children - only show parent or leaf transactions
+        result = result.filter { transaction in
+            transaction.parentTransaction == nil || (transaction.subtransactions ?? []).isEmpty
+        }
+
+        return result
+    }
+
+    /// Month sections grouped from filtered transactions
+    /// Computed property - SwiftUI handles caching automatically
     private var monthSections: [MonthSection] {
         let calendar = Calendar.current
         var grouped: [Date: [Transaction]] = [:]
+        grouped.reserveCapacity(36)
+
         for transaction in filteredTransactions {
             let components = calendar.dateComponents([.year, .month], from: transaction.date)
             let monthDate = calendar.date(from: components) ?? transaction.date
             grouped[monthDate, default: []].append(transaction)
         }
-        let formatterFull = Self.monthTitleFormatter
-        let formatterShort = Self.monthShortFormatter
+
         return grouped.keys.sorted(by: >).map { date in
             let items = (grouped[date] ?? []).sorted { $0.date > $1.date }
-            let title = formatterFull.string(from: date)
+            let title = Self.monthTitleFormatter.string(from: date)
             return MonthSection(
                 id: title,
                 title: title,
-                shortTitle: formatterShort.string(from: date).uppercased(),
+                shortTitle: Self.monthShortFormatter.string(from: date).uppercased(),
                 transactions: items
             )
         }
-	    }
+    }
 	    
-		    var body: some View {
-		        AnyView(
-		            NavigationStack { mainContent }
-		        )
-		        .scrollDismissesKeyboard(.interactively)
-		        .navigationTitle("All Transactions")
-		        .scrollContentBackground(.hidden)
-		        .background(Color(.systemGroupedBackground))
-	        .toolbar { toolbarContent }
-	        .sheet(item: $selectedTransaction, content: transactionSheet)
-	        .sheet(item: $viewingReceipt) { receipt in
-	            ReceiptDetailView(receipt: receipt, currencyCode: currencyCode)
-	        }
-	        .sheet(isPresented: $showingAddTransfer) { addTransferSheet }
+    var body: some View {
+        mainContent
+            .scrollDismissesKeyboard(.interactively)
+            .navigationTitle("All Transactions")
+            .scrollContentBackground(.hidden)
+            .background(Color(.systemGroupedBackground))
+            .toolbar { toolbarContent }
+            .sheet(item: $selectedTransaction, content: transactionSheet)
+            .sheet(item: $viewingReceipt) { receipt in
+                ReceiptDetailView(receipt: receipt, currencyCode: currencyCode)
+            }
+            .sheet(isPresented: $showingAddTransfer) { addTransferSheet }
             .sheet(isPresented: $showingTransfersInbox) { transfersInboxSheet }
-	        .sheet(isPresented: $showingFilter, onDismiss: triggerReload) { filterSheet }
-	        .sheet(isPresented: $showingNewCategorySheet, onDismiss: resetNewCategoryForm) { newCategorySheet }
-	        .sheet(isPresented: $showingBulkEditSheet) { bulkEditSheet }
-	        .sheet(isPresented: $showingAutoRules) { autoRulesSheet }
-	        .sheet(isPresented: $showingTransferMatch) { transferMatchSheet }
-	        .sheet(isPresented: $showingAccountPicker) { accountPickerSheet }
-	        .sheet(isPresented: $navigator.showingUncategorizedTransactions, onDismiss: {
-	            Task { await refreshUncategorizedCount() }
-	        }) { uncategorizedSheet }
-	        .sheet(isPresented: $navigator.showingImportTransactions, onDismiss: triggerReload) { importSheet }
-	        .onChange(of: showingAccountPicker, handleAccountPickerChange)
-            .onChange(of: searchText) { _, _ in
-                scheduleSearchPrefetch()
+            .sheet(isPresented: $showingFilter) { filterSheet }
+            .sheet(isPresented: $showingNewCategorySheet, onDismiss: resetNewCategoryForm) { newCategorySheet }
+            .sheet(isPresented: $showingBulkEditSheet) { bulkEditSheet }
+            .sheet(isPresented: $showingAutoRules) { autoRulesSheet }
+            .sheet(isPresented: $showingTransferMatch) { transferMatchSheet }
+            .sheet(isPresented: $showingAccountPicker) { accountPickerSheet }
+            .sheet(isPresented: $navigator.showingUncategorizedTransactions, onDismiss: {
+                Task { await refreshUncategorizedCount() }
+            }) { uncategorizedSheet }
+            .sheet(isPresented: $navigator.showingImportTransactions) { importSheet }
+            .onChange(of: showingAccountPicker, handleAccountPickerChange)
+            .safeAreaInset(edge: .bottom) {
+                if isBulkEditing {
+                    bulkEditBar
+                }
             }
-            .onChange(of: filter.isActive) { _, _ in
-                scheduleSearchPrefetch()
+            .task {
+                await refreshUncategorizedCount()
             }
-	        .safeAreaInset(edge: .bottom) {
-	            if isBulkEditing {
-	                bulkEditBar
-	            }
-	        }
-	        .task(id: fetchToken) {
-	            await reloadTransactions()
-	        }
-	        .refreshable {
-	            await reloadTransactions()
-	        }
-	    }
+            .refreshable {
+                // Refresh uncategorized count when pulling to refresh
+                await refreshUncategorizedCount()
+            }
+    }
 
 	    @ToolbarContentBuilder
 	    private var toolbarContent: some ToolbarContent {
@@ -239,7 +228,7 @@ struct AllTransactionsView: View {
 	                if filter.isActive {
 	                    Button(role: .destructive) {
 	                        filter = TransactionFilter()
-	                        triggerReload()
+	                        // No reload needed - @Query updates automatically
 	                    } label: {
 	                        Label("Clear Filter", systemImage: "xmark.circle")
 	                    }
@@ -303,16 +292,16 @@ struct AllTransactionsView: View {
 	                    currencyCode: currencyCode,
 	                    onLinked: { _ in
 	                        showingTransferMatch = false
-	                        triggerReload()
+	                        // No reload needed - @Query updates automatically
 	                    },
 	                    onMarkedUnmatched: {
 	                        showingTransferMatch = false
-	                        triggerReload()
+	                        // No reload needed - @Query updates automatically
 	                    },
 	                    onConvertedToStandard: {
 	                        handleConvertedBackToStandard(base)
 	                        showingTransferMatch = false
-	                        triggerReload()
+	                        // No reload needed - @Query updates automatically
 	                    }
 	                )
 	            } else {
@@ -405,36 +394,36 @@ struct AllTransactionsView: View {
 
 	    @ViewBuilder
 	    private func contentList(proxy: ScrollViewProxy) -> some View {
-	        if !didLoadOnce && transactions.isEmpty {
-	            loadingStateList
-	        } else if transactions.isEmpty {
+	        if allTransactions.isEmpty {
 	            emptyStateList
 	        } else {
 	            transactionsList(proxy: proxy)
 	        }
 	    }
 
-	    private var loadingStateList: some View {
-	        List {
-	            HStack {
-	                Spacer()
-	                ProgressView()
-	                Spacer()
-	            }
-	            .listRowSeparator(.hidden)
-	            .listRowBackground(Color.clear)
-	        }
-	        .listStyle(.plain)
-	        .scrollContentBackground(.hidden)
-	        .background(Color(.systemBackground))
-	    }
+		    private var loadingStateList: some View {
+		        List {
+		            HStack {
+		                Spacer()
+		                ProgressView()
+		                Spacer()
+		            }
+		            .listRowSeparator(.hidden)
+		            .listRowBackground(Color.clear)
+		        }
+		        .listStyle(.plain)
+		        .scrollContentBackground(.hidden)
+		        .background(Color(.systemBackground))
+                .background(ScrollOffsetEmitter(id: "AllTransactionsView.scroll"))
+	            .coordinateSpace(name: "AllTransactionsView.scroll")
+		    }
 
-	    private var emptyStateList: some View {
-	        List {
-	            EmptyDataCard(
-	                systemImage: "list.bullet.rectangle",
-	                title: "No Transactions",
-	                message: "Add a transaction or import data to get started.",
+		    private var emptyStateList: some View {
+		        List {
+		            EmptyDataCard(
+		                systemImage: "list.bullet.rectangle",
+		                title: "No Transactions",
+		                message: "Add a transaction or import data to get started.",
 	                actionTitle: "Add Transaction"
 	            ) {
 	                navigator.addTransaction()
@@ -442,17 +431,19 @@ struct AllTransactionsView: View {
 	            .listRowInsets(EdgeInsets())
 	            .listRowSeparator(.hidden)
 	            .listRowBackground(Color.clear)
-	        }
-	        .listStyle(.plain)
-	        .scrollContentBackground(.hidden)
-	        .background(Color(.systemBackground))
-	    }
+		        }
+		        .listStyle(.plain)
+		        .scrollContentBackground(.hidden)
+		        .background(Color(.systemBackground))
+                .background(ScrollOffsetEmitter(id: "AllTransactionsView.scroll"))
+	            .coordinateSpace(name: "AllTransactionsView.scroll")
+		    }
 
-	    private func transactionsList(proxy: ScrollViewProxy) -> some View {
-	        List {
-	            if !filteredTransactions.isEmpty, uncategorizedCount > 0 {
-	                Button {
-	                    navigator.showUncategorized()
+		    private func transactionsList(proxy: ScrollViewProxy) -> some View {
+		        List {
+		            if !filteredTransactions.isEmpty, uncategorizedCount > 0 {
+		                Button {
+		                    navigator.showUncategorized()
 	                } label: {
 	                    UncategorizedBanner(countText: bannerText)
 	                }
@@ -544,39 +535,15 @@ struct AllTransactionsView: View {
 	                }
 	            }
 
-	            if canLoadMoreTransactions {
-	                if searchText.isEmpty && !filter.isActive {
-	                    HStack {
-	                        Spacer()
-	                        ProgressView()
-	                        Spacer()
-	                    }
-	                    .listRowSeparator(.hidden)
-	                    .listRowBackground(Color.clear)
-	                    .onAppear {
-	                        Task { await loadNextTransactionsPage() }
-	                    }
-	                } else {
-	                    Button {
-	                        Task { await loadNextTransactionsPage() }
-	                    } label: {
-	                        HStack {
-	                            Spacer()
-	                            Text(isLoadingTransactions ? "Loading…" : "Load More")
-	                                .font(.callout.weight(.semibold))
-	                            Spacer()
-	                        }
-	                    }
-	                    .disabled(isLoadingTransactions)
-	                }
-	            }
-	        }
-	        .listSectionSpacing(.custom(14))
-	        .simultaneousGesture(
-	            DragGesture()
+		        }
+                .background(ScrollOffsetEmitter(id: "AllTransactionsView.scroll"))
+	            .coordinateSpace(name: "AllTransactionsView.scroll")
+		        .listSectionSpacing(.custom(14))
+		        .simultaneousGesture(
+		            DragGesture()
 	                .onChanged { _ in handleMonthIndexDragBegan() }
 	                .onEnded { _ in handleMonthIndexDragEnded() }
-	        )
+	        , including: .gesture)
 	        .overlay(alignment: .trailing) {
 	            let indexSections = Array(monthSections.prefix(12))
 	            if indexSections.count > 1 && showMonthIndexOverlay {
@@ -598,7 +565,7 @@ struct AllTransactionsView: View {
     private var newCategorySheet: some View {
         NewBudgetCategorySheet(initialGroup: newCategoryInitialGroup) { category in
             if let id = categoryCreationTransactionID,
-               let transaction = transactions.first(where: { $0.persistentModelID == id }) {
+               let transaction = allTransactions.first(where: { $0.persistentModelID == id }) {
                 handleCategoryChange(for: transaction, newCategory: category)
             }
             resetNewCategoryForm()
@@ -715,14 +682,14 @@ struct AllTransactionsView: View {
                         try undoRedoManager.execute(
                             DeleteTransferCommand(modelContext: modelContext, transferID: transferID)
                         )
-                        transactions.removeAll { $0.transferID == transferID }
+                        // @Query automatically updates when data changes - no manual removal needed
                     } catch {
                         logger.error("Delete transfer failed: \(error, privacy: .private)")
-                        errorCenter.show(title: "Couldn’t Delete", message: "Failed to delete that transfer. Please try again.")
+                        errorCenter.show(title: "Couldn't Delete", message: "Failed to delete that transfer. Please try again.")
                         for leg in legs {
                             modelContext.delete(leg)
                         }
-                        transactions.removeAll { $0.transferID == transferID }
+                        // @Query automatically updates when data changes - no manual removal needed
                     }
                 } else {
                     let wasUncategorized = transaction.kind == .standard && transaction.category == nil
@@ -734,12 +701,12 @@ struct AllTransactionsView: View {
                         try undoRedoManager.execute(
                             DeleteTransactionCommand(modelContext: modelContext, transaction: transaction)
                         )
-                        transactions.removeAll { $0.persistentModelID == transaction.persistentModelID }
+                        // @Query automatically updates when data changes - no manual removal needed
                     } catch {
                         logger.error("Delete transaction failed: \(error, privacy: .private)")
-                        errorCenter.show(title: "Couldn’t Delete", message: "Failed to delete that transaction. Please try again.")
+                        errorCenter.show(title: "Couldn't Delete", message: "Failed to delete that transaction. Please try again.")
                         modelContext.delete(transaction)
-                        transactions.removeAll { $0.persistentModelID == transaction.persistentModelID }
+                        // @Query automatically updates when data changes - no manual removal needed
                     }
 
                     if wasUncategorized {
@@ -879,107 +846,6 @@ struct AllTransactionsView: View {
         newCategoryInitialGroup = nil
     }
 
-    private func triggerReload() {
-        fetchToken = UUID()
-    }
-
-    @MainActor
-    private func reloadTransactions() async {
-        guard !isLoadingTransactions else { return }
-        isLoadingTransactions = true
-        defer { isLoadingTransactions = false }
-
-        let token = fetchToken
-        canLoadMoreTransactions = true
-        transactionFetchOffset = 0
-
-        do {
-            let now = Date()
-            let cutoff = Calendar.current.date(byAdding: .month, value: -max(1, initialLoadMonths), to: now) ?? now
-
-            var loaded: [Transaction] = []
-            var offset = 0
-            var didReachEnd = false
-
-            while loaded.count < initialLoadMaxTransactions {
-                var descriptor = FetchDescriptor<Transaction>(
-                    sortBy: [SortDescriptor(\Transaction.date, order: .reverse)]
-                )
-                descriptor.fetchLimit = transactionPageSize
-                descriptor.fetchOffset = offset
-
-                let page = try modelContext.fetch(descriptor)
-                guard token == fetchToken else { return }
-
-                if page.isEmpty {
-                    didReachEnd = true
-                    break
-                }
-
-                let existingIDs = Set(loaded.map(\.persistentModelID))
-                let deduped = page.filter { !existingIDs.contains($0.persistentModelID) }
-                loaded.append(contentsOf: deduped)
-                offset += page.count
-
-                if page.count < transactionPageSize {
-                    didReachEnd = true
-                    break
-                }
-
-                if let oldest = loaded.last?.date, oldest <= cutoff {
-                    break
-                }
-            }
-
-            transactions = loaded
-            transactionFetchOffset = offset
-            canLoadMoreTransactions = !didReachEnd
-            didLoadOnce = true
-            await refreshUncategorizedCount()
-            scheduleSearchPrefetch()
-        } catch {
-            logger.error("Reload transactions failed: \(error, privacy: .private)")
-            errorCenter.show(title: "Couldn’t Load", message: "Failed to load transactions. Please try again.")
-            didLoadOnce = true
-            canLoadMoreTransactions = false
-        }
-    }
-
-    @MainActor
-    private func loadNextTransactionsPage() async {
-        guard !isLoadingTransactions, canLoadMoreTransactions else { return }
-        isLoadingTransactions = true
-        defer { isLoadingTransactions = false }
-
-        let token = fetchToken
-        let offset = transactionFetchOffset
-
-        do {
-            var descriptor = FetchDescriptor<Transaction>(
-                sortBy: [SortDescriptor(\Transaction.date, order: .reverse)]
-            )
-            descriptor.fetchLimit = transactionPageSize
-            descriptor.fetchOffset = offset
-
-            let page = try modelContext.fetch(descriptor)
-            guard token == fetchToken else { return }
-
-            if page.isEmpty {
-                canLoadMoreTransactions = false
-                return
-            }
-
-            let existingIDs = Set(transactions.map(\.persistentModelID))
-            let deduped = page.filter { !existingIDs.contains($0.persistentModelID) }
-            transactions.append(contentsOf: deduped)
-            transactionFetchOffset = offset + page.count
-            canLoadMoreTransactions = page.count == transactionPageSize
-            scheduleSearchPrefetch()
-        } catch {
-            logger.error("Load more transactions failed: \(error, privacy: .private)")
-            canLoadMoreTransactions = false
-        }
-    }
 
     private func fetchTransferLegs(transferID: UUID) -> [Transaction] {
         let id: UUID? = transferID
@@ -1001,41 +867,6 @@ struct AllTransactionsView: View {
         }
     }
 
-    private func scheduleSearchPrefetch() {
-        searchPrefetchTask?.cancel()
-        guard !searchText.isEmpty || filter.isActive else {
-            searchIndexTransactions = transactions
-            return
-        }
-
-        searchPrefetchTask = Task { @MainActor in
-            let token = fetchToken
-            let query = searchText
-            try? await Task.sleep(nanoseconds: 250_000_000)
-            guard !Task.isCancelled, token == fetchToken, query == searchText else { return }
-
-            let now = Date()
-            let cutoff = Calendar.current.date(byAdding: .month, value: -max(1, initialLoadMonths), to: now) ?? now
-
-            do {
-                let windowTransactions = try TransactionQueryService.fetchTransactionsSince(
-                    modelContext: modelContext,
-                    since: cutoff
-                )
-                guard !Task.isCancelled, token == fetchToken else { return }
-
-                var byID: [PersistentIdentifier: Transaction] = [:]
-                byID.reserveCapacity(windowTransactions.count + transactions.count)
-
-                for tx in transactions { byID[tx.persistentModelID] = tx }
-                for tx in windowTransactions { byID[tx.persistentModelID] = tx }
-
-                searchIndexTransactions = byID.values.sorted { $0.date > $1.date }
-            } catch {
-                searchIndexTransactions = transactions
-            }
-        }
-    }
 }
 
 

@@ -32,6 +32,8 @@ struct AccountsView: View {
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
+                .background(ScrollOffsetEmitter(id: "AccountsView.scroll"))
+                .coordinateSpace(name: "AccountsView.scroll")
             } else {
                 List {
                     if filteredAccounts.isEmpty {
@@ -90,6 +92,8 @@ struct AccountsView: View {
                     }
                 }
                 .listStyle(.insetGrouped)
+                .background(ScrollOffsetEmitter(id: "AccountsView.scroll"))
+                .coordinateSpace(name: "AccountsView.scroll")
             }
         }
         .navigationDestination(item: $selectedAccount) { account in

@@ -3,6 +3,7 @@ import SwiftUI
 struct CompactSearchBar: View {
     @Binding var text: String
     var placeholder: String = "Search"
+    var showsBackground: Bool = true
 
     var body: some View {
         HStack(spacing: 8) {
@@ -22,10 +23,9 @@ struct CompactSearchBar: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(Color(.secondarySystemFill))
+        .padding(.horizontal, showsBackground ? 12 : 4)
+        .padding(.vertical, showsBackground ? 6 : 4)
+        .background(showsBackground ? Color(.secondarySystemFill) : Color.clear)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
-

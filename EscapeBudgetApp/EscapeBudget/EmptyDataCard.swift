@@ -6,10 +6,8 @@ struct EmptyDataCard: View {
     let message: String
     let actionTitle: String
     var action: (() -> Void)?
-    var showDemoModeSuggestion: Bool = true
 
     @Environment(\.colorScheme) private var colorScheme
-    @AppStorage("isDemoMode") private var isDemoMode = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -33,31 +31,6 @@ struct EmptyDataCard: View {
                 .buttonStyle(EmptyDataCardActionButtonStyle(colorScheme: colorScheme))
                 .controlSize(.regular)
                 .font(.subheadline.weight(.semibold))
-            }
-
-            // Demo mode suggestion
-            if showDemoModeSuggestion && !isDemoMode {
-                VStack(spacing: 8) {
-                    Divider()
-                        .padding(.vertical, 4)
-
-                    Text("Want to see how this works?")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-
-                    Button {
-                        isDemoMode = true
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "sparkles")
-                                .font(.caption)
-                            Text("Try Demo Mode")
-                                .font(.caption.weight(.semibold))
-                        }
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
             }
         }
         .padding()

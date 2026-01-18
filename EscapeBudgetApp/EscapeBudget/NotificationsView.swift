@@ -68,6 +68,11 @@ struct NotificationsView: View {
 
     private var notificationsList: some View {
         List {
+            ScrollOffsetReader(coordinateSpace: "NotificationsView.scroll", id: "NotificationsView.scroll")
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+
             if notifications.isEmpty {
                 ContentUnavailableView(
                     "No Notifications",
@@ -97,6 +102,7 @@ struct NotificationsView: View {
                 }
             }
         }
+        .coordinateSpace(name: "NotificationsView.scroll")
         .safeAreaInset(edge: .bottom) {
             if !notifications.isEmpty {
                 HStack(spacing: 12) {

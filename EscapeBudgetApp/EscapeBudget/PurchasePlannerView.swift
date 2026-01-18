@@ -34,6 +34,11 @@ struct PurchasePlannerView: View {
         Group {
             if filteredPurchases.isEmpty {
                 List {
+                    ScrollOffsetReader(coordinateSpace: "PurchasePlannerView.scroll", id: "PurchasePlannerView.scroll")
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+
                     EmptyDataCard(
                         systemImage: "cart",
                         title: "No Purchase Plans",
@@ -48,8 +53,14 @@ struct PurchasePlannerView: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
                 .background(Color(.systemBackground))
+                .coordinateSpace(name: "PurchasePlannerView.scroll")
             } else {
                 List {
+                    ScrollOffsetReader(coordinateSpace: "PurchasePlannerView.scroll", id: "PurchasePlannerView.scroll")
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+
                     // Summary Card
                     Section {
                         VStack(spacing: 12) {
@@ -119,6 +130,7 @@ struct PurchasePlannerView: View {
                         }
                     }
                 }
+                .coordinateSpace(name: "PurchasePlannerView.scroll")
             }
         }
         .toolbar {

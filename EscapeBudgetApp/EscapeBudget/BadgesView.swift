@@ -22,6 +22,8 @@ struct BadgesView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                ScrollOffsetReader(coordinateSpace: "BadgesView.scroll", id: "BadgesView.scroll")
+
                 streaksCard
                 
                 Text("Badges")
@@ -45,6 +47,7 @@ struct BadgesView: View {
             .padding(.top, 12)
         }
         .background(Color(.systemGroupedBackground))
+        .coordinateSpace(name: "BadgesView.scroll")
         .onAppear {
             badgeService.recordAppBecameActive(modelContext: modelContext)
         }

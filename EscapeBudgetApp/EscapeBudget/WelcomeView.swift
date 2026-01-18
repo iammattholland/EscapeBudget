@@ -2,6 +2,7 @@ import SwiftUI
 
 struct WelcomeView: View {
     let onContinue: () -> Void
+    let onImport: () -> Void
     let onTryDemo: () -> Void
 
     var body: some View {
@@ -10,15 +11,19 @@ struct WelcomeView: View {
                 Spacer()
 
                 VStack(spacing: 12) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 60, weight: .light))
-                        .foregroundColor(.accentColor)
+                    Image("RocketLogo")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 88, height: 88)
+                        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                        .clipped()
 
-                    Text("Welcome to Escape\u{00A0}Budget")
+                    Text("Escape Budget")
                         .font(.largeTitle.bold())
                         .multilineTextAlignment(.center)
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.85)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        .allowsTightening(true)
                         .foregroundStyle(.primary)
                         .padding(.horizontal, 12)
 
@@ -40,26 +45,33 @@ struct WelcomeView: View {
                 Spacer()
 
                 VStack(spacing: 12) {
-                    // Primary action: Try Demo
+                    // Primary action: Start Fresh
+                    Button(action: onContinue) {
+                        Text("Start Fresh")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+
+                    Button(action: onImport) {
+                        Text("From Import")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+
                     Button(action: onTryDemo) {
                         VStack(spacing: 4) {
                             Text("Guided Introduction")
                                 .font(.headline)
                             Text("Explore the app with sample data")
                                 .font(.caption)
-                                .foregroundColor(.white.opacity(0.9))
+                                .foregroundColor(.secondary)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 4)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-
-                    // Secondary action: Start Fresh
-                    Button(action: onContinue) {
-                        Text("Start Fresh")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.large)

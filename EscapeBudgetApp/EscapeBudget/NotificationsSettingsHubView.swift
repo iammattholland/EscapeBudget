@@ -10,37 +10,41 @@ struct NotificationsSettingsHubView: View {
     }
 
     @Environment(\.dismiss) private var dismiss
-    @State private var selectedTab: Tab = .notifications
+    @AppStorage("notificationsHub.selectedTab") private var selectedTabRawValue = Tab.notifications.rawValue
+    @State private var demoPillVisible = true
     private let maxContentWidth: CGFloat = 560
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                Picker("Section", selection: $selectedTab) {
-                    ForEach(Tab.allCases) { tab in
-                        Text(tab.rawValue).tag(tab)
+            hubBody
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    VStack(spacing: 0) {
+                        TopChromeTabs(
+                            selection: selectedTabBinding,
+                            tabs: Tab.allCases.map { .init(id: $0, title: $0.rawValue) }
+                        )
+                            .padding(.horizontal, 16)
+                            .padding(.top, 6)
+                            .padding(.bottom, 6)
+                            .frame(maxWidth: maxContentWidth)
+                            .frame(maxWidth: .infinity)
                     }
+                    .contentShape(Rectangle())
+                    .background(Color.black.opacity(0.001))
+                    .zIndex(10)
                 }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
-                .padding(.top, 8)
-                .padding(.bottom, 8)
-                .frame(maxWidth: maxContentWidth)
-                .frame(maxWidth: .infinity)
-
-                Group {
+                .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
+                    let key: String
                     switch selectedTab {
                     case .notifications:
-                        NotificationsView(embedded: true)
+                        key = "NotificationsView.scroll"
                     case .settings:
-                        SettingsView(embedded: true, showsAppLogo: false)
+                        key = "SettingsView.scroll"
                     case .badges:
-                        BadgesView()
+                        key = "BadgesView.scroll"
                     }
+                    demoPillVisible = (offsets[key] ?? 0) > -20
                 }
-                .frame(maxWidth: maxContentWidth)
-                .frame(maxWidth: .infinity)
-            }
             .navigationTitle(selectedTab.rawValue)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -54,5 +58,33 @@ struct NotificationsSettingsHubView: View {
         }
         .presentationDetents([.large])
         .solidPresentationBackground()
+        .environment(\.demoPillVisible, demoPillVisible)
+    }
+
+    private var selectedTab: Tab {
+        Tab(rawValue: selectedTabRawValue) ?? .notifications
+    }
+
+    private var selectedTabBinding: Binding<Tab> {
+        Binding(
+            get: { selectedTab },
+            set: { selectedTabRawValue = $0.rawValue }
+        )
+    }
+
+    @ViewBuilder
+    private var hubBody: some View {
+        Group {
+            switch selectedTab {
+            case .notifications:
+                NotificationsView(embedded: true)
+            case .settings:
+                SettingsView(embedded: true, showsAppLogo: false)
+            case .badges:
+                BadgesView()
+            }
+        }
+        .frame(maxWidth: maxContentWidth)
+        .frame(maxWidth: .infinity)
     }
 }
