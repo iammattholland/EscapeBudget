@@ -30,9 +30,9 @@ struct AutoBackupSettingsView: View {
             Section {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Auto Backup")
-                        .font(.headline)
+                        .appSectionTitleText()
                     Text("Automatically save a periodic full backup to a folder you choose (iCloud Drive or On My iPhone). This helps protect your data even if the app is deleted or you switch devices.")
-                        .font(.subheadline)
+                        .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 6)
@@ -46,18 +46,18 @@ struct AutoBackupSettingsView: View {
                         Label(destinationName == nil ? "Choose Backup Folder" : "Change Backup Folder", systemImage: "folder")
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                     }
                 }
 
                 if let destinationName {
                     Text(destinationName)
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                 } else {
                     Text("No folder selected")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                 }
 
@@ -83,7 +83,7 @@ struct AutoBackupSettingsView: View {
                     }
 
                 Text("When enabled, Escape Budget saves a backup weekly while the app is in use.")
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
             }
 
@@ -106,11 +106,11 @@ struct AutoBackupSettingsView: View {
 
                     if !password.isEmpty, password.count < 8 {
                         Text("Use at least 8 characters.")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(AppColors.warning(for: appColorMode))
                     } else if !passwordConfirm.isEmpty, passwordConfirm != password {
                         Text("Passwords don’t match.")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(AppColors.danger(for: appColorMode))
                     }
 
@@ -120,7 +120,7 @@ struct AutoBackupSettingsView: View {
                     .disabled(!canSavePassword)
 
                     Text("Keep this password somewhere safe. It’s required to restore these backups.")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                 }
             }
@@ -135,7 +135,7 @@ struct AutoBackupSettingsView: View {
                             ProgressView()
                         } else {
                             Text("Backup Now")
-                                .font(.headline)
+                                .appSectionTitleText()
                         }
                         Spacer()
                     }

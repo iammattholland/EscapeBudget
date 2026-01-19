@@ -40,7 +40,7 @@ struct LockScreenView: View {
 
                     Text("Locked")
                         .font(.title3)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
 
                 Spacer()
@@ -59,18 +59,18 @@ struct LockScreenView: View {
                             }
                             Text(isAuthenticating ? "Authenticating..." : "Unlock with \(authService.biometricType.displayName)")
                         }
-                        .font(.headline)
+                        .font(AppTheme.Typography.buttonLabel.weight(.semibold))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(AppColors.tint(for: appColorMode))
-                        .cornerRadius(14)
+                        .cornerRadius(AppTheme.Radius.small)
                     }
                     .disabled(isAuthenticating)
 
                     if showError {
                         Text("Authentication failed. Please try again.")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundColor(AppColors.danger(for: appColorMode))
                             .transition(.opacity)
                     }

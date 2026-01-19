@@ -27,7 +27,7 @@ struct BadgesView: View {
                 streaksCard
                 
                 Text("Badges")
-                    .font(.headline)
+                    .appSectionTitleText()
                     .padding(.horizontal, 16)
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -67,10 +67,10 @@ struct BadgesView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Week Streaks")
-                    .font(.headline)
+                    .appSectionTitleText()
                 Spacer()
                 Text("\(badgeService.weeklyOpenStreak) week\(badgeService.weeklyOpenStreak == 1 ? "" : "s")")
-                    .font(.subheadline)
+                    .appSecondaryBodyText()
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
@@ -96,15 +96,7 @@ struct BadgesView: View {
                 )
             }
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(.systemBackground))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
-        )
+        .appElevatedCardSurface(padding: 16, stroke: Color.primary.opacity(0.05))
         .padding(.horizontal, 16)
     }
 }
@@ -119,7 +111,7 @@ private struct StreakMetricView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: systemImage)
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(tint)
                 Text(title.uppercased())
                     .font(.caption2)
@@ -137,10 +129,10 @@ private struct StreakMetricView: View {
                 .foregroundStyle(.primary)
                 .monospacedDigit()
         }
-        .padding(12)
+        .padding(AppTheme.Spacing.tight)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
                 .fill(tint.opacity(0.10))
         )
     }
@@ -176,27 +168,18 @@ private struct BadgeCardView: View {
             }
 
             Text(title)
-                .font(.subheadline)
+                .appSecondaryBodyText()
                 .fontWeight(.semibold)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
             Text(subtitle)
-                .font(.caption)
+                .appCaptionText()
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(.systemBackground))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
-        )
+        .appElevatedCardSurface(stroke: Color.primary.opacity(0.05))
         .opacity(isEarned ? 1 : 0.75)
     }
 }

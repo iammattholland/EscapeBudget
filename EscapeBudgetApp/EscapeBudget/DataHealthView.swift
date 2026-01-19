@@ -47,9 +47,9 @@ struct DataHealthView: View {
             Section {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Data Health")
-                        .font(.headline)
+                        .appSectionTitleText()
                     Text("A quick overview of your data, storage, and safety net settings.")
-                        .font(.subheadline)
+                        .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 4)
@@ -58,7 +58,7 @@ struct DataHealthView: View {
             Section("Sync") {
                 Toggle("Sync with iCloud (Beta)", isOn: $iCloudSyncEnabled)
                 Text("If enabled, Escape Budget will attempt to keep your data in sync across your devices. This requires iCloud capabilities in your Apple Developer setup.")
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
             }
 
@@ -86,7 +86,7 @@ struct DataHealthView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
                         Text(lastSyncError)
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                             .lineLimit(4)
                             .fixedSize(horizontal: false, vertical: true)
@@ -181,7 +181,7 @@ struct DataHealthView: View {
                 .disabled(isRunningBackup || AutoBackupService.destinationDisplayName() == nil || AutoBackupService.isEnabled == false)
 
                 Text("Set up a backup destination in Settings → Data Management → Auto Backup.")
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
             }
 
@@ -202,7 +202,7 @@ struct DataHealthView: View {
                 } else {
                     ForEach(auditSummary.recentLines, id: \.self) { line in
                         Text(line)
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                             .lineLimit(3)
                             .fixedSize(horizontal: false, vertical: true)

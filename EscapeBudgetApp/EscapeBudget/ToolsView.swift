@@ -16,13 +16,10 @@ struct ToolsView: View {
                         Image(systemName: "hammer")
                             .font(.system(size: 24, weight: .semibold))
                             .foregroundStyle(.secondary)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Tools")
-                                .font(.headline)
-                            Text("Your toolbox for deeper insights and planning.")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
+                        AppSectionHeader(
+                            title: "Tools",
+                            subtitle: "Your toolbox for deeper insights and planning."
+                        )
                     }
                     .padding(.vertical, 4)
                 }
@@ -61,6 +58,7 @@ struct ToolsView: View {
                     )
                 }
             }
+            .appConstrainContentWidth()
             .coordinateSpace(name: "ToolsView.scroll")
             .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
                 demoPillVisible = (offsets["ToolsView.scroll"] ?? 0) > -20
@@ -82,9 +80,9 @@ private struct ToolComingItem: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(.headline)
+                .appSectionTitleText()
             Text(subtitle)
-                .font(.subheadline)
+                .appSecondaryBodyText()
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)
@@ -93,4 +91,15 @@ private struct ToolComingItem: View {
 
 #Preview {
     ToolsView()
+}
+
+#Preview("Tools • Dark") {
+    ToolsView()
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Tools • iPad") {
+    ToolsView()
+        .preferredColorScheme(.dark)
+        .previewDevice("iPad Pro (12.9-inch) (6th generation)")
 }

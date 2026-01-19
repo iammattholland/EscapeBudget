@@ -91,8 +91,8 @@ struct UncategorizedTransactionsView: View {
                                 .font(.system(size: 48))
                                 .foregroundColor(AppColors.success(for: appColorMode))
                             Text("All transactions categorized")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
+                                .appSectionTitleText()
+                                .foregroundStyle(.secondary)
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 40)
@@ -103,11 +103,11 @@ struct UncategorizedTransactionsView: View {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(transaction.payee)
-                                            .font(.headline)
+                                            .appSectionTitleText()
                                         
                                         Text(transaction.date, format: .dateTime.month(.abbreviated).day().year())
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
+                                            .appCaptionText()
+                                            .foregroundStyle(.secondary)
                                     }
                                     
                                     Spacer()
@@ -145,7 +145,7 @@ struct UncategorizedTransactionsView: View {
                                     }
                                 } label: {
                                     Text("Assign Category")
-                                        .font(.caption)
+                                        .appCaptionText()
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
                                         .background(Capsule().fill(AppColors.warning(for: appColorMode).opacity(0.15)))
@@ -185,7 +185,7 @@ struct UncategorizedTransactionsView: View {
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .appPrimaryCTA()
             .disabled(transactions.isEmpty)
 
             HStack(spacing: 8) {
@@ -196,7 +196,7 @@ struct UncategorizedTransactionsView: View {
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .appSecondaryCTA()
                 .disabled(transactions.isEmpty)
 
                 Button {
@@ -206,7 +206,7 @@ struct UncategorizedTransactionsView: View {
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .appSecondaryCTA()
                 .disabled(transactions.isEmpty)
             }
         }

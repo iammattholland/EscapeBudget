@@ -67,8 +67,8 @@ struct PurchasePlannerView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Total Planned")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .appCaptionText()
+                                        .foregroundStyle(.secondary)
                                     Text(totalPlanned, format: .currency(code: currencyCode))
                                         .font(.title2)
                                         .fontWeight(.bold)
@@ -78,8 +78,8 @@ struct PurchasePlannerView: View {
                                 
                                 VStack(alignment: .trailing, spacing: 4) {
                                     Text("Items")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .appCaptionText()
+                                        .foregroundStyle(.secondary)
                                     Text("\(filteredPurchases.count)")
                                         .font(.title3)
                                         .fontWeight(.semibold)
@@ -292,7 +292,7 @@ struct PurchasePlanRow: View {
             HStack(spacing: 16) {
                 // Category Icon
                 ZStack {
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: AppTheme.Radius.compact)
                         .fill(categoryColor.opacity(0.15))
                         .frame(width: 56, height: 56)
 
@@ -306,7 +306,7 @@ struct PurchasePlanRow: View {
                             HStack {
                                 Spacer()
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.caption)
+                                    .appCaptionText()
                                     .foregroundColor(.white)
                                     .background(
                                         Circle()
@@ -324,7 +324,7 @@ struct PurchasePlanRow: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text(purchase.itemName)
-                            .font(.headline)
+                            .appSectionTitleText()
                             .lineLimit(1)
 
                         Spacer()
@@ -342,20 +342,20 @@ struct PurchasePlanRow: View {
                     }
 
                     Text(purchase.expectedPrice, format: .currency(code: currencyCode))
-                        .font(.subheadline)
+                        .appSecondaryBodyText()
                         .fontWeight(.semibold)
                         .foregroundColor(categoryColor)
 
                     if let insight = affordabilityInsight {
                         Text(insight)
-                            .font(.caption)
-                            .foregroundColor(insight.contains("now") ? AppColors.success(for: appColorMode) : .secondary)
+                            .appCaptionText()
+                            .foregroundStyle(insight.contains("now") ? AppColors.success(for: appColorMode) : .secondary)
                     } else if let purchaseDate = purchase.purchaseDate, !purchase.isPurchased {
                         let daysUntil = Calendar.current.dateComponents([.day], from: Date(), to: purchaseDate).day ?? 0
                         if daysUntil > 0 && daysUntil <= 30 {
                             Text("\(daysUntil) day\(daysUntil == 1 ? "" : "s") until target")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -401,7 +401,7 @@ struct AddPurchasePlanView: View {
                     
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Priority: \(priority)")
-                            .font(.subheadline)
+                            .appSecondaryBodyText()
                         Slider(value: Binding(
                             get: { Double(priority) },
                             set: { priority = Int($0) }
@@ -409,12 +409,12 @@ struct AddPurchasePlanView: View {
                         
                         HStack {
                             Text("Low")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                             Spacer()
                             Text("High")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -496,7 +496,7 @@ struct PurchasePlanDetailView: View {
                     HStack(spacing: 2) {
                         ForEach(0..<purchase.priority, id: \.self) { _ in
                             Image(systemName: "star.fill")
-                                .font(.caption)
+                                .appCaptionText()
                         }
                     }
                     .foregroundColor(AppColors.warning(for: appColorMode))

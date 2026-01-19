@@ -22,6 +22,10 @@ enum TransactionStatsUpdateCoordinator {
         if let accountID = transaction.account?.persistentModelID {
             markAccountMonthKey(accountMonthKey(monthKey: monthKey, accountID: accountID))
         }
+
+        if !isDeferringUpdates {
+            notify()
+        }
     }
 
     static func markDirty(transactionSnapshot: TransactionSnapshot) {
@@ -30,15 +34,26 @@ enum TransactionStatsUpdateCoordinator {
         if let accountID = transactionSnapshot.accountPersistentID {
             markAccountMonthKey(accountMonthKey(monthKey: monthKey, accountID: accountID))
         }
+
+        if !isDeferringUpdates {
+            notify()
+        }
     }
 
     static func markDirty(monthStart: Date) {
         guard let monthKey = monthKey(for: monthStart) else { return }
         markCashflowMonthKey(monthKey)
+
+        if !isDeferringUpdates {
+            notify()
+        }
     }
 
     static func markNeedsFullRebuild() {
         UserDefaults.standard.set(true, forKey: fullRebuildNeededKey)
+        if !isDeferringUpdates {
+            notify()
+        }
     }
 
     static var isDeferringUpdates: Bool {

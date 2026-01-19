@@ -81,7 +81,7 @@ struct UndoRedoStatusView: View {
             if undoRedoManager.canUndo {
                 Label {
                     Text(undoRedoManager.undoDescription ?? "Undo available")
-                        .font(.caption)
+                        .appCaptionText()
                 } icon: {
                     Image(systemName: "arrow.uturn.backward.circle.fill")
                         .foregroundColor(.accentColor)
@@ -91,7 +91,7 @@ struct UndoRedoStatusView: View {
             if undoRedoManager.canRedo {
                 Label {
                     Text(undoRedoManager.redoDescription ?? "Redo available")
-                        .font(.caption)
+                        .appCaptionText()
                 } icon: {
                     Image(systemName: "arrow.uturn.forward.circle.fill")
                         .foregroundColor(.accentColor)
@@ -101,16 +101,16 @@ struct UndoRedoStatusView: View {
             if !undoRedoManager.canUndo && !undoRedoManager.canRedo {
                 Label {
                     Text("No actions to undo")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
                 } icon: {
                     Image(systemName: "checkmark.circle")
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
         .padding()
         .background(Color(.secondarySystemBackground))
-        .cornerRadius(12)
+        .cornerRadius(AppTheme.Radius.compact)
     }
 }

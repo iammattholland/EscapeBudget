@@ -38,20 +38,20 @@ struct ReceiptReviewView: View {
                 Section {
                     if let thumbnail = image.compressedData(maxSizeKB: 100),
                        let previewImage = UIImage(data: thumbnail) {
-                        Image(uiImage: previewImage)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxHeight: 200)
-                            .cornerRadius(8)
-                    }
-                }
+	                        Image(uiImage: previewImage)
+	                            .resizable()
+	                            .scaledToFit()
+	                            .frame(maxHeight: 200)
+	                            .cornerRadius(AppTheme.Radius.xSmall)
+	                    }
+	                }
 
                 // Receipt Details
                 Section("Receipt Details") {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Merchant")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
                         TextField("Merchant name", text: $merchant)
                             .textFieldStyle(.plain)
                     }
@@ -60,11 +60,11 @@ struct ReceiptReviewView: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Total Amount")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
                         HStack {
                             Text(currencyCode)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                             TextField("0.00", text: $total)
                                 .keyboardType(.decimalPad)
                                 .textFieldStyle(.plain)
@@ -87,16 +87,17 @@ struct ReceiptReviewView: View {
 
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(item.name)
-                                        .font(.subheadline)
+                                        .appSecondaryBodyText()
                                     Text("\(item.quantity) × \(item.price.formatted(.currency(code: currencyCode)))")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .appCaptionText()
+                                        .foregroundStyle(.secondary)
                                 }
 
                                 Spacer()
 
                                 Text((item.price * Decimal(item.quantity)).formatted(.currency(code: currencyCode)))
-                                    .font(.subheadline.weight(.medium))
+                                    .appSecondaryBodyText()
+                                    .fontWeight(.medium)
                             }
                         }
                         .onDelete { indexSet in
@@ -106,7 +107,7 @@ struct ReceiptReviewView: View {
                         Text("Purchased Items")
                     } footer: {
                         Text("Select items to add to transaction. Tap to select, swipe to delete.")
-                            .font(.caption)
+                            .appCaptionText()
                     }
 
                     Button {

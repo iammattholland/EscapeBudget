@@ -132,22 +132,31 @@ struct EscapeBudgetApp: App {
                             Task { await AutoBackupService.maybeRunWeekly(modelContext: activeContainer.mainContext) }
                         }
                     }
-                .onReceive(NotificationCenter.default.publisher(for: DataChangeTracker.didChangeNotification)) { _ in
+                .onReceive(NotificationCenter.default.publisher(for: TransactionStatsUpdateCoordinator.didMarkDirtyNotification)) { _ in
                     guard !isSwitchingDataStore else { return }
                     guard !TransactionStatsUpdateCoordinator.isDeferringUpdates else { return }
 
                     // Coalesce bursts of changes (e.g., demo seeding/import) into a single stats refresh.
                     statsUpdateTask?.cancel()
                     statsUpdateTask = Task { @MainActor in
-                        try? await Task.sleep(nanoseconds: 150_000_000)
+                        do {
+                            try await Task.sleep(nanoseconds: 150_000_000)
+                        } catch {
+                            // CancellationError: exit early to avoid duplicate refresh runs.
+                            return
+                        }
+                        if Task.isCancelled { return }
                         guard !isSwitchingDataStore else { return }
                         guard !TransactionStatsUpdateCoordinator.isDeferringUpdates else { return }
+
+                        let interval = PerformanceSignposts.begin("StatsUpdate.refresh")
 
                         let dirty = TransactionStatsUpdateCoordinator.consumeDirtyState()
 
                         if dirty.needsFullRebuild {
                             await MonthlyAccountTotalsService.rebuildAllAsync(modelContext: activeContainer.mainContext)
                             await MonthlyCashflowTotalsService.rebuildAllAsync(modelContext: activeContainer.mainContext)
+                            PerformanceSignposts.end(interval, "full=true")
                             return
                         }
 
@@ -162,6 +171,15 @@ struct EscapeBudgetApp: App {
                             MonthlyCashflowTotalsService.applyDirtyMonthKeys(
                                 modelContext: activeContainer.mainContext,
                                 monthKeys: dirty.cashflowMonthKeys
+                            )
+                        }
+
+                        if dirty.accountMonthKeys.isEmpty, dirty.cashflowMonthKeys.isEmpty {
+                            PerformanceSignposts.end(interval)
+                        } else {
+                            PerformanceSignposts.end(
+                                interval,
+                                "full=false accountKeys=\(dirty.accountMonthKeys.count) cashflowKeys=\(dirty.cashflowMonthKeys.count)"
                             )
                         }
                     }

@@ -22,12 +22,12 @@ struct TransactionProcessingReviewView: View {
                                 Image(systemName: iconName(for: event.kind))
                                     .foregroundStyle(AppColors.tint(for: appColorMode))
                                 Text(event.title)
-                                    .font(.subheadline)
+                                    .appSecondaryBodyText()
                             }
 
                             if let detail = event.detail, !detail.isEmpty {
                                 Text(detail)
-                                    .font(.caption)
+                                    .appCaptionText()
                                     .foregroundStyle(.secondary)
                                     .padding(.leading, 26)
                             }

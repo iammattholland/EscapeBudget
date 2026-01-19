@@ -5,13 +5,13 @@ import Charts
 struct CustomWidgetRenderer: View {
     let widget: CustomDashboardWidget
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     @Query private var categoryGroups: [CategoryGroup]
     @Query private var accounts: [Account]
     @Query(sort: \RecurringPurchase.nextDate) private var recurringPurchases: [RecurringPurchase]
     @AppStorage("currencyCode") private var currencyCode = "USD"
     @Environment(\.appColorMode) private var appColorMode
 
+    @State private var transactionsCache: [Transaction] = []
     @State private var filteredTransactionsCache: [Transaction] = []
     
     private var filteredTransactions: [Transaction] {
@@ -20,7 +20,7 @@ struct CustomWidgetRenderer: View {
 
     private var filteredTransactionsKey: String {
         let (start, end) = widget.dateRange.dateRange()
-        return "\(widget.id.uuidString)-\(start.timeIntervalSince1970)-\(end.timeIntervalSince1970)-\(transactions.count)"
+        return "\(widget.id.uuidString)-\(start.timeIntervalSince1970)-\(end.timeIntervalSince1970)-\(DataChangeTracker.token)"
     }
     
     var body: some View {
@@ -33,7 +33,28 @@ struct CustomWidgetRenderer: View {
         }
         .task(id: filteredTransactionsKey) {
             let (start, end) = widget.dateRange.dateRange()
-            filteredTransactionsCache = transactions.filter { $0.date >= start && $0.date <= end }
+            let now = Date()
+            let calendar = Calendar.current
+            let thisYearStart = calendar.date(from: calendar.dateComponents([.year], from: now)) ?? now
+            let lastYearStart = calendar.date(byAdding: .year, value: -1, to: thisYearStart) ?? thisYearStart
+            let fourQuartersStart = calendar.date(byAdding: .month, value: -12, to: now) ?? now
+
+            let requiredStart = min(start, lastYearStart, fourQuartersStart)
+            let requiredEnd = max(end, now)
+
+            let interval = PerformanceSignposts.begin("Widget.fetchTransactions")
+            defer { PerformanceSignposts.end(interval, "type=\(widget.dataType.rawValue) range=\(requiredStart.timeIntervalSince1970)-\(requiredEnd.timeIntervalSince1970)") }
+
+            let descriptor = FetchDescriptor<Transaction>(
+                predicate: #Predicate<Transaction> { tx in
+                    tx.date >= requiredStart && tx.date <= requiredEnd
+                },
+                sortBy: [SortDescriptor(\Transaction.date, order: .reverse)]
+            )
+
+            let fetched = (try? modelContext.fetch(descriptor)) ?? []
+            transactionsCache = fetched
+            filteredTransactionsCache = fetched.filter { $0.date >= start && $0.date <= end }
         }
     }
     
@@ -250,8 +271,8 @@ struct CustomWidgetRenderer: View {
                 .font(.system(size: 48, weight: .bold))
                 .foregroundColor(rate >= 20 ? AppColors.success(for: appColorMode) : (rate >= 10 ? AppColors.warning(for: appColorMode) : AppColors.danger(for: appColorMode)))
             Text("Savings Rate")
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .appCaptionText()
+                .foregroundStyle(.secondary)
             ProgressView(value: min(rate / 100, 1.0))
                 .tint(rate >= 20 ? AppColors.success(for: appColorMode) : (rate >= 10 ? AppColors.warning(for: appColorMode) : AppColors.danger(for: appColorMode)))
         }
@@ -290,10 +311,10 @@ struct CustomWidgetRenderer: View {
         VStack(spacing: 12) {
             Text(avg, format: .currency(code: currencyCode))
                 .font(.system(size: 36, weight: .bold))
-                .foregroundColor(.primary)
+                .foregroundStyle(.primary)
             Text("Average Transaction")
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .appCaptionText()
+                .foregroundStyle(.secondary)
         }
         .padding()
     }
@@ -335,15 +356,15 @@ struct CustomWidgetRenderer: View {
                     HStack {
                         VStack(alignment: .leading) {
                             Text(transaction.payee)
-                                .font(.subheadline)
+                                .appSecondaryBodyText()
                                 .fontWeight(.medium)
                             Text(transaction.date, format: .dateTime.month().day())
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                         }
                         Spacer()
                         Text(transaction.amount, format: .currency(code: currencyCode))
-                            .font(.subheadline)
+                            .appSecondaryBodyText()
                             .foregroundColor(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
                     }
                     .padding(.vertical, 8)
@@ -351,7 +372,7 @@ struct CustomWidgetRenderer: View {
                 }
                 if filteredTransactions.isEmpty {
                     Text("No transactions found")
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .padding()
                 }
             }
@@ -372,7 +393,7 @@ struct CustomWidgetRenderer: View {
             
         default:
             Text("Table not implemented for this data type")
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
         }
     }
     
@@ -530,11 +551,11 @@ struct CustomWidgetRenderer: View {
         let thisMonthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: now))!
         let lastMonthStart = calendar.date(byAdding: .month, value: -1, to: thisMonthStart)!
 
-        let thisMonth = transactions.filter {
+        let thisMonth = transactionsCache.filter {
             $0.date >= thisMonthStart && $0.date <= now && $0.kind == .standard && $0.amount < 0
         }.reduce(Decimal.zero) { $0 + abs($1.amount) }
 
-        let lastMonth = transactions.filter {
+        let lastMonth = transactionsCache.filter {
             $0.date >= lastMonthStart && $0.date < thisMonthStart && $0.kind == .standard && $0.amount < 0
         }.reduce(Decimal.zero) { $0 + abs($1.amount) }
 
@@ -550,11 +571,11 @@ struct CustomWidgetRenderer: View {
         let thisYearStart = calendar.date(from: calendar.dateComponents([.year], from: now))!
         let lastYearStart = calendar.date(byAdding: .year, value: -1, to: thisYearStart)!
 
-        let thisYear = transactions.filter {
+        let thisYear = transactionsCache.filter {
             $0.date >= thisYearStart && $0.date <= now && $0.kind == .standard && $0.amount < 0
         }.reduce(Decimal.zero) { $0 + abs($1.amount) }
 
-        let lastYear = transactions.filter {
+        let lastYear = transactionsCache.filter {
             $0.date >= lastYearStart && $0.date < thisYearStart && $0.kind == .standard && $0.amount < 0
         }.reduce(Decimal.zero) { $0 + abs($1.amount) }
 
@@ -574,7 +595,7 @@ struct CustomWidgetRenderer: View {
             let quarterStart = calendar.date(byAdding: .month, value: -3 * (i + 1), to: now)!
             let quarterEnd = calendar.date(byAdding: .month, value: -3 * i, to: now)!
 
-            let total = transactions.filter {
+            let total = transactionsCache.filter {
                 $0.date >= quarterStart && $0.date < quarterEnd && $0.kind == .standard && $0.amount < 0
             }.reduce(Decimal.zero) { $0 + abs($1.amount) }
 
@@ -590,7 +611,7 @@ struct CustomWidgetRenderer: View {
         let calendar = Calendar.current
         var monthlyBalances: [Date: Decimal] = [:]
 
-        for t in transactions where t.kind == .standard {
+        for t in transactionsCache where t.kind == .standard {
             let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: t.date))!
             monthlyBalances[monthStart, default: 0] += t.amount
         }
@@ -794,20 +815,20 @@ struct UpcomingBillRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(bill.name)
-                    .font(.caption)
+                    .appCaptionText()
                     .fontWeight(.medium)
                     .lineLimit(1)
 
                 Text(bill.nextDate, format: .dateTime.month(.abbreviated).day())
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
             }
 
             Spacer()
 
             VStack(alignment: .trailing, spacing: 2) {
                 Text(bill.amount, format: .currency(code: currencyCode))
-                    .font(.caption)
+                    .appCaptionText()
                     .fontWeight(.semibold)
 
                 Text(daysText)
@@ -831,8 +852,8 @@ struct WidgetEmptyStateView: View {
                 .font(.largeTitle)
                 .foregroundColor(.secondary.opacity(0.3))
             Text(message)
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .appCaptionText()
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()

@@ -22,7 +22,7 @@ struct PlanView: View {
                         selection: $selectedSection,
                         tabs: PlanSection.allCases.map { .init(id: $0, title: $0.rawValue) }
                     )
-                    .padding(.horizontal, 16)
+                    .appAdaptiveScreenHorizontalPadding()
                     .padding(.top, 6)
                     .padding(.bottom, 6)
                 }
@@ -93,7 +93,7 @@ private struct PlanForecastHubView: View {
                 }
                 .pickerStyle(.segmented)
                 .topChromeSegmentedStyle(isCompact: true)
-                .padding(.horizontal, 16)
+                .appAdaptiveScreenHorizontalPadding()
                 .padding(.top, 6)
                 .padding(.bottom, 6)
 
@@ -127,4 +127,45 @@ private struct PlanForecastHubView: View {
             ],
             inMemory: true
         )
+}
+
+#Preview("Plan • Dark") {
+    PlanView()
+        .modelContainer(
+            for: [
+                CategoryGroup.self,
+                Category.self,
+                Account.self,
+                Transaction.self,
+                TransactionHistoryEntry.self,
+                TransactionTag.self,
+                MonthlyCashflowTotal.self,
+                RecurringPurchase.self,
+                PurchasePlan.self,
+                SavingsGoal.self
+            ],
+            inMemory: true
+        )
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Plan • iPad") {
+    PlanView()
+        .modelContainer(
+            for: [
+                CategoryGroup.self,
+                Category.self,
+                Account.self,
+                Transaction.self,
+                TransactionHistoryEntry.self,
+                TransactionTag.self,
+                MonthlyCashflowTotal.self,
+                RecurringPurchase.self,
+                PurchasePlan.self,
+                SavingsGoal.self
+            ],
+            inMemory: true
+        )
+        .preferredColorScheme(.dark)
+        .previewDevice("iPad Pro (12.9-inch) (6th generation)")
 }

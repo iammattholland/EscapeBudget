@@ -112,7 +112,7 @@ struct BulkEditTransactionsView: View {
                         }
                     } else if !supportsAccountChange {
                         Text("Account changes aren’t available when transfers are selected.")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -134,7 +134,7 @@ struct BulkEditTransactionsView: View {
                         }
                     } else if !supportsCategoryChange {
                         Text("Category changes only apply to standard (non-transfer) transactions.")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -151,7 +151,7 @@ struct BulkEditTransactionsView: View {
                             .keyboardType(.decimalPad)
                     } else if !supportsAmountChange {
                         Text("Amount changes aren't available when transfers are selected.")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -163,18 +163,18 @@ struct BulkEditTransactionsView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Label {
                                 Text("This will convert \(standardTransactionCount) transaction(s) to unmatched transfers and remove their categories.")
-                                    .font(.caption)
+                                    .appCaptionText()
                             } icon: {
                                 Image(systemName: "info.circle.fill")
                                     .foregroundStyle(.blue)
                             }
                             Text("You can match them later in the Transfers Inbox or All Transactions view.")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
                     } else if !supportsConvertToTransfer {
                         Text("No standard transactions selected to convert.")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                     }
                 }

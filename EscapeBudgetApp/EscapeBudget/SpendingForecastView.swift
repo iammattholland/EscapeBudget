@@ -259,38 +259,38 @@ struct SpendingForecastView: View {
     private var listView: some View {
         List {
             ScrollOffsetReader(coordinateSpace: scrollCoordinateSpace, id: scrollCoordinateSpace)
-            ForEach(upcomingPurchases, id: \.id) { item in
-                HStack(spacing: 12) {
+	            ForEach(upcomingPurchases, id: \.id) { item in
+	                HStack(spacing: 12) {
                     // Urgency Indicator
                     UrgencyIndicator(daysUntil: item.daysUntil, appColorMode: appColorMode)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(item.name)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
+	                    VStack(alignment: .leading, spacing: 4) {
+	                        Text(item.name)
+	                            .appSecondaryBodyText()
+	                            .fontWeight(.medium)
 
                         HStack(spacing: 4) {
                             Text(item.date, style: .date)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                             Text("•")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                             Text(daysUntilText(item.daysUntil))
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundColor(urgencyColor(for: item.daysUntil))
                         }
                     }
 
                     Spacer()
 
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text(item.amount, format: .currency(code: currencyCode))
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
+	                    VStack(alignment: .trailing, spacing: 4) {
+	                        Text(item.amount, format: .currency(code: currencyCode))
+	                            .appSecondaryBodyText()
+	                            .fontWeight(.semibold)
                         Text(item.type)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .padding(.vertical, 4)
@@ -350,16 +350,16 @@ struct SpendingForecastView: View {
         ScrollView {
             LazyVStack(spacing: 16) {
                 ScrollOffsetReader(coordinateSpace: scrollCoordinateSpace, id: scrollCoordinateSpace)
-                ForEach(groupedByMonth(), id: \.0) { month, items in
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text(month, format: .dateTime.month(.wide).year())
-                                .font(.headline)
-                            Spacer()
+	                ForEach(groupedByMonth(), id: \.0) { month, items in
+	                    VStack(alignment: .leading, spacing: 12) {
+	                        HStack {
+	                            Text(month, format: .dateTime.month(.wide).year())
+	                                .appSectionTitleText()
+	                            Spacer()
                             Text(items.reduce(Decimal(0)) { $0 + $1.amount }, format: .currency(code: currencyCode))
-                                .font(.subheadline)
+                                .appSecondaryBodyText()
                                 .fontWeight(.semibold)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                         }
                         .padding(.horizontal)
 
@@ -371,42 +371,42 @@ struct SpendingForecastView: View {
                                         .font(.system(size: 20, weight: .bold))
                                     Text(item.date, format: .dateTime.month(.abbreviated))
                                         .font(.caption2)
-                                        .foregroundColor(.secondary)
+                                        .foregroundStyle(.secondary)
                                 }
                                 .frame(width: 50)
                                 .padding(.vertical, 8)
                                 .background(urgencyColor(for: item.daysUntil).opacity(0.1))
-                                .cornerRadius(8)
+                                .cornerRadius(AppTheme.Radius.xSmall)
 
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(item.name)
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
-                                    HStack(spacing: 4) {
+	                                VStack(alignment: .leading, spacing: 4) {
+	                                    Text(item.name)
+	                                        .appSecondaryBodyText()
+	                                        .fontWeight(.medium)
+	                                    HStack(spacing: 4) {
                                         Circle()
                                             .fill(item.type == "Recurring" ? AppColors.tint(for: appColorMode) : AppColors.warning(for: appColorMode))
                                             .frame(width: 6, height: 6)
                                         Text(item.type)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
+                                            .appCaptionText()
+                                            .foregroundStyle(.secondary)
                                         Text("•")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
+                                            .appCaptionText()
+                                            .foregroundStyle(.secondary)
                                         Text(daysUntilText(item.daysUntil))
-                                            .font(.caption)
+                                            .appCaptionText()
                                             .foregroundColor(urgencyColor(for: item.daysUntil))
                                     }
                                 }
 
                                 Spacer()
 
-                                Text(item.amount, format: .currency(code: currencyCode))
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                            }
+	                                Text(item.amount, format: .currency(code: currencyCode))
+	                                    .appSecondaryBodyText()
+	                                    .fontWeight(.semibold)
+	                            }
                             .padding()
                             .background(Color(.systemBackground))
-                            .cornerRadius(12)
+                            .cornerRadius(AppTheme.Radius.compact)
                             .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
                             .padding(.horizontal)
                         }
@@ -443,18 +443,18 @@ struct SpendingForecastView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Text(item.date, format: .dateTime.month(.abbreviated).day().year())
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                                 Spacer()
                                 Text(daysUntilText(item.daysUntil))
-                                    .font(.caption)
+                                    .appCaptionText()
                                     .fontWeight(.medium)
                                     .foregroundColor(urgencyColor(for: item.daysUntil))
                             }
 
-                            Text(item.name)
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
+	                            Text(item.name)
+	                                .appSecondaryBodyText()
+	                                .fontWeight(.semibold)
 
                             HStack {
                                 HStack(spacing: 4) {
@@ -462,19 +462,19 @@ struct SpendingForecastView: View {
                                         .fill(item.type == "Recurring" ? AppColors.tint(for: appColorMode) : AppColors.warning(for: appColorMode))
                                         .frame(width: 6, height: 6)
                                     Text(item.type)
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .appCaptionText()
+                                        .foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 Text(item.amount, format: .currency(code: currencyCode))
-                                    .font(.subheadline)
+                                    .appSecondaryBodyText()
                                     .fontWeight(.bold)
                             }
                         }
                         .padding()
                         .frame(maxWidth: .infinity)
                         .background(Color(.systemBackground))
-                        .cornerRadius(12)
+                        .cornerRadius(AppTheme.Radius.compact)
                         .shadow(color: .black.opacity(0.05), radius: 2, y: 1)
                     }
                     .padding(.horizontal)
@@ -508,8 +508,8 @@ private struct SummaryCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .appCaptionText()
+                .foregroundStyle(.secondary)
 
             Text(amount, format: .currency(code: currencyCode))
                 .font(.system(size: 24, weight: .bold))
@@ -517,12 +517,12 @@ private struct SummaryCard: View {
 
             Text("\(count) item\(count == 1 ? "" : "s")")
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
         }
         .frame(width: 140)
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(AppTheme.Radius.compact)
         .shadow(color: .black.opacity(0.05), radius: 3, y: 2)
     }
 }
@@ -559,18 +559,18 @@ struct NotificationPromptBanner: View {
     var body: some View {
         let tint = AppColors.warning(for: appColorMode)
 
-        HStack(spacing: 12) {
+	        HStack(spacing: 12) {
             Image(systemName: "bell.badge")
                 .font(.title3)
                 .foregroundColor(tint)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Enable Reminders")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+	            VStack(alignment: .leading, spacing: 2) {
+	                Text("Enable Reminders")
+	                    .appSecondaryBodyText()
+	                    .fontWeight(.semibold)
                 Text("Get notified before bills are due")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
             }
 
             Spacer()
@@ -578,12 +578,12 @@ struct NotificationPromptBanner: View {
             Button("Enable") {
                 onEnable()
             }
-            .buttonStyle(.borderedProminent)
+            .appPrimaryCTA()
             .controlSize(.small)
         }
         .padding()
         .background(tint.opacity(0.12))
-        .cornerRadius(12)
+        .cornerRadius(AppTheme.Radius.compact)
     }
 }
 

@@ -911,23 +911,23 @@ struct GroupHeaderView: View {
         HStack(spacing: 8) {
             Button(action: onToggleCollapse) {
                 Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
-                    .font(.caption)
+                    .appCaptionText()
                     .fontWeight(.semibold)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .frame(width: 24, height: 24)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(isCollapsed ? "Expand \(group.name)" : "Collapse \(group.name)")
             
-            HStack(spacing: 6) {
-                Text(group.name)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                
-                Text(totalAssigned, format: .currency(code: currencyCode))
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
+	        HStack(spacing: 6) {
+	                Text(group.name)
+	                    .appSectionTitleText()
+	                    .foregroundStyle(.primary)
+	                
+	                Text(totalAssigned, format: .currency(code: currencyCode))
+	                    .appSecondaryBodyText()
+	                    .foregroundStyle(.secondary)
+	        }
             
             Spacer()
             Menu {
@@ -945,9 +945,9 @@ struct GroupHeaderView: View {
                 }
             } label: {
                 Image(systemName: "ellipsis")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .padding(8)
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
+                    .padding(AppTheme.Spacing.compact)
                     .background(Color(.systemGray6))
                     .clipShape(Circle())
             }
@@ -1030,7 +1030,7 @@ struct BudgetCategoryRowView: View {
                     Text(category.name)
                         .font(.body)
                         .fontWeight(.medium)
-                        .foregroundColor(.primary)
+                        .foregroundStyle(.primary)
                     
                     if category.assigned == 0 && category.group?.type != .income {
                         Text("Needs Budget")
@@ -1042,12 +1042,12 @@ struct BudgetCategoryRowView: View {
                 
                 Spacer()
                 
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(category.assigned, format: .currency(code: currencyCode))
-                        .font(.subheadline)
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
+	                VStack(alignment: .trailing, spacing: 2) {
+	                    Text(category.assigned, format: .currency(code: currencyCode))
+	                        .appSecondaryBodyText()
+	                        .foregroundStyle(.primary)
+	                        .lineLimit(1)
+	                        .minimumScaleFactor(0.5)
                     
                     if category.group?.type == .income {
                         if monthlyData.spent > 0 {
@@ -1075,7 +1075,7 @@ struct BudgetCategoryRowView: View {
                         .foregroundStyle(isSelected ? AppColors.tint(for: appColorMode) : Color.secondary.opacity(0.35))
                 } else {
                     Image(systemName: "chevron.right")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -1138,8 +1138,8 @@ struct CategoryTransactionsSheet: View {
                     HStack(spacing: 20) {
                         VStack(spacing: 4) {
                             Text("Budget")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                             Text(category.assigned, format: .currency(code: currencyCode))
                                 .font(.title3)
                                 .fontWeight(.semibold)
@@ -1152,8 +1152,8 @@ struct CategoryTransactionsSheet: View {
                         
                         VStack(spacing: 4) {
                             Text("Spent")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                             Text(totalSpent, format: .currency(code: currencyCode))
                                 .font(.title3)
                                 .fontWeight(.semibold)
@@ -1167,8 +1167,8 @@ struct CategoryTransactionsSheet: View {
                         
                         VStack(spacing: 4) {
                             Text("Remaining")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                             Text(category.assigned - totalSpent, format: .currency(code: currencyCode))
                                 .font(.title3)
                                 .fontWeight(.semibold)
@@ -1182,27 +1182,27 @@ struct CategoryTransactionsSheet: View {
                     let formatter = DateFormatter()
                     let _ = formatter.dateFormat = "MMM d, yyyy"
                     Text("\(formatter.string(from: dateRange.start)) – \(formatter.string(from: dateRange.end))")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
                 }
                 .padding()
                 .background(Color(.systemGroupedBackground))
                 
-                if transactions.isEmpty {
-                    VStack(spacing: 16) {
-                        Spacer()
-                        Image(systemName: "tray")
-                            .font(.system(size: 50))
-                            .foregroundColor(.secondary.opacity(0.5))
-                        Text("No transactions")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                        Text("Transactions in this category will appear here")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary.opacity(0.7))
-                        Spacer()
-                    }
-                } else {
+	                if transactions.isEmpty {
+	                    VStack(spacing: 16) {
+	                        Spacer()
+	                        Image(systemName: "tray")
+	                            .font(.system(size: 50))
+	                            .foregroundColor(.secondary.opacity(0.5))
+	                        Text("No transactions")
+	                            .appSectionTitleText()
+	                            .foregroundStyle(.secondary)
+	                        Text("Transactions in this category will appear here")
+	                            .appSecondaryBodyText()
+	                            .foregroundColor(.secondary.opacity(0.7))
+	                        Spacer()
+	                    }
+	                } else {
                     List {
                         ForEach(sortedTransactions) { transaction in
                             Button {
@@ -1216,28 +1216,28 @@ struct CategoryTransactionsSheet: View {
 
                                         HStack(spacing: 8) {
                                             Text(transaction.date, format: .dateTime.month(.abbreviated).day())
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
+                                                .appCaptionText()
+                                                .foregroundStyle(.secondary)
 
                                             if let account = transaction.account {
                                                 Text(account.name)
-                                                    .font(.caption)
-                                                    .foregroundColor(.secondary)
+                                                    .appCaptionText()
+                                                    .foregroundStyle(.secondary)
                                             }
                                         }
                                     }
 
                                     Spacer()
 
-                                    Text(transaction.amount, format: .currency(code: currencyCode))
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.5)
+	                                    Text(transaction.amount, format: .currency(code: currencyCode))
+	                                        .appSecondaryBodyText()
+	                                        .fontWeight(.semibold)
+	                                        .foregroundColor(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+	                                        .lineLimit(1)
+	                                        .minimumScaleFactor(0.5)
 
                                     Image(systemName: "chevron.right")
-                                        .font(.caption)
+                                        .appCaptionText()
                                         .foregroundStyle(.tertiary)
                                 }
                                 .contentShape(Rectangle())
@@ -1304,7 +1304,7 @@ struct CategoryEditSheet: View {
                 Section {
                     VStack(alignment: .leading) {
                         Text("Category Name")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                         TextField("Name", text: $name)
                             .font(.body)
@@ -1312,7 +1312,7 @@ struct CategoryEditSheet: View {
                     
                     VStack(alignment: .leading) {
                         Text("Budget Amount")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                         TextField("Amount", value: $assigned, format: .currency(code: currencyCode))
                             .keyboardType(.decimalPad)
@@ -1320,7 +1320,7 @@ struct CategoryEditSheet: View {
                     
                     VStack(alignment: .leading) {
                         Text("Memo (Optional)")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                         TextField("Add a note...", text: $memoText)
                     }
@@ -1347,7 +1347,7 @@ struct CategoryEditSheet: View {
                             Text(category.group?.name ?? "None")
                                 .foregroundStyle(.secondary)
                             Image(systemName: "chevron.right")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -1586,10 +1586,10 @@ struct EmojiPickerSheet: View {
                             .textFieldStyle(.roundedBorder)
                             .padding(.horizontal)
 
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Any emoji")
-                                .font(.headline)
-                                .padding(.horizontal)
+	                        VStack(alignment: .leading, spacing: 6) {
+	                            Text("Any emoji")
+	                                .appSectionTitleText()
+	                                .padding(.horizontal)
 
                             HStack(spacing: 10) {
                                 TextField("Type or paste an emoji", text: $customEmojiText)
@@ -1633,10 +1633,10 @@ struct EmojiPickerSheet: View {
                     }
 
                     if !suggestedEmojis.isEmpty {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("Suggested")
-                                .font(.headline)
-                                .padding(.horizontal)
+	                        VStack(alignment: .leading, spacing: 10) {
+	                            Text("Suggested")
+	                                .appSectionTitleText()
+	                                .padding(.horizontal)
 
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 45))], spacing: 10) {
                                 ForEach(suggestedEmojis, id: \.self) { emoji in
@@ -1657,11 +1657,11 @@ struct EmojiPickerSheet: View {
                         }
                     }
 
-                    ForEach(filteredCategories, id: \.0) { category in
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text(category.0)
-                                .font(.headline)
-                                .padding(.horizontal)
+	                    ForEach(filteredCategories, id: \.0) { category in
+	                        VStack(alignment: .leading, spacing: 10) {
+	                            Text(category.0)
+	                                .appSectionTitleText()
+	                                .padding(.horizontal)
                             
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 45))], spacing: 10) {
                                 ForEach(category.1, id: \.self) { emoji in
@@ -1692,7 +1692,7 @@ struct EmojiPickerSheet: View {
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(Color(.systemGray6))
-                            .cornerRadius(10)
+                            .cornerRadius(AppTheme.Radius.button)
                     }
                     .padding()
                 }

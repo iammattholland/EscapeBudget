@@ -306,15 +306,15 @@ private struct AccountsSummaryCard: View {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Overview")
-                        .font(.headline)
+                        .appSectionTitleText()
                     Text("\(count) account\(count == 1 ? "" : "s")")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Text(netWorth, format: .currency(code: currencyCode))
                     .font(.title3.weight(.semibold))
-                    .foregroundColor(netWorth >= 0 ? .primary : AppColors.danger(for: appColorMode))
+                    .foregroundStyle(netWorth >= 0 ? .primary : AppColors.danger(for: appColorMode))
             }
 
             HStack(spacing: 12) {
@@ -324,7 +324,7 @@ private struct AccountsSummaryCard: View {
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(14)
+        .cornerRadius(AppTheme.Radius.small)
         .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 2)
     }
 }
@@ -338,7 +338,7 @@ private struct SummaryPill: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
-                .font(.caption)
+                .appCaptionText()
                 .foregroundStyle(.secondary)
             Text(value, format: .currency(code: currencyCode))
                 .font(.subheadline.weight(.semibold))
@@ -346,13 +346,13 @@ private struct SummaryPill: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.vertical, AppTheme.Spacing.small)
         .background(tint.opacity(0.12))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: AppTheme.Radius.compact)
                 .stroke(tint.opacity(0.25), lineWidth: 1)
         )
-        .cornerRadius(12)
+        .cornerRadius(AppTheme.Radius.compact)
     }
 }
 
@@ -379,7 +379,7 @@ private struct AccountRow: View {
 
                 HStack(spacing: 6) {
                     Text(account.type.rawValue)
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
 
                     if account.isTrackingOnly {
@@ -394,10 +394,10 @@ private struct AccountRow: View {
 
                     if let notes = account.notes, !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         Text("•")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                         Text(notes)
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     }
@@ -436,7 +436,7 @@ private struct AccountEditorSheet: View {
         formatter.numberStyle = .currency
         formatter.currencyCode = code
         formatter.maximumFractionDigits = 0
-        return formatter.currencySymbol ?? "$"
+        return formatter.currencySymbol ?? code
     }
 
     var body: some View {
@@ -444,7 +444,7 @@ private struct AccountEditorSheet: View {
             Section("Details") {
                 VStack(alignment: .leading, spacing: 4) {
 	                    Text("Name")
-	                        .font(.caption)
+	                        .appCaptionText()
 	                        .foregroundStyle(.secondary)
 	                    TextField("Enter account name", text: $name)
 	                        .textInputAutocapitalization(.words)
@@ -458,7 +458,7 @@ private struct AccountEditorSheet: View {
 
 	                VStack(alignment: .leading, spacing: 4) {
 	                    Text("Current Balance")
-	                        .font(.caption)
+	                        .appCaptionText()
 	                        .foregroundStyle(.secondary)
 	                    HStack(spacing: 8) {
 	                        Text(currencySymbol(for: currencyCode))

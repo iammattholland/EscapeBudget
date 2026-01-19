@@ -31,9 +31,9 @@ struct RestoreBackupView: View {
                 Section {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Restore an Escape Budget backup")
-                            .font(.headline)
+                            .appSectionTitleText()
                         Text("This replaces your current data with what’s in the backup file.")
-                            .font(.subheadline)
+                            .appSecondaryBodyText()
                             .foregroundStyle(.secondary)
                     }
                     .padding(.vertical, 6)
@@ -47,7 +47,7 @@ struct RestoreBackupView: View {
                             Label(backupURL == nil ? "Choose Backup File" : "Choose Another File", systemImage: "doc")
                             Spacer()
                             Image(systemName: "chevron.right")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -55,7 +55,7 @@ struct RestoreBackupView: View {
 
                     if let backupURL {
                         Text(backupURL.lastPathComponent)
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                     }
 
@@ -85,7 +85,7 @@ struct RestoreBackupView: View {
                             HStack {
                                 Spacer()
                                 Text(isRestoring ? "Restoring…" : "Restore Backup")
-                                    .font(.headline)
+                                    .appSectionTitleText()
                                 Spacer()
                             }
                         }

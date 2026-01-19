@@ -34,11 +34,11 @@ struct WidgetEditorView: View {
                                 Image(systemName: "wand.and.stars")
                                     .foregroundColor(AppColors.tint(for: appColorMode))
                                 Text("Browse Suggested Widgets")
-                                    .foregroundColor(.primary)
+                                    .foregroundStyle(.primary)
                                 Spacer()
                                 Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     } header: {
@@ -225,19 +225,19 @@ struct SuggestedWidgetsView: View {
                                             .frame(width: 24)
 
                                         Text(template.title)
-                                            .foregroundColor(.primary)
+                                            .foregroundStyle(.primary)
                                             .fontWeight(.medium)
 
                                         Spacer()
 
                                         Image(systemName: "chevron.right")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
+                                            .appCaptionText()
+                                            .foregroundStyle(.secondary)
                                     }
 
                                     Text(template.dataType.description)
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .appCaptionText()
+                                        .foregroundStyle(.secondary)
                                         .padding(.leading, 32)
                                 }
                                 .padding(.vertical, 4)

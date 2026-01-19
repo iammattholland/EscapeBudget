@@ -122,7 +122,7 @@ struct AutoRuleHistoryView: View {
                 }
             }
             .padding(.horizontal)
-            .padding(.vertical, 10)
+            .padding(.vertical, AppTheme.Spacing.small)
         }
         .background(Color(.secondarySystemGroupedBackground))
     }
@@ -141,29 +141,29 @@ struct AutoRuleHistoryView: View {
                         Text(group)
                         Spacer()
                         Text("\(apps.count) changes")
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
 
-            if filteredApplications.isEmpty && !applications.isEmpty {
-                Section {
-                    VStack(spacing: 12) {
-                        Image(systemName: "line.3.horizontal.decrease.circle")
-                            .font(.system(size: 32))
-                            .foregroundColor(.secondary)
-                        Text("No matches for current filters")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        Button("Clear Filters") {
-                            selectedFilter = .all
-                            selectedFieldFilter = nil
-                        }
-                        .font(.subheadline)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 20)
-                }
+	            if filteredApplications.isEmpty && !applications.isEmpty {
+	                Section {
+	                    VStack(spacing: 12) {
+	                        Image(systemName: "line.3.horizontal.decrease.circle")
+	                            .font(.system(size: 32))
+	                            .foregroundStyle(.secondary)
+	                        Text("No matches for current filters")
+	                            .appSecondaryBodyText()
+	                            .foregroundStyle(.secondary)
+	                        Button("Clear Filters") {
+	                            selectedFilter = .all
+	                            selectedFieldFilter = nil
+	                        }
+	                        .font(AppTheme.Typography.secondaryBody)
+	                    }
+	                    .frame(maxWidth: .infinity)
+	                    .padding(.vertical, 20)
+	                }
             }
         }
         .listStyle(.insetGrouped)
@@ -179,17 +179,17 @@ struct AutoRuleHistoryView: View {
                 .font(.system(size: 64))
                 .foregroundColor(.secondary.opacity(0.6))
 
-            VStack(spacing: 8) {
-                Text("No History Yet")
-                    .font(.title2)
-                    .fontWeight(.semibold)
+	            VStack(spacing: 8) {
+	                Text("No History Yet")
+	                    .font(.title2)
+	                    .fontWeight(.semibold)
 
-                Text("When auto rules modify transactions during import, the changes will appear here.")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-            }
+	                Text("When auto rules modify transactions during import, the changes will appear here.")
+	                    .appSecondaryBodyText()
+	                    .foregroundStyle(.secondary)
+	                    .multilineTextAlignment(.center)
+	                    .padding(.horizontal, 32)
+	            }
 
             Spacer()
         }
@@ -215,13 +215,13 @@ struct FilterChip: View {
                         .font(.caption2)
                 }
                 Text(label)
-                    .font(.caption)
+                    .appCaptionText()
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(isSelected ? AppColors.tint(for: appColorMode) : Color(.tertiarySystemFill))
             .foregroundColor(isSelected ? .white : .primary)
-            .cornerRadius(16)
+            .cornerRadius(AppTheme.Radius.card)
         }
     }
 }
@@ -240,36 +240,36 @@ struct HistoryRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // Header: Rule name and time
-            HStack {
-                if let rule = application.rule {
-                    Text(rule.name)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                } else {
-                    Text("Deleted Rule")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .italic()
-                }
+	            HStack {
+	                if let rule = application.rule {
+	                    Text(rule.name)
+	                        .appSecondaryBodyText()
+	                        .fontWeight(.medium)
+	                } else {
+	                    Text("Deleted Rule")
+	                        .appSecondaryBodyText()
+	                        .foregroundStyle(.secondary)
+	                        .italic()
+	                }
 
                 Spacer()
 
                 Text(application.appliedAt.formatted(.dateTime.hour().minute()))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
             }
 
             // Transaction info
             if let transaction = application.transaction {
                 HStack {
                     Text(transaction.payee)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
 
                     Spacer()
 
                     Text(transaction.amount, format: .currency(code: currencyCode))
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundColor(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .secondary)
                 }
             }
@@ -278,7 +278,7 @@ struct HistoryRowView: View {
             HStack(spacing: 8) {
                 if let field = fieldChange {
                     Image(systemName: field.systemImage)
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundColor(AppColors.tint(for: appColorMode))
                 }
 
@@ -287,18 +287,18 @@ struct HistoryRowView: View {
                         HStack(spacing: 4) {
                             Text(oldValue)
                                 .strikethrough()
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                             Image(systemName: "arrow.right")
                                 .font(.caption2)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                             Text(application.newValue ?? "")
-                                .foregroundColor(.primary)
+                                .foregroundStyle(.primary)
                         }
-                        .font(.caption)
+                        .appCaptionText()
                     } else {
                         Text("Set to: \(application.newValue ?? "")")
-                            .font(.caption)
-                            .foregroundColor(.primary)
+                            .appCaptionText()
+                            .foregroundStyle(.primary)
                     }
                 }
 
@@ -334,10 +334,10 @@ struct AutoRuleStatsView: View {
         }.sorted { $0.1 > $1.1 }
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Statistics")
-                .font(.headline)
+	    var body: some View {
+	        VStack(alignment: .leading, spacing: 12) {
+	            Text("Statistics")
+	                .appSectionTitleText()
 
             HStack(spacing: 16) {
                 StatBox(value: "\(totalChanges)", label: "Total Changes")
@@ -353,7 +353,7 @@ struct AutoRuleStatsView: View {
         }
         .padding()
         .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(12)
+        .cornerRadius(AppTheme.Radius.compact)
     }
 }
 
@@ -367,7 +367,7 @@ struct StatBox: View {
         VStack(spacing: 4) {
             if let icon = icon {
                 Image(systemName: icon)
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundColor(AppColors.tint(for: appColorMode))
             }
             Text(value)
@@ -375,7 +375,7 @@ struct StatBox: View {
                 .fontWeight(.bold)
             Text(label)
                 .font(.caption2)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
     }

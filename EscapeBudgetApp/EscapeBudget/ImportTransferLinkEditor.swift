@@ -17,16 +17,16 @@ struct ImportTransferLinkEditor: View {
             if legs.count >= 2 {
                 Section("Linked Transfer") {
                     ForEach(legs) { tx in
-                        HStack(spacing: 12) {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(accountNameFor(tx))
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                Text(tx.date, format: .dateTime.month(.abbreviated).day().year())
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(accountNameFor(tx))
+                                        .appSecondaryBodyText()
+                                        .fontWeight(.semibold)
+                                    Text(tx.date, format: .dateTime.month(.abbreviated).day().year())
+                                        .appCaptionText()
+                                        .foregroundStyle(.secondary)
                                 Text(tx.payee)
-                                    .font(.caption)
+                                    .appCaptionText()
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
                             }
@@ -34,7 +34,7 @@ struct ImportTransferLinkEditor: View {
                             Spacer()
 
                             Text(tx.amount, format: .currency(code: currencyCode))
-                                .font(.subheadline)
+                                .appSecondaryBodyText()
                                 .fontWeight(.semibold)
                                 .monospacedDigit()
                         }

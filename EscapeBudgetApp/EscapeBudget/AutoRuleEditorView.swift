@@ -207,8 +207,8 @@ struct AutoRuleEditorView: View {
                     DisclosureGroup(isExpanded: $actionTagsEnabled) {
                         if tags.isEmpty {
                             Text("No tags available. Create tags first.")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                         } else {
                             ForEach(tags) { tag in
                                 HStack {
@@ -293,14 +293,14 @@ struct AutoRuleEditorView: View {
                                 Spacer()
                                 if !previewTransactions.isEmpty {
                                     Text("\(previewTransactions.count) matches")
-                                        .foregroundColor(.secondary)
+                                        .foregroundStyle(.secondary)
                                 }
                                 Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
                         }
-                        .foregroundColor(.primary)
+                        .foregroundStyle(.primary)
                     } header: {
                         Text("Preview")
                     }
@@ -506,7 +506,7 @@ struct ConditionToggleLabel: View {
                     .foregroundColor(isEnabled ? .primary : .secondary)
                 if let summary = summary {
                     Text(summary)
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundColor(AppColors.tint(for: appColorMode))
                 }
             }
@@ -516,7 +516,7 @@ struct ConditionToggleLabel: View {
             if isEnabled {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundColor(AppColors.success(for: appColorMode))
-                    .font(.caption)
+                    .appCaptionText()
             }
         }
     }
@@ -540,7 +540,7 @@ struct ActionToggleLabel: View {
                     .foregroundColor(isEnabled ? .primary : .secondary)
                 if let summary = summary {
                     Text(summary)
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundColor(AppColors.warning(for: appColorMode))
                 }
             }
@@ -550,7 +550,7 @@ struct ActionToggleLabel: View {
             if isEnabled {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundColor(AppColors.success(for: appColorMode))
-                    .font(.caption)
+                    .appCaptionText()
             }
         }
     }
@@ -569,12 +569,12 @@ struct PreviewMatchesSheet: View {
                     VStack(spacing: 16) {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 48))
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                         Text("No Matching Transactions")
-                            .font(.headline)
+                            .appSectionTitleText()
                         Text("No existing transactions match these conditions.")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .appSecondaryBodyText()
+                            .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -592,8 +592,8 @@ struct PreviewMatchesSheet: View {
                                                 Text("• \(account.name)")
                                             }
                                         }
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .appCaptionText()
+                                        .foregroundStyle(.secondary)
                                     }
                                     Spacer()
                                     Text(tx.amount, format: .currency(code: currencyCode))

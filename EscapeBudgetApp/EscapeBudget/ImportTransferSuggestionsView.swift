@@ -15,7 +15,7 @@ struct ImportTransferSuggestionsView: View {
         List {
             Section {
                 Text("Review suggested transfer pairs before linking them. Only selected pairs will be linked.")
-                    .font(.subheadline)
+                    .appSecondaryBodyText()
                     .foregroundStyle(.secondary)
             }
 
@@ -42,7 +42,7 @@ struct ImportTransferSuggestionsView: View {
                     Label("Link Selected (\(selectedIDs.count))", systemImage: "link")
                         .fontWeight(.semibold)
                 }
-                .buttonStyle(.borderedProminent)
+                .appPrimaryCTA()
                 .disabled(selectedIDs.isEmpty)
             }
 
@@ -68,12 +68,12 @@ struct ImportTransferSuggestionsView: View {
                                     if let outflow = transactionLookup(suggestion.outflowID),
                                        let inflow = transactionLookup(suggestion.inflowID) {
                                         Text("\(accountNameFor(outflow)) → \(accountNameFor(inflow))")
-                                            .font(.subheadline)
+                                            .appSecondaryBodyText()
                                             .fontWeight(.semibold)
                                             .lineLimit(1)
 
                                         Text("\(outflow.date.formatted(.dateTime.month(.abbreviated).day())) • \(suggestion.daysApart)d apart")
-                                            .font(.caption)
+                                            .appCaptionText()
                                             .foregroundStyle(.secondary)
                                             .lineLimit(1)
                                     } else {
@@ -87,7 +87,7 @@ struct ImportTransferSuggestionsView: View {
                                 VStack(alignment: .trailing, spacing: 2) {
                                     if let outflow = transactionLookup(suggestion.outflowID) {
                                         Text(abs(outflow.amount), format: .currency(code: currencyCode))
-                                            .font(.subheadline)
+                                            .appSecondaryBodyText()
                                             .fontWeight(.semibold)
                                             .monospacedDigit()
                                     }

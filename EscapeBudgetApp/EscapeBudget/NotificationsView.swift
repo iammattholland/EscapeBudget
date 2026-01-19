@@ -114,7 +114,7 @@ struct NotificationsView: View {
                             .minimumScaleFactor(0.85)
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
+                    .appSecondaryCTA()
                     .confirmationDialog("Delete all notifications?", isPresented: $showingDeleteAllConfirmFromBottom, titleVisibility: .visible) {
                         Button("Delete All", role: .destructive) {
                             clearAllNotifications()
@@ -132,7 +132,7 @@ struct NotificationsView: View {
                             .minimumScaleFactor(0.85)
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .appPrimaryCTA()
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 10)
@@ -213,8 +213,8 @@ struct NotificationRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(notification.title)
-                        .font(.headline)
-                        .foregroundColor(.primary)
+                        .appSectionTitleText()
+                        .foregroundStyle(.primary)
                     
                     Spacer()
                     
@@ -226,13 +226,13 @@ struct NotificationRow: View {
                 }
                 
                 Text(notification.message)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .appSecondaryBodyText()
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 
                 Text(notification.date.formatted(.relative(presentation: .named)))
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .padding(.top, 2)
             }
         }

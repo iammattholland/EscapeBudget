@@ -57,7 +57,7 @@ struct MoveCategorySheet: View {
                                     Spacer()
                                     if group.persistentModelID == currentGroupID {
                                         Text("Current")
-                                            .font(.caption)
+                                            .appCaptionText()
                                             .foregroundStyle(.secondary)
                                     }
                                 }

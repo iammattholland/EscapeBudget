@@ -25,10 +25,10 @@ struct AccountDetailView: View {
                 HStack {
                     VStack(alignment: .leading) {
                         Text(displayTitle(for: transaction))
-                            .font(.headline)
+                            .appSectionTitleText()
                         Text(transaction.date, format: .dateTime.month().day())
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
                     }
                     Spacer()
                     Text(transaction.amount, format: .currency(code: currencyCode))
@@ -190,7 +190,7 @@ private struct AccountEditSheet: View {
             Section("Details") {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Name")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                     TextField("Enter account name", text: $name)
                         .textInputAutocapitalization(.words)
@@ -206,7 +206,7 @@ private struct AccountEditSheet: View {
 
                 if isTrackingOnly {
                     Text("Transactions under this account are tracked but not included in any metrics.")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                 }
             }

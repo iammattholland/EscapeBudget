@@ -13,15 +13,15 @@ struct EmptyDataCard: View {
         VStack(spacing: 16) {
             Image(systemName: systemImage)
                 .font(.system(size: 36, weight: .semibold))
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
 
             Text(title)
-                .font(.headline)
-                .foregroundColor(.primary)
+                .font(AppTheme.Typography.sectionTitle)
+                .foregroundStyle(.primary)
 
             Text(message)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(AppTheme.Typography.secondaryBody)
+                .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
             if let action {
@@ -30,15 +30,15 @@ struct EmptyDataCard: View {
                 }
                 .buttonStyle(EmptyDataCardActionButtonStyle(colorScheme: colorScheme))
                 .controlSize(.regular)
-                .font(.subheadline.weight(.semibold))
+                .font(AppTheme.Typography.buttonLabel.weight(.semibold))
             }
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(18)
-        .padding(.vertical, 40)
-        .padding(.horizontal)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous))
+        .padding(.vertical, 32)
+        .padding(.horizontal, AppTheme.Spacing.screenHorizontal)
     }
 }
 
@@ -48,15 +48,15 @@ private struct EmptyDataCardActionButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.vertical, AppTheme.Spacing.small)
             .frame(minHeight: 36)
             .foregroundStyle(foregroundColor(configuration: configuration))
             .background(backgroundColor(configuration: configuration))
             .overlay(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
                     .strokeBorder(borderColor(configuration: configuration), lineWidth: 1)
             )
-            .cornerRadius(10)
+            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous))
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 
@@ -71,7 +71,7 @@ private struct EmptyDataCardActionButtonStyle: ButtonStyle {
 
     private func backgroundColor(configuration: Configuration) -> some View {
         let base: Color = (colorScheme == .dark) ? Color(.systemGray6) : .white
-        return RoundedRectangle(cornerRadius: 10, style: .continuous)
+        return RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
             .fill(configuration.isPressed ? base.opacity(0.85) : base)
     }
 

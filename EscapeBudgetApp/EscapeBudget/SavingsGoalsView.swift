@@ -49,8 +49,8 @@ struct SavingsGoalsView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Total Saved")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .appCaptionText()
+                                        .foregroundStyle(.secondary)
                                     Text(totalSaved, format: .currency(code: currencyCode))
                                         .font(.title2)
                                         .fontWeight(.bold)
@@ -60,8 +60,8 @@ struct SavingsGoalsView: View {
                                 
                                 VStack(alignment: .trailing, spacing: 4) {
                                     Text("Total Goal")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .appCaptionText()
+                                        .foregroundStyle(.secondary)
                                     Text(totalTarget, format: .currency(code: currencyCode))
                                         .font(.title3)
                                         .fontWeight(.semibold)
@@ -227,7 +227,7 @@ struct SavingsGoalRow: View {
                             .foregroundColor(color)
                     } else {
                         Text("\(Int(goal.progressPercentage))%")
-                            .font(.caption)
+                            .appCaptionText()
                             .fontWeight(.bold)
                             .foregroundColor(color)
                     }
@@ -236,16 +236,16 @@ struct SavingsGoalRow: View {
                 // Content
                 VStack(alignment: .leading, spacing: 6) {
                     Text(goal.name)
-                        .font(.headline)
+                        .appSectionTitleText()
 
                     Text("\(goal.currentAmount, format: .currency(code: currencyCode)) of \(goal.targetAmount, format: .currency(code: currencyCode))")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .appSecondaryBodyText()
+                        .foregroundStyle(.secondary)
 
                     if let insight = smartInsight {
                         Text(insight)
-                            .font(.caption)
-                            .foregroundColor(goal.isAchieved ? AppColors.success(for: appColorMode) : color)
+                            .appCaptionText()
+                            .foregroundStyle(goal.isAchieved ? AppColors.success(for: appColorMode) : color)
                     }
                 }
 

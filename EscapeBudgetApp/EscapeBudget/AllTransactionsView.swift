@@ -329,21 +329,21 @@ struct AllTransactionsView: View {
 	                Button {
 	                    selectedAccountForImport = account
 	                    showingAccountPicker = false
-	                } label: {
-	                    HStack {
-	                        VStack(alignment: .leading) {
-	                            Text(account.name)
-	                                .font(.headline)
-	                            Text(account.type.rawValue)
-	                                .font(.caption)
-	                                .foregroundColor(.secondary)
-	                        }
+		            } label: {
+		                    HStack {
+		                        VStack(alignment: .leading) {
+		                            Text(account.name)
+		                                .appSectionTitleText()
+		                            Text(account.type.rawValue)
+		                                .appCaptionText()
+		                                .foregroundStyle(.secondary)
+		                        }
 	                        Spacer()
 	                        Text(account.balance, format: .currency(code: currencyCode))
-	                            .foregroundColor(.secondary)
+	                            .foregroundStyle(.secondary)
 	                    }
 	                }
-	                .foregroundColor(.primary)
+	                .foregroundStyle(.primary)
 	            }
 	            .navigationTitle("Select Account")
 	            .toolbar {
@@ -464,13 +464,13 @@ struct AllTransactionsView: View {
 	                .listRowBackground(Color.clear)
 	            } else {
 	                ForEach(monthSections) { section in
-	                    Section(
-	                        header: Text(section.title)
-	                            .font(.headline)
-	                            .textCase(nil)
-	                            .padding(.vertical, 8)
-	                            .id(section.id)
-	                    ) {
+		                    Section(
+		                        header: Text(section.title)
+		                            .appSectionTitleText()
+		                            .textCase(nil)
+		                            .padding(.vertical, 8)
+		                            .id(section.id)
+		                    ) {
 		                        ForEach(section.transactions) { transaction in
 		                            TransactionRowContent(
 		                                transaction: transaction,
@@ -603,7 +603,7 @@ struct AllTransactionsView: View {
                 .disabled(selectedTransactionIDs.isEmpty)
             }
             .padding(.horizontal)
-            .padding(.vertical, 10)
+            .padding(.vertical, AppTheme.Spacing.small)
             .background(.ultraThinMaterial)
         }
     }
@@ -950,7 +950,7 @@ struct TransactionFilterView: View {
                                     showingSuggestions = false
                                 }) {
                                     Text(payee)
-                                        .foregroundColor(.primary)
+                                        .foregroundStyle(.primary)
                                         .padding(.vertical, 4)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 }
@@ -1166,19 +1166,19 @@ private struct UncategorizedTransactionsSheetContent: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(.systemGroupedBackground))
-            } else if let errorMessage {
-                VStack(spacing: 12) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 32))
-                        .foregroundColor(AppColors.warning(for: appColorMode))
-                    Text("Unable to load transactions")
-                        .font(.headline)
-                    Text(errorMessage)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                    Button("Done") { onDismiss() }
+		            } else if let errorMessage {
+		                VStack(spacing: 12) {
+		                    Image(systemName: "exclamationmark.triangle.fill")
+		                        .font(.system(size: 32))
+		                        .foregroundColor(AppColors.warning(for: appColorMode))
+		                    Text("Unable to load transactions")
+		                        .appSectionTitleText()
+		                    Text(errorMessage)
+		                        .appSecondaryBodyText()
+		                        .foregroundStyle(.secondary)
+		                        .multilineTextAlignment(.center)
+		                        .padding(.horizontal)
+		                    Button("Done") { onDismiss() }
                         .appPrimaryCTA()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -1245,31 +1245,31 @@ private struct UncategorizedTransactionsSheetContent: View {
             }
             AccountIcon(account: transaction.account)
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(primaryTitle)
-                        .font(.headline)
+	                HStack(spacing: 6) {
+	                    Text(primaryTitle)
+	                        .appSectionTitleText()
 
-                    if showsSplitIcon {
-                        Text("⇔")
-                            .font(.caption.bold())
+	                    if showsSplitIcon {
+	                        Text("⇔")
+	                            .font(.caption.bold())
                             .foregroundColor(.purple)
                     }
 
                     if transaction.receipt != nil {
                         Image(systemName: "doc.text.image.fill")
-                            .font(.caption)
-                            .foregroundColor(.blue)
+                            .appCaptionText()
+                            .foregroundStyle(.blue)
                     }
                 }
 
                 HStack {
                     Text(transaction.account?.name ?? "No Account")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
                     
                     Text("•")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
                     
                     if transaction.isTransfer {
                         transferBadge
@@ -1302,8 +1302,8 @@ private struct UncategorizedTransactionsSheetContent: View {
 	                Text(transaction.amount, format: .currency(code: currencyCode))
 	                    .foregroundColor((transaction.isTransfer || transaction.isAdjustment) ? .primary : (transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary))
 	                Text(transaction.date, format: .dateTime.month().day())
-	                    .font(.caption)
-	                    .foregroundColor(.secondary)
+	                    .appCaptionText()
+	                    .foregroundStyle(.secondary)
 	            }
 	        }
 	    }
@@ -1352,21 +1352,21 @@ private struct UncategorizedTransactionsSheetContent: View {
 	            } label: {
 	                if transaction.isIgnored {
 	                    Text("Ignored")
-	                        .font(.caption)
+	                        .appCaptionText()
 	                        .foregroundColor(AppColors.warning(for: appColorMode))
 	                        .padding(.horizontal, 8)
 	                        .padding(.vertical, 2)
 	                        .background(Capsule().fill(AppColors.warning(for: appColorMode).opacity(0.12)))
 	                } else if let category = transaction.category {
 		                Text(category.name)
-		                    .font(.caption)
-	                    .foregroundColor(.secondary)
+		                    .appCaptionText()
+	                    .foregroundStyle(.secondary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
                     .background(Capsule().fill(Color.secondary.opacity(0.1)))
             } else {
                 Text("Uncategorized")
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundColor(AppColors.warning(for: appColorMode))
                     .lineLimit(1)
                     .padding(.horizontal, 8)
@@ -1382,7 +1382,7 @@ private struct UncategorizedTransactionsSheetContent: View {
 	        Group {
 	            if transaction.isIgnored {
 	                Text("Ignored")
-	                    .font(.caption)
+	                    .appCaptionText()
 	                    .foregroundColor(AppColors.warning(for: appColorMode))
 	                    .lineLimit(1)
 	                    .padding(.horizontal, 8)
@@ -1391,8 +1391,8 @@ private struct UncategorizedTransactionsSheetContent: View {
 	                    .fixedSize()
 	            } else if let category = transaction.category {
 	                Text(category.name)
-	                    .font(.caption)
-	                    .foregroundColor(.secondary)
+	                    .appCaptionText()
+	                    .foregroundStyle(.secondary)
 	                    .lineLimit(1)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
@@ -1400,7 +1400,7 @@ private struct UncategorizedTransactionsSheetContent: View {
                     .fixedSize()
             } else {
                 Text("Uncategorized")
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundColor(AppColors.warning(for: appColorMode))
                     .lineLimit(1)
                     .padding(.horizontal, 8)
@@ -1413,7 +1413,7 @@ private struct UncategorizedTransactionsSheetContent: View {
 
     private var transferBadge: some View {
         Text("Transfer")
-            .font(.caption)
+            .appCaptionText()
             .foregroundColor(AppColors.tint(for: appColorMode))
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
@@ -1422,8 +1422,8 @@ private struct UncategorizedTransactionsSheetContent: View {
 
     private var adjustmentBadge: some View {
         Text("Adjustment")
-            .font(.caption)
-            .foregroundColor(.secondary)
+            .appCaptionText()
+            .foregroundStyle(.secondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
             .background(Capsule().fill(Color(.tertiarySystemFill)))
@@ -1550,7 +1550,7 @@ private struct UncategorizedBanner: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
                 Text(countText)
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
             }
 
@@ -1593,7 +1593,7 @@ private struct MonthIndexBar: View {
                 ForEach(sections) { section in
                     Text(section.shortTitle)
                         .font(.caption2.weight(.semibold))
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 4)
                         .background(Color(.systemGray5))

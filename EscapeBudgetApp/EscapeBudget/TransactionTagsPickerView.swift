@@ -384,7 +384,7 @@ struct TransactionTagChip: View {
         Text(tag.name)
             .font(.caption.weight(.semibold))
             .foregroundStyle(.primary)
-            .padding(.horizontal, 10)
+            .padding(.horizontal, AppTheme.Spacing.small)
             .padding(.vertical, 4)
             .background(
                 Capsule().fill((Color(hex: tag.colorHex) ?? fallback).opacity(0.18))

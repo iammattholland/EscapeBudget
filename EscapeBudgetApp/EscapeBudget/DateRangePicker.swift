@@ -77,20 +77,20 @@ struct DateRangePicker: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: selectedRange.icon)
-                    .font(.subheadline)
+                    .font(AppTheme.Typography.secondaryBody)
                 
                 Text(displayText)
-                    .font(.subheadline)
+                    .appSecondaryBodyText()
                     .fontWeight(.medium)
                 
                 Image(systemName: "chevron.down")
-                    .font(.caption)
+                    .appCaptionText()
                     .fontWeight(.semibold)
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.vertical, AppTheme.Spacing.small)
             .background(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: AppTheme.Radius.compact)
                     .fill(Color(.systemBackground))
                     .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
             )
@@ -137,7 +137,7 @@ struct MonthYearPicker: View {
             }
             
             Text(formattedDate)
-                .font(.headline)
+                .appSectionTitleText()
                 .frame(minWidth: 140)
             
             Button(action: nextMonth) {
@@ -151,7 +151,7 @@ struct MonthYearPicker: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
                 .fill(Color(.systemBackground))
                 .shadow(color: .black.opacity(0.05), radius: 8, y: 2)
         )
@@ -218,7 +218,7 @@ struct CustomDateRangeSheet: View {
                     Text("Select Date Range")
                 } footer: {
                     Text("You can select a range up to one year from today.")
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
                 
                 Section {
@@ -279,8 +279,8 @@ struct DateRangeSummaryView: View {
     var body: some View {
         HStack(spacing: 4) {
             Text(formattedRange)
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .appCaptionText()
+                .foregroundStyle(.secondary)
         }
     }
     

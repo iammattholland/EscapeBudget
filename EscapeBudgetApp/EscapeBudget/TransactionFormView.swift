@@ -136,7 +136,7 @@ struct TransactionFormView: View {
 
             if purchasedItems.isEmpty {
                 Text("Add items from this purchase for quick reference and future insights.")
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 4)
             } else {
@@ -150,7 +150,7 @@ struct TransactionFormView: View {
                                     .foregroundStyle(.primary)
                                 if !item.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                                     Text(item.note)
-                                        .font(.caption)
+                                        .appCaptionText()
                                         .foregroundStyle(.secondary)
                                         .lineLimit(1)
                                 }
@@ -179,7 +179,7 @@ struct TransactionFormView: View {
                     Text("Limit reached (\(TransactionTextLimits.maxPurchasedItemsPerTransaction) items per transaction).")
                 }
             }
-            .font(.caption)
+            .appCaptionText()
             .foregroundStyle(.secondary)
         }
     }
@@ -191,27 +191,27 @@ struct TransactionFormView: View {
                 // Receipt preview
                 HStack(spacing: 12) {
                     if let imageData = receipt.imageData,
-                       let uiImage = UIImage(data: imageData) {
-                        Image(uiImage: uiImage)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 60, height: 60)
-                            .cornerRadius(8)
-                            .clipped()
-                    }
+	                       let uiImage = UIImage(data: imageData) {
+	                        Image(uiImage: uiImage)
+	                            .resizable()
+	                            .scaledToFill()
+	                            .frame(width: 60, height: 60)
+	                            .cornerRadius(AppTheme.Radius.xSmall)
+	                            .clipped()
+	                    }
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(receipt.merchant ?? "Receipt")
-                            .font(.headline)
+                            .appSectionTitleText()
                         if let date = receipt.receiptDate {
                             Text(date, style: .date)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                         }
                         if let total = receipt.totalAmount {
                             Text(total.formatted(.currency(code: currencyCode)))
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                         }
                     }
 
@@ -221,14 +221,14 @@ struct TransactionFormView: View {
                         receiptImage = nil
                     } label: {
                         Image(systemName: "trash")
-                            .foregroundColor(.red)
+                            .foregroundStyle(AppColors.danger(for: appColorMode))
                     }
                 }
 
                 if !receipt.items.isEmpty {
                     Text("\(receipt.items.count) item\(receipt.items.count == 1 ? "" : "s") extracted")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
                 }
             } else {
                 Button {
@@ -242,7 +242,7 @@ struct TransactionFormView: View {
         } footer: {
             if receiptImage == nil {
                 Text("Attach a receipt image to extract items and details automatically.")
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
             }
         }
@@ -487,7 +487,7 @@ struct TransactionFormView: View {
         formatter.numberStyle = .currency
         formatter.currencyCode = code
         formatter.maximumFractionDigits = 0
-        return formatter.currencySymbol ?? "$"
+        return formatter.currencySymbol ?? code
     }
     
     private var isAmountIncome: Bool { amountType == .income }
@@ -691,7 +691,7 @@ struct TransactionFormView: View {
                 Section("Details") {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Payee")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                         TextField("Enter payee name", text: $payee)
                         if !payeeSuggestions.isEmpty {
@@ -703,22 +703,22 @@ struct TransactionFormView: View {
                                     } label: {
                                         HStack {
                                             Text(suggestion)
-                                                .foregroundColor(.primary)
+                                                .foregroundStyle(.primary)
                                             Spacer()
                                         }
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 6)
-                                    }
-                                }
-                            }
-                            .background(Color(.systemGray6))
-                            .cornerRadius(8)
-                        }
-                    }
+	                                    }
+	                                }
+	                            }
+	                            .background(Color(.systemGray6))
+	                            .cornerRadius(AppTheme.Radius.xSmall)
+	                        }
+	                    }
                     
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Amount")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                         HStack(spacing: 8) {
                             Text(currencySymbol)
@@ -732,20 +732,20 @@ struct TransactionFormView: View {
                             
                             if let indicator = amountIndicator {
                                 Text(indicator.text)
-                                    .font(.caption)
+                                    .appCaptionText()
                                     .fontWeight(.semibold)
                                     .foregroundColor(indicator.color)
-                                    .padding(.horizontal, 10)
+                                    .padding(.horizontal, AppTheme.Spacing.small)
                                     .padding(.vertical, 4)
                                     .background(indicator.color.opacity(0.15))
-                                    .cornerRadius(10)
+                                    .cornerRadius(AppTheme.Radius.button)
                             }
                         }
                     }
                     
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Date")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                         DatePicker("Transaction Date", selection: $date, displayedComponents: .date)
                             .labelsHidden()
@@ -753,7 +753,7 @@ struct TransactionFormView: View {
                     
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Memo")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                         TextField("Add notes...", text: $memo, axis: .vertical)
                             .lineLimit(3, reservesSpace: true)
@@ -775,7 +775,7 @@ struct TransactionFormView: View {
                 Section("Account & Category") {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Account")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                         Menu {
                             Button("Select") { selectedAccount = nil }
@@ -789,7 +789,7 @@ struct TransactionFormView: View {
                                     .foregroundStyle(.primary)
                                 Spacer()
                                 Image(systemName: "chevron.up.chevron.down")
-                                    .font(.caption)
+                                    .appCaptionText()
                                     .foregroundStyle(.secondary)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -803,8 +803,8 @@ struct TransactionFormView: View {
                             showingNewAccountSheet = true
                         } label: {
                             Label("Create New Account", systemImage: "plus.circle")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
                         .padding(.top, 4)
@@ -813,7 +813,7 @@ struct TransactionFormView: View {
                     if !isSplit {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Category")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                             Menu {
                                 Button("Uncategorized") {
@@ -881,7 +881,7 @@ struct TransactionFormView: View {
                                         .foregroundStyle(.primary)
                                     Spacer()
                                     Image(systemName: "chevron.up.chevron.down")
-                                        .font(.caption)
+                                        .appCaptionText()
                                         .foregroundStyle(.secondary)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -899,8 +899,8 @@ struct TransactionFormView: View {
                             showingNewCategorySheet = true
                         } label: {
                                 Label("Create New Category", systemImage: "plus.circle")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)
                             .padding(.top, 4)
@@ -908,7 +908,7 @@ struct TransactionFormView: View {
 	                        if !categorySuggestions.isEmpty {
 	                            VStack(alignment: .leading, spacing: 6) {
 	                                Text("Quick Categories")
-                                        .font(.caption)
+                                        .appCaptionText()
                                         .foregroundStyle(.secondary)
                                     ScrollView(.horizontal, showsIndicators: false) {
                                         HStack(spacing: 8) {
@@ -917,7 +917,7 @@ struct TransactionFormView: View {
                                                     selectedCategory = suggestion
                                                 } label: {
                                                     Text(suggestion.name)
-                                                        .font(.caption)
+                                                        .appCaptionText()
                                                         .fontWeight(.semibold)
                                                         .padding(.horizontal, 12)
                                                         .padding(.vertical, 6)
@@ -952,7 +952,7 @@ struct TransactionFormView: View {
                         Section("Transfer Information") {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Save this transaction first to match it with a transfer in another account.")
-                                    .font(.caption)
+                                    .appCaptionText()
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -988,10 +988,10 @@ struct TransactionFormView: View {
                     Toggle(isOn: $isSplit) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Enable Split")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                             Text("Divide this amount across multiple categories.")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -1014,12 +1014,12 @@ struct TransactionFormView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Split Amount")
-                                        .font(.caption)
+                                        .appCaptionText()
                                         .foregroundStyle(.secondary)
                                     HStack(spacing: 4) {
-                                        Text(amount < 0 ? "-$" : "$")
+                                        Text(amount < 0 ? "-\(currencySymbol)" : currencySymbol)
                                             .font(.body)
-                                            .foregroundColor(.secondary)
+                                            .foregroundStyle(.secondary)
                                         TextField("", text: splitAmountTextBinding(for: $sub), prompt: Text("0.00"))
                                             .keyboardType(.decimalPad)
                                             .focused($focusedField, equals: .splitAmount(subID))
@@ -1029,7 +1029,7 @@ struct TransactionFormView: View {
                                 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Split Category")
-                                        .font(.caption)
+                                        .appCaptionText()
                                         .foregroundStyle(.secondary)
                                     Picker("Split Category", selection: $sub.category) {
                                         Text("Select").tag(nil as Category?)
@@ -1046,10 +1046,10 @@ struct TransactionFormView: View {
                                 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Split Memo")
-                                        .font(.caption)
+                                        .appCaptionText()
                                         .foregroundStyle(.secondary)
                                     TextField("Optional note", text: $sub.memo)
-                                        .font(.caption)
+                                        .appCaptionText()
                                         .onChange(of: sub.memo) { _, newValue in
                                             guard newValue.count > memoLimit else { return }
                                             sub.memo = String(newValue.prefix(memoLimit))
@@ -1095,7 +1095,7 @@ struct TransactionFormView: View {
                             }
                             
                             Text("Split amounts must equal the transaction total before saving.")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
                         .padding(.top, 4)
@@ -1105,7 +1105,7 @@ struct TransactionFormView: View {
                 if let parentTransaction = transactionToEdit?.parentTransaction {
                     Section("Split Options") {
                         Text("This transaction is part of a split (\(parentTransaction.payee)). Removing the split will restore the original transaction.")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                         
                         Button(role: .destructive) {
@@ -1122,18 +1122,18 @@ struct TransactionFormView: View {
                     Section("History") {
                         if sortedHistoryEntries.isEmpty {
                             Text("No history yet")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                                 .padding(.vertical, 4)
                         } else {
-                            ForEach(sortedHistoryEntries) { entry in
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(entry.detail)
-                                        .font(.subheadline)
-                                    Text(entry.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
+	                            ForEach(sortedHistoryEntries) { entry in
+	                                VStack(alignment: .leading, spacing: 4) {
+	                                    Text(entry.detail)
+	                                        .appSecondaryBodyText()
+	                                    Text(entry.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
+	                                        .appCaptionText()
+	                                        .foregroundStyle(.secondary)
+	                                }
                                 .padding(.vertical, 2)
                             }
                         }
@@ -1190,17 +1190,17 @@ struct TransactionFormView: View {
                                     applyAmountSign(isIncome: false)
                                 } label: {
                                     Text("Expense")
-                                        .font(.caption)
+                                        .appCaptionText()
                                         .fontWeight(.semibold)
                                         .foregroundColor(AppColors.danger(for: appColorMode))
                                         .padding(.horizontal, 12)
                                         .padding(.vertical, 6)
                                         .background(
-                                            RoundedRectangle(cornerRadius: 10)
+                                            RoundedRectangle(cornerRadius: AppTheme.Radius.button)
                                                 .fill((amount < 0 ? AppColors.danger(for: appColorMode).opacity(0.2) : AppColors.danger(for: appColorMode).opacity(0.08)))
                                         )
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: 10)
+                                            RoundedRectangle(cornerRadius: AppTheme.Radius.button)
                                                 .stroke(AppColors.danger(for: appColorMode).opacity(amount < 0 ? 1 : 0.4), lineWidth: amount < 0 ? 2 : 1)
                                         )
                                 }
@@ -1209,17 +1209,17 @@ struct TransactionFormView: View {
                                     applyAmountSign(isIncome: true)
                                 } label: {
                                     Text("Income")
-                                        .font(.caption)
+                                        .appCaptionText()
                                         .fontWeight(.semibold)
                                         .foregroundColor(AppColors.success(for: appColorMode))
                                         .padding(.horizontal, 12)
                                         .padding(.vertical, 6)
                                         .background(
-                                            RoundedRectangle(cornerRadius: 10)
+                                            RoundedRectangle(cornerRadius: AppTheme.Radius.button)
                                                 .fill((isIncomeSelected ? AppColors.success(for: appColorMode).opacity(0.2) : AppColors.success(for: appColorMode).opacity(0.08)))
                                         )
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: 10)
+                                            RoundedRectangle(cornerRadius: AppTheme.Radius.button)
                                                 .stroke(AppColors.success(for: appColorMode).opacity(isIncomeSelected ? 1 : 0.4), lineWidth: isIncomeSelected ? 2 : 1)
                                         )
                                 }
@@ -1281,14 +1281,14 @@ struct TransactionFormView: View {
                 Form {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Account Name")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
-                        TextField("Chequing", text: $newAccountName)
-                            .padding(12)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemFill)))
+	                        TextField("Chequing", text: $newAccountName)
+	                            .padding(AppTheme.Spacing.tight)
+	                            .background(RoundedRectangle(cornerRadius: AppTheme.Radius.compact).fill(Color(.secondarySystemFill)))
                         
                         Text("Account Type")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                         Picker("Account Type", selection: $newAccountType) {
                             ForEach(AccountType.allCases) { type in
@@ -1297,21 +1297,21 @@ struct TransactionFormView: View {
                         }
                         .pickerStyle(.menu)
                         
-                        Text("Starting Balance")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color(.secondarySystemFill))
-                            HStack(spacing: 6) {
+	                    Text("Starting Balance")
+	                        .appCaptionText()
+	                        .foregroundStyle(.secondary)
+	                    ZStack(alignment: .leading) {
+	                        RoundedRectangle(cornerRadius: AppTheme.Radius.compact)
+	                            .fill(Color(.secondarySystemFill))
+	                        HStack(spacing: 6) {
                                 Text(currencySymbol)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 TextField("0.00", text: $newAccountBalanceInput)
                                     .keyboardType(.decimalPad)
                             }
                             .padding(.horizontal, 12)
-                            .padding(.vertical, 10)
-                        }
+	                            .padding(.vertical, AppTheme.Spacing.small)
+	                    }
                     }
                     .padding(.vertical, 8)
                 }
@@ -1339,7 +1339,7 @@ struct TransactionFormView: View {
                     if categoryCreationStep == .groupSelection {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Choose a Group")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                             
                             Picker("Group", selection: Binding(get: {
@@ -1357,8 +1357,8 @@ struct TransactionFormView: View {
                                 showingNewGroupSheet = true
                             } label: {
                                 Label("Create New Group", systemImage: "plus.circle")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)
                             .padding(.top, 4)
@@ -1368,16 +1368,16 @@ struct TransactionFormView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             if let group = newCategoryGroup {
                                 Text("Group: \(group.name)")
-                                    .font(.caption)
+                                    .appCaptionText()
                                     .foregroundStyle(.secondary)
                             }
                             
                             Text("Category Name")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
-                            TextField("Groceries", text: $newCategoryName)
-                                .padding(12)
-                                .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemFill)))
+	                            TextField("Groceries", text: $newCategoryName)
+	                                .padding(AppTheme.Spacing.tight)
+	                                .background(RoundedRectangle(cornerRadius: AppTheme.Radius.compact).fill(Color(.secondarySystemFill)))
                         }
                         .padding(.vertical, 8)
                     }
@@ -1419,14 +1419,14 @@ struct TransactionFormView: View {
                 Form {
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Group Name")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
-                        TextField("Living Expenses", text: $newGroupName)
-                            .padding(12)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemFill)))
+	                        TextField("Living Expenses", text: $newGroupName)
+	                            .padding(AppTheme.Spacing.tight)
+	                            .background(RoundedRectangle(cornerRadius: AppTheme.Radius.compact).fill(Color(.secondarySystemFill)))
                         
                         Text("Group Type")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                         Picker("Group Type", selection: $newGroupType) {
                             ForEach(CategoryGroupType.allCases, id: \.self) { type in
@@ -1585,9 +1585,9 @@ struct TransactionFormView: View {
                 HStack(spacing: 6) {
                     Text("Select")
                     Image(systemName: "chevron.down")
-                        .font(.caption)
+                        .appCaptionText()
                 }
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .padding(.horizontal, 12)
                 .frame(maxWidth: .infinity, alignment: .leading)
             )
@@ -1647,10 +1647,10 @@ struct TransactionFormView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("External Transfer")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                         Text(externalLabel)
-                            .font(.subheadline)
+                            .appSecondaryBodyText()
                             .fontWeight(.medium)
                     }
                     Spacer()
@@ -1660,16 +1660,16 @@ struct TransactionFormView: View {
                 }
                 .padding()
                 .background(AppColors.tint(for: appColorMode).opacity(0.1))
-                .cornerRadius(10)
+                .cornerRadius(AppTheme.Radius.button)
 
                 Button(role: .destructive) {
                     clearExternalTransferLabel(transaction)
                 } label: {
                     Label("Remove External Label", systemImage: "xmark.circle")
-                        .font(.subheadline)
+                        .appSecondaryBodyText()
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .appSecondaryCTA()
             }
         } else if let transferID = transaction.transferID {
             // Show matched transfer info
@@ -1678,36 +1678,36 @@ struct TransactionFormView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Matched Transfer")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                             Text("\(transaction.account?.name ?? "Account") → \(matched.account?.name ?? "Account")")
-                                .font(.subheadline)
+                                .appSecondaryBodyText()
                                 .fontWeight(.medium)
                             Text(matched.payee)
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
                         Text(matched.amount, format: .currency(code: currencyCode))
-                            .font(.subheadline)
+                            .appSecondaryBodyText()
                             .fontWeight(.semibold)
                             .monospacedDigit()
                     }
                     .padding()
                     .background(AppColors.tint(for: appColorMode).opacity(0.1))
-                    .cornerRadius(10)
+                    .cornerRadius(AppTheme.Radius.button)
 
                     Button(role: .destructive) {
                         unmatchTransfer(transaction)
                     } label: {
                         Label("Unmatch Transfer", systemImage: "link.badge.minus")
-                            .font(.subheadline)
+                            .appSecondaryBodyText()
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
+                    .appSecondaryCTA()
                 } else {
                     Text("Previously matched transfer no longer available")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                 }
             }
@@ -1715,17 +1715,17 @@ struct TransactionFormView: View {
             // Show Find Match button for unmatched transfers
             VStack(alignment: .leading, spacing: 12) {
                 Text("This transaction is marked as a transfer but not yet matched with a corresponding transaction in another account.")
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
 
                 Button {
                     transferBaseTransaction = transaction
                 } label: {
                     Label("Find Match", systemImage: "magnifyingglass")
-                        .font(.subheadline)
+                        .appSecondaryBodyText()
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .appPrimaryCTA()
                 .labelStyle(.titleAndIcon)
             }
         }
@@ -2221,7 +2221,7 @@ private struct PurchasedItemEditorView: View {
             Section("Item") {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Name")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                     TextField("Item name", text: $item.name)
                         .onChange(of: item.name) { _, newValue in
@@ -2250,10 +2250,10 @@ private struct PurchasedItemEditorView: View {
                             }
                         }
                         .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
                                 .fill(Color(.secondarySystemFill))
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous))
                     }
 
                     HStack {
@@ -2267,7 +2267,7 @@ private struct PurchasedItemEditorView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Price")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                     HStack(spacing: 6) {
                         Text(currencySymbol)

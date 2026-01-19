@@ -29,14 +29,14 @@ struct TopChromeTabs<Selection: Hashable>: View {
                     }
                 } label: {
                     Text(tab.title)
-                        .font(.subheadline.weight(.semibold))
+                        .font(AppTheme.Typography.tabLabel)
                         .foregroundStyle(selection == tab.id ? .primary : .secondary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                         .contentShape(Rectangle())
                         .background {
                             if selection == tab.id {
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                RoundedRectangle(cornerRadius: AppTheme.Radius.tabsSelection, style: .continuous)
                                     .fill(Color(.tertiarySystemFill))
                                     .matchedGeometryEffect(id: "TopChromeTabs.selection", in: namespace)
                                     .padding(2)
@@ -49,14 +49,13 @@ struct TopChromeTabs<Selection: Hashable>: View {
         }
         .padding(2)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: AppTheme.Radius.tabsOuter, style: .continuous)
                 .fill(Color(.secondarySystemFill))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppTheme.Radius.tabsOuter, style: .continuous)
+                .strokeBorder(Color.primary.opacity(AppTheme.Stroke.subtleOpacity), lineWidth: AppTheme.Stroke.subtle)
         )
         .topChromeSegmentedStyle(isCompact: isCompact)
     }
 }
-

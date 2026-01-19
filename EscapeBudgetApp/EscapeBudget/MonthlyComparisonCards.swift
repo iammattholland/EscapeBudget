@@ -178,13 +178,10 @@ struct MonthlySpendComparisonCard: View {
                     }
                 }
             } else {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Monthly Spend")
-                        .font(.headline)
-                    Text("Not enough expense data yet. Add transactions to see trends.")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
+                AppSectionHeader(
+                    title: "Monthly Spend",
+                    subtitle: "Not enough expense data yet. Add transactions to see trends."
+                )
             }
         }
         .task(id: transactionsSignature) {
@@ -199,7 +196,7 @@ struct MonthlySpendComparisonCard: View {
                 List {
                     if monthSelectionOptions.isEmpty {
                         Text("All recent months are already shown.")
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                             .padding()
                     } else {
                         ForEach(monthSelectionOptions, id: \.self) { month in
@@ -217,7 +214,7 @@ struct MonthlySpendComparisonCard: View {
                                     }
                                 }
                             }
-                            .foregroundColor(.primary)
+                            .foregroundStyle(.primary)
                         }
                     }
                 }
@@ -472,13 +469,10 @@ struct MonthlyIncomeComparisonCard: View {
                     useCardStyle: false
                 )
             } else {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Monthly Income")
-                        .font(.headline)
-                    Text("Not enough income data yet. Add transactions to see trends.")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
+                AppSectionHeader(
+                    title: "Monthly Income",
+                    subtitle: "Not enough income data yet. Add transactions to see trends."
+                )
             }
         }
         .task(id: transactionsSignature) {
@@ -493,7 +487,7 @@ struct MonthlyIncomeComparisonCard: View {
                 List {
                     if monthSelectionOptions.isEmpty {
                         Text("All recent months are already shown.")
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                             .padding()
                     } else {
                         ForEach(monthSelectionOptions, id: \.self) { month in
@@ -511,7 +505,7 @@ struct MonthlyIncomeComparisonCard: View {
                                     }
                                 }
                             }
-                            .foregroundColor(.primary)
+                            .foregroundStyle(.primary)
                         }
                     }
                 }

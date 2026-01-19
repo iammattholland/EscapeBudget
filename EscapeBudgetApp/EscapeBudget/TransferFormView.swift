@@ -28,8 +28,10 @@ struct TransferFormView: View {
     }
 
     private var currencySymbol: String {
-        let locale = Locale.current
-        return locale.currencySymbol ?? "$"
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currencyCode
+        return formatter.currencySymbol ?? currencyCode
     }
 
     var body: some View {
@@ -61,7 +63,7 @@ struct TransferFormView: View {
                 Section("Details") {
                     HStack {
                         Text(currencySymbol)
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                         TextField("0.00", text: $amountText)
                             .keyboardType(.decimalPad)
                             .focused($isAmountFocused)
@@ -91,17 +93,17 @@ struct TransferFormView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(other.account?.name ?? "Unknown Account")
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
+                                        .appSectionTitleText()
+                                        .foregroundStyle(.primary)
                                     Text(other.amount >= 0 ? "Receiving account" : "Sending account")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .appCaptionText()
+                                        .foregroundStyle(.secondary)
                                 }
                                 Spacer()
                                 Text(other.amount, format: .currency(code: currencyCode))
                                     .foregroundColor(other.amount >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
                                 Image(systemName: "chevron.right")
-                                    .font(.caption)
+                                    .appCaptionText()
                                     .foregroundStyle(.tertiary)
                             }
                         }

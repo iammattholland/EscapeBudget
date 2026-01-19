@@ -298,14 +298,14 @@ struct CashFlowForecastView: View {
         }
     }
 
-    private var chartCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Cash Flow Forecast")
-                    .font(.headline)
-                Spacer()
-                Picker("Range", selection: $horizonDays) {
-                    Text("30d").tag(30)
+	    private var chartCard: some View {
+	        VStack(alignment: .leading, spacing: 10) {
+	            HStack {
+	                Text("Cash Flow Forecast")
+	                    .appSectionTitleText()
+	                Spacer()
+	                Picker("Range", selection: $horizonDays) {
+	                    Text("30d").tag(30)
                     Text("60d").tag(60)
                     Text("90d").tag(90)
                 }
@@ -376,30 +376,24 @@ struct CashFlowForecastView: View {
                 .padding(.top, 2)
 
                 Text("This forecast uses your current cash balances plus upcoming recurring bills and planned purchases. Income is an estimate (optional).")
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(14)
-        .background(.background)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color(.separator).opacity(0.35))
-        )
+        .appElevatedCardSurface()
     }
 
-    private var assumptionsCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Assumptions")
-                .font(.headline)
+	    private var assumptionsCard: some View {
+	        VStack(alignment: .leading, spacing: 12) {
+	            Text("Assumptions")
+	                .appSectionTitleText()
 
-            Toggle("Include income estimate", isOn: $includeIncome)
+	            Toggle("Include income estimate", isOn: $includeIncome)
 
             if includeIncome {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Estimated monthly income")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
 
                     TextField("Monthly income", value: monthlyIncomeBinding, format: .currency(code: currencyCode))
@@ -409,24 +403,18 @@ struct CashFlowForecastView: View {
                         let suggested = suggestedMonthlyIncome
                         monthlyIncomeDouble = NSDecimalNumber(decimal: max(0, suggested)).doubleValue
                     }
-                    .buttonStyle(.bordered)
+                    .appSecondaryCTA()
                     .disabled(suggestedMonthlyIncome <= 0)
                 }
             }
         }
-        .padding(14)
-        .background(.background)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color(.separator).opacity(0.35))
-        )
+        .appElevatedCardSurface()
     }
 
-    private var accountsCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Starting Cash")
-                .font(.headline)
+	    private var accountsCard: some View {
+	        VStack(alignment: .leading, spacing: 12) {
+	            Text("Starting Cash")
+	                .appSectionTitleText()
 
             Toggle("Chequing", isOn: $includeChequing)
             Toggle("Savings", isOn: $includeSavings)
@@ -434,44 +422,38 @@ struct CashFlowForecastView: View {
 
             if includedCashAccounts.isEmpty {
                 Text("No cash accounts selected.")
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
             } else {
-                ForEach(includedCashAccounts) { account in
-                    HStack {
-                        Label(account.name, systemImage: account.type.icon)
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        Text(account.balance, format: .currency(code: currencyCode))
-                            .foregroundStyle(.secondary)
-                    }
-                    .font(.subheadline)
-                }
-            }
-        }
-        .padding(14)
-        .background(.background)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color(.separator).opacity(0.35))
-        )
-    }
+	                ForEach(includedCashAccounts) { account in
+	                    HStack {
+	                        Label(account.name, systemImage: account.type.icon)
+	                            .foregroundStyle(.primary)
+	                        Spacer()
+	                        Text(account.balance, format: .currency(code: currencyCode))
+	                            .foregroundStyle(.secondary)
+	                    }
+	                    .font(AppTheme.Typography.secondaryBody)
+	                }
+	            }
+	        }
+	        .appElevatedCardSurface()
+	    }
 
-    private var eventsCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Upcoming Events")
-                    .font(.headline)
-                Spacer()
-                Text("\(forecastEvents.count)")
-                    .font(.caption)
+	    private var eventsCard: some View {
+	        VStack(alignment: .leading, spacing: 10) {
+	            HStack {
+	                Text("Upcoming Events")
+	                    .appSectionTitleText()
+	                Spacer()
+	                Text("\(forecastEvents.count)")
+	                    .appCaptionText()
                     .foregroundStyle(.secondary)
             }
 
             if forecastEvents.isEmpty {
                 Text("Add recurring bills or planned purchases to see a cash flow timeline.")
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(forecastEvents.prefix(24)) { event in
@@ -481,14 +463,14 @@ struct CashFlowForecastView: View {
                             .frame(width: 30, height: 30)
                             .overlay(
                                 Image(systemName: icon(for: event.kind))
-                                    .font(.caption)
+                                    .appCaptionText()
                                     .foregroundStyle(color(for: event.kind))
                             )
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(event.title)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
+	                        VStack(alignment: .leading, spacing: 2) {
+	                            Text(event.title)
+	                                .appSecondaryBodyText()
+	                                .fontWeight(.medium)
 
                             HStack(spacing: 6) {
                                 Text(event.date, format: .dateTime.month(.abbreviated).day().year())
@@ -503,12 +485,12 @@ struct CashFlowForecastView: View {
 
                         Spacer()
 
-                        Text(event.amount, format: .currency(code: currencyCode))
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(event.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
-                            .monospacedDigit()
-                    }
+	                        Text(event.amount, format: .currency(code: currencyCode))
+	                            .appSecondaryBodyText()
+	                            .fontWeight(.semibold)
+	                            .foregroundStyle(event.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+	                            .monospacedDigit()
+	                    }
                     .padding(.vertical, 4)
                 }
 
@@ -520,13 +502,7 @@ struct CashFlowForecastView: View {
                 }
             }
         }
-        .padding(14)
-        .background(.background)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color(.separator).opacity(0.35))
-        )
+        .appElevatedCardSurface()
     }
 
     private func icon(for kind: ForecastEvent.Kind) -> String {
@@ -555,7 +531,7 @@ private struct MetricCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.caption)
+                .appCaptionText()
                 .foregroundStyle(.secondary)
             Text(value, format: .currency(code: currencyCode))
                 .font(.title3)
@@ -565,14 +541,7 @@ private struct MetricCard: View {
                 .minimumScaleFactor(0.75)
                 .monospacedDigit()
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(.background)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(tint.opacity(0.25))
-        )
+        .appElevatedCardSurface(stroke: tint.opacity(0.25))
     }
 }
 
@@ -588,13 +557,13 @@ private struct MetricPill: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
             Text(value, format: .currency(code: currencyCode))
-                .font(.caption)
+                .appCaptionText()
                 .fontWeight(.semibold)
                 .foregroundStyle(.primary)
                 .monospacedDigit()
         }
         .padding(.vertical, 6)
-        .padding(.horizontal, 10)
+        .padding(.horizontal, AppTheme.Spacing.small)
         .background(tint.opacity(0.12))
         .clipShape(Capsule())
     }

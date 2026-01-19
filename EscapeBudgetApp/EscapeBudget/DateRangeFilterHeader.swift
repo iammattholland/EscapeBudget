@@ -41,7 +41,7 @@ struct DateRangeFilterHeader: View {
             Button(action: previousPeriod) {
                 Image(systemName: "chevron.left")
                     .font(isCompact ? .callout : .body)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
                     .padding(isCompact ? 6 : 8)
                     .background(Color(.systemGray6))
                     .clipShape(Circle())
@@ -59,7 +59,7 @@ struct DateRangeFilterHeader: View {
             } label: {
                 Text(labelText)
                     .font(isCompact ? .subheadline.weight(.semibold) : .headline)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
                     .padding(.vertical, isCompact ? 4 : 8)
                     .frame(maxWidth: .infinity)
             }
@@ -71,7 +71,7 @@ struct DateRangeFilterHeader: View {
             Button(action: nextPeriod) {
                 Image(systemName: "chevron.right")
                     .font(isCompact ? .callout : .body)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
                     .padding(isCompact ? 6 : 8)
                     .background(Color(.systemGray6))
                     .clipShape(Circle())

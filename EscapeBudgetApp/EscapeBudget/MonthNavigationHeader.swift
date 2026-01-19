@@ -13,7 +13,7 @@ struct MonthNavigationHeader: View {
             }) {
                 Image(systemName: "chevron.left")
                     .font(isCompact ? .callout : .body)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
                     .padding(isCompact ? 6 : 8)
                     .background(Color(.systemGray6))
                     .clipShape(Circle())
@@ -34,7 +34,7 @@ struct MonthNavigationHeader: View {
             }) {
                 Image(systemName: "chevron.right")
                     .font(isCompact ? .callout : .body)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
                     .padding(isCompact ? 6 : 8)
                     .background(Color(.systemGray6))
                     .clipShape(Circle())

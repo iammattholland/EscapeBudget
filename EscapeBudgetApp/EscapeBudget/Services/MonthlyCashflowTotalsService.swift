@@ -1,8 +1,11 @@
 import Foundation
 import SwiftData
+import os
 
 @MainActor
 enum MonthlyCashflowTotalsService {
+    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.mattholland.EscapeBudget", category: "MonthlyCashflowTotalsService")
+
     static func ensureUpToDate(modelContext: ModelContext) {
         Task { @MainActor in
             await ensureUpToDateAsync(modelContext: modelContext)
@@ -16,12 +19,18 @@ enum MonthlyCashflowTotalsService {
     }
 
     static func ensureUpToDateAsync(modelContext: ModelContext) async {
+        let interval = PerformanceSignposts.begin("MonthlyCashflow.ensureUpToDateAsync")
+        defer { PerformanceSignposts.end(interval) }
+
         let existingCount = (try? modelContext.fetchCount(FetchDescriptor<MonthlyCashflowTotal>())) ?? 0
         guard existingCount == 0 else { return }
         await rebuildAllAsync(modelContext: modelContext)
     }
 
     static func rebuildAllAsync(modelContext: ModelContext) async {
+        let interval = PerformanceSignposts.begin("MonthlyCashflow.rebuildAllAsync")
+        defer { PerformanceSignposts.end(interval) }
+
         do {
             let existing = try modelContext.fetch(FetchDescriptor<MonthlyCashflowTotal>())
             for entry in existing { modelContext.delete(entry) }
@@ -85,14 +94,17 @@ enum MonthlyCashflowTotalsService {
             }
 
             try modelContext.save()
-            DataChangeTracker.bump()
         } catch {
             // Fail soft; callers should fall back to raw computations when needed.
+            logger.error("rebuildAllAsync failed: \(String(describing: error), privacy: .public)")
         }
     }
 
     static func applyDirtyMonthKeys(modelContext: ModelContext, monthKeys: Set<String>) {
         guard !monthKeys.isEmpty else { return }
+
+        let interval = PerformanceSignposts.begin("MonthlyCashflow.applyDirtyMonthKeys")
+        defer { PerformanceSignposts.end(interval, "keys=\(monthKeys.count)") }
 
         let calendar = Calendar.current
         let standardRaw = TransactionKind.standard.rawValue
@@ -159,6 +171,7 @@ enum MonthlyCashflowTotalsService {
             try modelContext.save()
         } catch {
             // fail soft
+            logger.error("applyDirtyMonthKeys save failed: \(String(describing: error), privacy: .public)")
         }
     }
 }

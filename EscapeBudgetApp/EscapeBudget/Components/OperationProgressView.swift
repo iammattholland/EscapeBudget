@@ -61,15 +61,15 @@ struct OperationProgressOverlay: View {
                     HStack(alignment: .firstTextBaseline) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(progress.title)
-                                .font(.headline)
+                                .appSectionTitleText()
                             Text(progress.message)
-                                .font(.subheadline)
+                                .appSecondaryBodyText()
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
                         if let current = progress.current, let total = progress.total {
                             Text("\(current) / \(total)")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
                         }
@@ -77,11 +77,11 @@ struct OperationProgressOverlay: View {
                 }
                 .padding()
                 .background(.regularMaterial)
-                .cornerRadius(12)
+                .cornerRadius(AppTheme.Radius.compact)
 
                 if progress.cancellable, let onCancel {
                     Button("Cancel", role: .cancel, action: onCancel)
-                        .buttonStyle(.bordered)
+                        .appSecondaryCTA()
                 }
             }
             .padding()

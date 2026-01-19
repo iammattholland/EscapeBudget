@@ -36,14 +36,19 @@ struct CustomDashboardView: View {
                             .font(.system(size: 40))
                             .foregroundStyle(AppColors.tint(for: appColorMode).gradient)
                         Text("Add Widget")
-                            .font(.headline)
-                            .foregroundColor(.primary)
+                            .font(AppTheme.Typography.sectionTitle)
+                            .foregroundStyle(.primary)
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 150)
-                    .background(Color(.systemBackground))
-                    .cornerRadius(16)
-                    .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+                            .fill(.background)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+                            .stroke(Color(.separator).opacity(0.35))
+                    )
                 }
             }
             .padding()
@@ -74,8 +79,7 @@ struct CustomWidgetContainer: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text(widget.title)
-                    .font(.headline)
-                    .fontWeight(.semibold)
+                    .font(AppTheme.Typography.sectionTitle)
                 Spacer()
                 
                 Menu {
@@ -89,8 +93,8 @@ struct CustomWidgetContainer: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis")
-                        .font(.caption)
-                        .padding(8)
+                        .appCaptionText()
+                        .padding(AppTheme.Spacing.compact)
                         .background(Color(.systemGray6))
                         .clipShape(Circle())
                 }
@@ -100,10 +104,7 @@ struct CustomWidgetContainer: View {
             CustomWidgetRenderer(widget: widget)
                 .frame(minHeight: 200)
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 2)
+        .appElevatedCardSurface()
         .alert("Delete Widget?", isPresented: $showingDeleteAlert) {
             Button("Delete", role: .destructive) {
                 modelContext.delete(widget)

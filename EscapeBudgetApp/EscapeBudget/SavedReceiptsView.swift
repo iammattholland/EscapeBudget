@@ -59,46 +59,46 @@ struct ReceiptRow: View {
                     .resizable()
                     .scaledToFill()
                     .frame(width: 60, height: 60)
-                    .cornerRadius(8)
+                    .cornerRadius(AppTheme.Radius.xSmall)
                     .clipped()
             } else {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: AppTheme.Radius.xSmall)
                     .fill(Color(.secondarySystemFill))
                     .frame(width: 60, height: 60)
                     .overlay(
                         Image(systemName: "doc.text.image")
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                     )
             }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(receipt.merchant ?? "Receipt")
-                    .font(.headline)
+                    .appSectionTitleText()
 
                 if let date = receipt.receiptDate {
                     Text(date, style: .date)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
                 }
 
                 if let total = receipt.totalAmount {
                     Text(total.formatted(.currency(code: currencyCode)))
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .appSecondaryBodyText()
+                        .foregroundStyle(.secondary)
                 }
 
                 if !receipt.items.isEmpty {
                     Text("\(receipt.items.count) item\(receipt.items.count == 1 ? "" : "s")")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
                 }
             }
 
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .appCaptionText()
+                .foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)
     }
@@ -121,7 +121,7 @@ struct ReceiptDetailView: View {
                         Image(uiImage: uiImage)
                             .resizable()
                             .scaledToFit()
-                            .cornerRadius(12)
+                            .cornerRadius(AppTheme.Radius.compact)
                             .shadow(radius: 4)
                     }
 
@@ -141,13 +141,13 @@ struct ReceiptDetailView: View {
                     }
                     .padding()
                     .background(Color(.secondarySystemBackground))
-                    .cornerRadius(12)
+                    .cornerRadius(AppTheme.Radius.compact)
 
                     // Line Items
                     if !receipt.items.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Items")
-                                .font(.headline)
+                                .appSectionTitleText()
                                 .padding(.horizontal)
 
                             VStack(spacing: 0) {
@@ -155,18 +155,19 @@ struct ReceiptDetailView: View {
                                     HStack {
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(item.name)
-                                                .font(.subheadline)
+                                                .appSecondaryBodyText()
                                             if item.quantity > 1 {
                                                 Text("\(item.quantity) × \(item.price.formatted(.currency(code: currencyCode)))")
-                                                    .font(.caption)
-                                                    .foregroundColor(.secondary)
+                                                    .appCaptionText()
+                                                    .foregroundStyle(.secondary)
                                             }
                                         }
 
                                         Spacer()
 
                                         Text((item.price * Decimal(item.quantity)).formatted(.currency(code: currencyCode)))
-                                            .font(.subheadline.weight(.medium))
+                                            .appSecondaryBodyText()
+                                            .fontWeight(.medium)
                                     }
                                     .padding()
 
@@ -176,7 +177,7 @@ struct ReceiptDetailView: View {
                                 }
                             }
                             .background(Color(.secondarySystemBackground))
-                            .cornerRadius(12)
+                            .cornerRadius(AppTheme.Radius.compact)
                         }
                     }
 
@@ -184,16 +185,16 @@ struct ReceiptDetailView: View {
                     if let extractedText = receipt.extractedText, !extractedText.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Extracted Text")
-                                .font(.headline)
+                                .appSectionTitleText()
                                 .padding(.horizontal)
 
                             Text(extractedText)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                                 .padding()
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(Color(.secondarySystemBackground))
-                                .cornerRadius(12)
+                                .cornerRadius(AppTheme.Radius.compact)
                         }
                     }
                 }
@@ -219,11 +220,11 @@ struct DetailRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .appSecondaryBodyText()
+                .foregroundStyle(.secondary)
             Spacer()
             Text(value)
-                .font(.subheadline)
+                .appSecondaryBodyText()
         }
     }
 }

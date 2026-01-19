@@ -136,17 +136,17 @@ struct SettingsView: View {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundStyle(.orange)
                             Text("Demo Mode Active")
-                                .font(.headline)
+                                .appSectionTitleText()
                             Spacer()
                             Button("Turn Off") {
                                 isDemoMode = false
                             }
-                            .buttonStyle(.bordered)
+                            .appSecondaryCTA()
                             .controlSize(.small)
                         }
 
                         Text("You're viewing sample data. Your real data is safe and will return when you turn off demo mode.")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
 
                         Button {
@@ -189,7 +189,7 @@ struct SettingsView: View {
                 } else {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Sign in to help protect your access to premium features and make future upgrades like restore + multi-device support possible.")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
 
                         SignInWithAppleButton(.signIn) { request in
@@ -221,7 +221,7 @@ struct SettingsView: View {
                         Label("Upgrade to Premium", systemImage: "crown")
                         Spacer()
                         Text("Coming soon")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -239,7 +239,12 @@ struct SettingsView: View {
                         CurrencySelectionView(selectedCurrency: $currencyCode, currencies: currencies)
                     } label: {
                         HStack {
-                            Text("Currency")
+                            Label {
+                                Text("Currency")
+                                    .fontWeight(.regular)
+                            } icon: {
+                                Image(systemName: "dollarsign.circle")
+                            }
                             Spacer()
                             if let currency = currencies.first(where: { $0.0 == currencyCode }) {
                                 Text(currency.0)
@@ -251,7 +256,11 @@ struct SettingsView: View {
                 
                 Section("Appearance") {
                     VStack(alignment: .leading, spacing: 4) {
-                        Picker("App Theme", selection: Binding(
+                        HStack {
+                            Image(systemName: "moon")
+                                .foregroundStyle(.primary)
+                                .frame(width: 20)
+                            Picker("App Theme", selection: Binding(
                             get: { appearanceMode },
                             set: { newValue in
                                 appearanceMode = newValue
@@ -262,13 +271,18 @@ struct SettingsView: View {
                             Text("Light").tag("Light")
                             Text("Dark").tag("Dark")
                         }
+                        }
                         Text("Choose whether the app follows your system appearance or stays in light/dark mode.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Picker("App Icon", selection: Binding(
+                        HStack {
+                            Image(systemName: "app")
+                                .foregroundStyle(.primary)
+                                .frame(width: 20)
+                            Picker("App Icon", selection: Binding(
                             get: { appIconModeRawValue },
                             set: { newValue in
                                 appIconModeRawValue = newValue
@@ -281,27 +295,38 @@ struct SettingsView: View {
                             Text("Dark").tag("Dark")
                             Text("Light").tag("Light")
                         }
+                        }
                         Text("Choose whether the icon follows your appearance or stays light/dark.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Picker("App Colours", selection: $appColorModeRawValue) {
+                        HStack {
+                            Image(systemName: "paintpalette")
+                                .foregroundStyle(.primary)
+                                .frame(width: 20)
+                            Picker("App Colours", selection: $appColorModeRawValue) {
                             ForEach(AppColorMode.allCases) { mode in
                                 Text(mode.rawValue).tag(mode.rawValue)
                             }
                         }
+                        }
                         Text("Choose the color scheme for the app.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
                     }
                 }
                 
                 Section("Notifications") {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            Text("System Notifications")
+                            Label {
+                                Text("System Notifications")
+                                    .fontWeight(.regular)
+                            } icon: {
+                                Image(systemName: "bell")
+                            }
                             Spacer()
                             Text(notificationService.notificationsEnabled ? "Enabled" : "Off")
                                 .foregroundStyle(.secondary)
@@ -320,17 +345,19 @@ struct SettingsView: View {
                         .buttonStyle(.borderless)
 
                         Text("iOS notifications require permission. In-app notifications always appear in your Notifications feed.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
                     }
 
-                    DisclosureGroup("Notification Options", isExpanded: $showingNotificationOptions) {
-                        VStack(alignment: .leading, spacing: 12) {
+                    DisclosureGroup(
+                        isExpanded: $showingNotificationOptions,
+                        content: {
+                            VStack(alignment: .leading, spacing: 12) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Toggle("Show details in iOS notifications", isOn: $showSensitiveNotificationContent)
                                 Text("When off, notifications hide amounts, filenames, and other details on your lock screen.")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
                             .onChange(of: showSensitiveNotificationContent) { _, _ in
                                 Task {
@@ -346,77 +373,82 @@ struct SettingsView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Toggle("Budget Alerts", isOn: $budgetAlerts)
                                 Text("Get notified when approaching budget limits")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Toggle("Bill Reminders", isOn: $billReminders)
                                 Text("Receive reminders for upcoming recurring bills")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Toggle("Transfers Inbox", isOn: $transfersInboxNotifications)
                                 Text("Get notified when transfers need review")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Toggle("Import Complete", isOn: $importCompleteNotifications)
                                 Text("Get notified when data imports finish")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Toggle("Export Status", isOn: $exportStatusNotifications)
                                 Text("Get notified when exports are ready or fail")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Toggle("Backup & Restore", isOn: $backupRestoreNotifications)
                                 Text("Get notified when backups restore successfully or fail")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Toggle("Rule Applied", isOn: $ruleAppliedNotifications)
                                 Text("Get notified when retroactive rules complete")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Toggle("Badge Achievements", isOn: $badgeAchievementNotifications)
                                 Text("Get notified when you earn a badge")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
                         }
                         .padding(.top, 8)
-                    }
-                }
+                        },
+                        label: {
+                            Label {
+                                Text("Notification Options")
+                                    .fontWeight(.regular)
+                            } icon: {
+                                Image(systemName: "bell.badge")
+                            }
+                        }
+	                    )
+	                }
 
-                // Demo Mode Toggle when NOT in demo mode
-                if !isDemoMode {
-                    Section("Demo") {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack(spacing: 8) {
-                                Image(systemName: "sparkles")
-                                    .foregroundStyle(.blue)
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text("Try Demo Mode")
-                                        .font(.headline)
-                                    Text("Explore with sample data without affecting your real information")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
+	                // Demo Mode Toggle when NOT in demo mode
+	                if !isDemoMode {
+	                    Section("Demo") {
+	                        VStack(alignment: .leading, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Try Demo Mode")
+                                    .fontWeight(.regular)
+                                Text("Explore with sample data without affecting your real information")
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
 
                             Button {
@@ -426,7 +458,7 @@ struct SettingsView: View {
                                     Text("Enable Demo Mode")
                                     Spacer()
                                     Image(systemName: "arrow.right")
-                                        .font(.caption)
+                                        .appCaptionText()
                                 }
                             }
                             .buttonStyle(.borderless)
@@ -459,12 +491,12 @@ struct SettingsView: View {
 
                         if authService.biometricType == .none {
                             Text("Biometric authentication is not available on this device")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                         } else {
                             Text("Require \(authService.biometricType.displayName) to unlock the app")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -477,7 +509,7 @@ struct SettingsView: View {
                             Label("Data Health", systemImage: "heart.text.square")
                             Spacer()
                             Text(iCloudSyncEnabled ? "iCloud Sync On" : "Local")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -493,22 +525,22 @@ struct SettingsView: View {
                             Label("Export Data", systemImage: "square.and.arrow.up")
                             Spacer()
                             Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                         }
                     }
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
 
                     Button(action: { showingImportData = true }) {
                         HStack {
                             Label("Import Data", systemImage: "square.and.arrow.down")
                             Spacer()
                             Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                         }
                     }
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
 
                     NavigationLink {
                         AutoBackupSettingsView()
@@ -518,10 +550,11 @@ struct SettingsView: View {
                                 Image(systemName: "clock.arrow.circlepath")
                                     .foregroundStyle(.primary)
                                 Text("Auto Backup")
+                                    .fontWeight(.regular)
                             }
                             Spacer()
                             Text(AutoBackupService.destinationDisplayName() ?? "Off")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -532,11 +565,11 @@ struct SettingsView: View {
                             Label("Restore Backup", systemImage: "arrow.counterclockwise")
                             Spacer()
                             Image(systemName: "chevron.right")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                         }
                     }
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
 
                     Button {
                         showingRebuildStatsConfirm = true
@@ -548,12 +581,12 @@ struct SettingsView: View {
                                 ProgressView()
                             } else {
                                 Image(systemName: "chevron.right")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
                     .disabled(isRebuildingStats)
 
                     Button(action: { showingDeleteSheet = true }) {
@@ -562,10 +595,11 @@ struct SettingsView: View {
                                 Image(systemName: "trash")
                                     .foregroundStyle(.primary)
                                 Text("Delete All Data")
+                                    .fontWeight(.regular)
                             }
                             Spacer()
                             Image(systemName: "chevron.right")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -577,17 +611,18 @@ struct SettingsView: View {
                         Text("Version")
                         Spacer()
                         Text("1.0.0")
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                     }
                     
                     HStack {
                         Text("Build")
                         Spacer()
                         Text("2025.12.05")
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                     }
                 }
         }
+        .appConstrainContentWidth()
         .coordinateSpace(name: "SettingsView.scroll")
         .alert("Authentication Failed", isPresented: $showBiometricError) {
             Button("OK", role: .cancel) { }
@@ -641,7 +676,7 @@ struct SettingsView: View {
                 Section("Before You Delete") {
                     Text("Export your data first if you may need it later. Deleting cannot be undone.")
                         .font(.footnote)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                     Button {
                         showingDeleteSheet = false
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -655,7 +690,7 @@ struct SettingsView: View {
                 Section("Confirmation") {
                     Text("Type DELETE to confirm.")
                         .font(.footnote)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                     TextField("Type DELETE", text: $deleteConfirmationText)
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
@@ -827,10 +862,10 @@ struct CurrencySelectionView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(currency.2)
-                                .foregroundColor(.primary)
+                                .foregroundStyle(.primary)
                             Text("\(currency.0) • \(currency.1)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                         }
                         Spacer()
                         if selectedCurrency == currency.0 {

@@ -1,8 +1,11 @@
 import Foundation
 import SwiftData
+import os
 
 @MainActor
 enum MonthlyAccountTotalsService {
+    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.mattholland.EscapeBudget", category: "MonthlyAccountTotalsService")
+
     static func ensureUpToDate(modelContext: ModelContext) {
         Task { @MainActor in
             await ensureUpToDateAsync(modelContext: modelContext)
@@ -16,6 +19,9 @@ enum MonthlyAccountTotalsService {
     }
 
     static func ensureUpToDateAsync(modelContext: ModelContext) async {
+        let interval = PerformanceSignposts.begin("MonthlyAccountTotals.ensureUpToDateAsync")
+        defer { PerformanceSignposts.end(interval) }
+
         // Build once if missing (e.g., after upgrading to a version that introduces this model).
         let existingCount = (try? modelContext.fetchCount(FetchDescriptor<MonthlyAccountTotal>())) ?? 0
         guard existingCount == 0 else { return }
@@ -23,6 +29,9 @@ enum MonthlyAccountTotalsService {
     }
 
     static func rebuildAllAsync(modelContext: ModelContext) async {
+        let interval = PerformanceSignposts.begin("MonthlyAccountTotals.rebuildAllAsync")
+        defer { PerformanceSignposts.end(interval) }
+
         do {
             let existing = try modelContext.fetch(FetchDescriptor<MonthlyAccountTotal>())
             for entry in existing { modelContext.delete(entry) }
@@ -92,14 +101,17 @@ enum MonthlyAccountTotalsService {
             }
 
             try modelContext.save()
-            DataChangeTracker.bump()
         } catch {
             // If totals can't be built, fail soft; callers should fall back to raw computations.
+            logger.error("rebuildAllAsync failed: \(String(describing: error), privacy: .public)")
         }
     }
 
     static func applyDirtyAccountMonthKeys(modelContext: ModelContext, keys: Set<String>) {
         guard !keys.isEmpty else { return }
+
+        let interval = PerformanceSignposts.begin("MonthlyAccountTotals.applyDirtyAccountMonthKeys")
+        defer { PerformanceSignposts.end(interval, "keys=\(keys.count)") }
 
         let calendar = Calendar.current
 
@@ -167,6 +179,7 @@ enum MonthlyAccountTotalsService {
             try modelContext.save()
         } catch {
             // fail soft
+            logger.error("applyDirtyAccountMonthKeys save failed: \(String(describing: error), privacy: .public)")
         }
     }
 }

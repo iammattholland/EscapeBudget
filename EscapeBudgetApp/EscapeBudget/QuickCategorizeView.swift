@@ -77,14 +77,14 @@ struct QuickCategorizeView: View {
                     
                     Text(transaction.date, format: .dateTime.month().day().year())
                         .font(.body)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
-                .padding(16)
+                .padding(AppTheme.Spacing.screenHorizontal)
                 .frame(width: geometry.size.width * 0.6, height: geometry.size.height * 0.45) // smaller card
                 .background(Color(.systemBackground))
-                .cornerRadius(20)
+                .cornerRadius(AppTheme.Radius.large)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
+                    RoundedRectangle(cornerRadius: AppTheme.Radius.large)
                         .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
                 )
                 .shadow(color: Color.black.opacity(0.1), radius: 15, x: 0, y: 5)
@@ -245,16 +245,16 @@ struct SwipeOptionLabel: View {
                 .font(.title3)
                 .fontWeight(.bold)
             Text(text)
-                .font(.subheadline)
+                .appSecondaryBodyText()
                 .fontWeight(.bold)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
         }
         .foregroundColor(.white)
-        .padding(.vertical, 10)
+        .padding(.vertical, AppTheme.Spacing.small)
         .padding(.horizontal, 16)
         .background(color)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous))
         .shadow(radius: 4)
         .frame(maxWidth: 120) // Constrain width so it doesn't takeover
     }
@@ -314,7 +314,7 @@ struct QuickCategorizeSessionView: View {
                         Button("Finish") {
                             dismiss()
                         }
-                        .buttonStyle(.borderedProminent)
+                        .appPrimaryCTA()
                         .padding()
                     }
                 }
@@ -363,7 +363,7 @@ struct QuickCategorizeSessionView: View {
                                 showingManualPicker = false
                             } label: {
                                 Label("Ignore Transaction", systemImage: "nosign")
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                             }
                             .disabled(currentIndex >= sortedTransactions.count)
                         }

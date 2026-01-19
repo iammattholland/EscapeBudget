@@ -27,15 +27,15 @@ extension View {
 
     func topChromeSegmentedStyle(isCompact: Bool = false) -> some View {
         self
-            .padding(.horizontal, isCompact ? 12 : 14)
-            .padding(.vertical, isCompact ? 8 : 12)
+            .padding(.horizontal, isCompact ? 12 : AppTheme.Spacing.chromePaddingHorizontal)
+            .padding(.vertical, isCompact ? AppTheme.Spacing.chromePaddingVerticalCompact : AppTheme.Spacing.chromePaddingVertical)
             .background(
-                RoundedRectangle(cornerRadius: isCompact ? 18 : 22, style: .continuous)
+                RoundedRectangle(cornerRadius: isCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
                     .fill(.ultraThinMaterial)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: isCompact ? 18 : 22, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+                RoundedRectangle(cornerRadius: isCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(AppTheme.Stroke.subtleOpacity), lineWidth: AppTheme.Stroke.subtle)
             )
     }
 }

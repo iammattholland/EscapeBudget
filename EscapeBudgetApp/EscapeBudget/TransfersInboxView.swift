@@ -88,7 +88,7 @@ struct TransfersInboxView: View {
 
                 Section {
                     Text("Link transfers to exclude them from income/expense and keep balances accurate. Start with suggested pairs or fix unmatched transfers.")
-                        .font(.subheadline)
+                        .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
                 }
 
@@ -201,7 +201,7 @@ struct TransfersInboxView: View {
                             Text("Dismiss (\(selectedCount))")
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered)
+                        .appSecondaryCTA()
                         .disabled(selectedCount == 0)
 
                         Button {
@@ -210,7 +210,7 @@ struct TransfersInboxView: View {
                             Text("Link (\(selectedSuggestionIDs.count))")
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .appPrimaryCTA()
                         .disabled(selectedSuggestionIDs.isEmpty)
                     }
                     .padding(.horizontal, 16)
@@ -581,35 +581,35 @@ private struct SuggestedTransferRow: View {
     var body: some View {
         if let base, let match {
             HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("\(base.account?.name ?? "From") → \(match.account?.name ?? "To")")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("\(base.account?.name ?? "From") → \(match.account?.name ?? "To")")
+                            .appSecondaryBodyText()
+                            .fontWeight(.semibold)
+                            .lineLimit(1)
 
                     Text(base.payee)
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
 
                     Text(match.payee)
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
 
                     Text("\(base.date.formatted(.dateTime.month(.abbreviated).day())) • \(suggestion.daysApart)d apart")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
 
                 Spacer()
 
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(suggestion.amount, format: .currency(code: currencyCode))
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .monospacedDigit()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(suggestion.amount, format: .currency(code: currencyCode))
+                            .appSecondaryBodyText()
+                            .fontWeight(.semibold)
+                            .monospacedDigit()
 
                     Text("\(Int(min(suggestion.score * 100, 100).rounded()))%")
                         .font(.caption2)
@@ -634,17 +634,17 @@ private struct UnmatchedTransferRow: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(transaction.account?.name ?? "No Account")
-                    .font(.subheadline)
+                    .appSecondaryBodyText()
                     .fontWeight(.semibold)
                 Text(transaction.date, format: .dateTime.month(.abbreviated).day().year())
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
 
             Text(transaction.amount, format: .currency(code: currencyCode))
-                .font(.subheadline)
+                .appSecondaryBodyText()
                 .fontWeight(.semibold)
                 .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
                 .monospacedDigit()
@@ -693,7 +693,7 @@ private struct TransferSuggestionConfirmView: View {
                         Label("Link as Transfer", systemImage: "link")
                             .fontWeight(.semibold)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .appPrimaryCTA()
                 }
             } else {
                 ContentUnavailableView(
@@ -735,13 +735,13 @@ private struct TransferTransactionRow: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(transaction.account?.name ?? "No Account")
-                    .font(.subheadline)
+                    .appSecondaryBodyText()
                     .fontWeight(.semibold)
                 Text(transaction.date, format: .dateTime.month(.abbreviated).day().year())
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
                 Text(transaction.payee)
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -749,7 +749,7 @@ private struct TransferTransactionRow: View {
             Spacer()
 
             Text(transaction.amount, format: .currency(code: currencyCode))
-                .font(.subheadline)
+                .appSecondaryBodyText()
                 .fontWeight(.semibold)
                 .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
                 .monospacedDigit()

@@ -20,15 +20,15 @@ struct ReceiptScannerView: View {
 
                 Image(systemName: "doc.text.image")
                     .font(.system(size: 72))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
 
                 VStack(spacing: 8) {
                     Text("Scan Receipt")
                         .font(.title2.bold())
 
                     Text("Take a photo, select from your library, or choose a file")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .appSecondaryBodyText()
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                 }
@@ -43,7 +43,7 @@ struct ReceiptScannerView: View {
                         }
                         .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .appPrimaryCTA()
                     .controlSize(.large)
 
                     Button {
@@ -55,7 +55,7 @@ struct ReceiptScannerView: View {
                         }
                         .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
+                    .appSecondaryCTA()
                     .controlSize(.large)
 
                     Button {
@@ -67,7 +67,7 @@ struct ReceiptScannerView: View {
                         }
                         .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
+                    .appSecondaryCTA()
                     .controlSize(.large)
                 }
                 .padding(.horizontal)
@@ -79,8 +79,8 @@ struct ReceiptScannerView: View {
 
                 if let errorMessage {
                     Text(errorMessage)
-                        .font(.caption)
-                        .foregroundColor(.red)
+                        .appCaptionText()
+                        .foregroundStyle(.red)
                         .padding()
                 }
 

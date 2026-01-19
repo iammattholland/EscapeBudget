@@ -105,7 +105,7 @@ struct ReconcileAccountView: View {
         Section("Actual Balance") {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Enter the current balance shown by your bank. Escape Budget will create an adjustment transaction to match it.")
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
                 HStack(spacing: 6) {
                     Text(currencySymbol(for: currencyCode))
@@ -144,7 +144,7 @@ struct ReconcileAccountView: View {
         formatter.numberStyle = .currency
         formatter.currencyCode = code
         formatter.maximumFractionDigits = 0
-        return formatter.currencySymbol ?? "$"
+        return formatter.currencySymbol ?? code
     }
 
     private var reconcileButtonSection: some View {

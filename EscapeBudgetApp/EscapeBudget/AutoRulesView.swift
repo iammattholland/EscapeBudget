@@ -175,11 +175,11 @@ struct AutoRulesView: View {
                             Text("\(rules.count) Rules")
                             Spacer()
                             Text("\(rules.filter(\.isEnabled).count) Active")
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                         }
                     } footer: {
                         Text("Rules are applied in order from top to bottom during import. Drag to reorder.")
-                            .font(.caption)
+                            .appCaptionText()
                     }
                 }
                 .listStyle(.insetGrouped)
@@ -203,8 +203,8 @@ struct AutoRulesView: View {
                     .fontWeight(.semibold)
 
                 Text("Auto rules automatically rename, categorize, and tag your transactions during import.")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .appSecondaryBodyText()
+                    .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
@@ -215,7 +215,7 @@ struct AutoRulesView: View {
             } label: {
                 Label("Create Your First Rule", systemImage: "plus.circle.fill")
             }
-            .buttonStyle(.borderedProminent)
+            .appPrimaryCTA()
             .controlSize(.large)
 
             Spacer()
@@ -223,7 +223,7 @@ struct AutoRulesView: View {
             // Tips Section
             VStack(alignment: .leading, spacing: 12) {
                 Text("What can Auto Rules do?")
-                    .font(.headline)
+                    .appSectionTitleText()
 
                 TipRow(
                     icon: "person.text.rectangle",
@@ -245,7 +245,7 @@ struct AutoRulesView: View {
             }
             .padding()
             .background(Color(.secondarySystemGroupedBackground))
-            .cornerRadius(12)
+            .cornerRadius(AppTheme.Radius.small)
             .padding(.horizontal)
 
             Spacer()
@@ -337,8 +337,8 @@ struct RuleRowView: View {
                 }
 
                 Text(rule.matchSummary)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
 
                 // Action icons
@@ -364,8 +364,8 @@ struct RuleRowView: View {
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .appCaptionText()
+                .foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
@@ -386,7 +386,7 @@ struct ActionBadge: View {
             Text(label)
                 .font(.caption2)
         }
-        .foregroundColor(.secondary)
+        .foregroundStyle(.secondary)
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
         .background(Color(.tertiarySystemFill))
@@ -411,11 +411,11 @@ struct TipRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.subheadline)
+                    .appSecondaryBodyText()
                     .fontWeight(.medium)
                 Text(description)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
             }
         }
     }

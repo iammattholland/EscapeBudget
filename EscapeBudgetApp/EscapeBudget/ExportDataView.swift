@@ -105,31 +105,31 @@ struct ExportDataView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Export Transactions")
-                            .font(.headline)
-                        Text("Export your transactions to CSV, with optional password protection.")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+	                Section {
+	                    VStack(alignment: .leading, spacing: 16) {
+	                        Text("Export Transactions")
+	                            .appSectionTitleText()
+	                        Text("Export your transactions to CSV, with optional password protection.")
+	                            .appSecondaryBodyText()
+	                            .foregroundStyle(.secondary)
 
-                        Label("\(exportableTransactions.count) Transactions", systemImage: "list.bullet")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.vertical, 8)
-                }
+	                        Label("\(exportableTransactions.count) Transactions", systemImage: "list.bullet")
+	                            .appSecondaryBodyText()
+	                            .foregroundStyle(.secondary)
+	                    }
+	                    .padding(.vertical, 8)
+	                }
 
-                if isDemoMode {
-                    Section {
-                        HStack {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundColor(AppColors.warning(for: appColorMode))
-                            Text("Demo mode is active. Demo data will not be exported.")
-                                .font(.subheadline)
-                        }
-                    }
-                }
+	                if isDemoMode {
+	                    Section {
+	                        HStack {
+	                            Image(systemName: "exclamationmark.triangle.fill")
+	                                .foregroundColor(AppColors.warning(for: appColorMode))
+	                            Text("Demo mode is active. Demo data will not be exported.")
+	                                .appSecondaryBodyText()
+	                        }
+	                    }
+	                }
 
                 Section("Export Format") {
                     Picker("Format", selection: $selectedFormat) {
@@ -137,8 +137,8 @@ struct ExportDataView: View {
                             VStack(alignment: .leading) {
                                 Text(format.rawValue)
                                 Text(format.description)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
                             }
                             .tag(format)
                         }
@@ -164,8 +164,8 @@ struct ExportDataView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Toggle("Password-protected export", isOn: encryptedExportBinding)
                         Text("Encrypts the export file with your password.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
                     }
 
                     if isEncryptedExport {
@@ -176,17 +176,17 @@ struct ExportDataView: View {
 
                         if !exportPassword.isEmpty, exportPassword.count < 8 {
                             Text("Use at least 8 characters.")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(AppColors.warning(for: appColorMode))
                         } else if !exportPasswordConfirm.isEmpty, exportPasswordConfirm != exportPassword {
                             Text("Passwords don’t match.")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(AppColors.danger(for: appColorMode))
                         }
 
                         Text("If you forget this password, the export can’t be recovered.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -195,7 +195,7 @@ struct ExportDataView: View {
                         HStack {
                             ProgressView()
                             Text("Preparing export...")
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                         }
                     } else {
                         Button(action: exportData) {
@@ -205,19 +205,19 @@ struct ExportDataView: View {
                             }
                             .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .appPrimaryCTA()
                         .disabled(exportableTransactions.isEmpty || !isEncryptedExportReady)
                     }
                 }
 
-                Section("Escape Budget Backup") {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Export a full backup of your accounts, budgets, tags, goals, rules, and transactions.")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        Text("Restore it later via Settings → Data Management → Restore Backup.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+	                Section("Escape Budget Backup") {
+	                    VStack(alignment: .leading, spacing: 4) {
+	                        Text("Export a full backup of your accounts, budgets, tags, goals, rules, and transactions.")
+	                            .appSecondaryBodyText()
+	                            .foregroundStyle(.secondary)
+	                        Text("Restore it later via Settings → Data Management → Restore Backup.")
+	                            .appCaptionText()
+                            .foregroundStyle(.secondary)
                     }
 
                     Button {

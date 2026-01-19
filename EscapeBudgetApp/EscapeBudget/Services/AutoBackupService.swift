@@ -1,8 +1,11 @@
 import Foundation
 import SwiftData
+import os
 
 @MainActor
 enum AutoBackupService {
+    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.mattholland.EscapeBudget", category: "AutoBackupService")
+
     enum AutoBackupError: LocalizedError {
         case destinationNotSet
         case destinationUnavailable
@@ -82,6 +85,9 @@ enum AutoBackupService {
     }
 
     static func maybeRunWeekly(modelContext: ModelContext, now: Date = Date()) async {
+        let interval = PerformanceSignposts.begin("AutoBackup.maybeRunWeekly")
+        defer { PerformanceSignposts.end(interval) }
+
         guard isEnabled else { return }
         guard (try? resolveDestinationURL()) != nil else { return }
 
@@ -97,10 +103,14 @@ enum AutoBackupService {
             try await runNow(modelContext: modelContext, reason: "weekly", now: now)
         } catch {
             // Non-fatal: user can still export manually.
+            logger.error("maybeRunWeekly failed: \(String(describing: error), privacy: .public)")
         }
     }
 
     static func runNow(modelContext: ModelContext, reason: String, now: Date = Date()) async throws {
+        let interval = PerformanceSignposts.begin("AutoBackup.runNow")
+        defer { PerformanceSignposts.end(interval, "reason=\(reason)") }
+
         guard isEnabled else { return }
         let destination = try resolveDestinationURL()
 

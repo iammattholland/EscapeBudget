@@ -29,7 +29,7 @@ struct WelcomeView: View {
 
                     Text("Your personal finance companion for tracking spending, managing budgets, and achieving your goals.")
                         .font(.body)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                 }
@@ -40,7 +40,10 @@ struct WelcomeView: View {
                     FeatureRow(icon: "brain.head.profile", title: "Smart insights", detail: "Get personalized tips based on your spending")
                 }
                 .padding()
-                .background(RoundedRectangle(cornerRadius: 16).fill(Color(.secondarySystemBackground)))
+                .background(
+                    RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+                        .fill(Color(.secondarySystemBackground))
+                )
 
                 Spacer()
 
@@ -48,36 +51,31 @@ struct WelcomeView: View {
                     // Primary action: Start Fresh
                     Button(action: onContinue) {
                         Text("Start Fresh")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
+                            .appPrimaryButtonLabel()
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
+                    .appPrimaryCTA(controlSize: .large)
 
                     Button(action: onImport) {
                         Text("From Import")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity)
+                            .appSecondaryButtonLabel()
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
+                    .appSecondaryCTA(controlSize: .large)
 
                     Button(action: onTryDemo) {
                         VStack(spacing: 4) {
                             Text("Guided Introduction")
-                                .font(.headline)
+                                .appSecondaryButtonLabel()
                             Text("Explore the app with sample data")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                         }
-                        .frame(maxWidth: .infinity)
                         .padding(.vertical, 4)
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
+                    .appSecondaryCTA(controlSize: .large)
                 }
             }
-            .padding()
+            .appAdaptiveScreenPadding()
+            .appConstrainContentWidth()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     EmptyView()
@@ -101,12 +99,28 @@ struct WelcomeView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.headline)
+                        .appSectionTitleText()
                     Text(detail)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .appSecondaryBodyText()
+                        .foregroundStyle(.secondary)
                 }
             }
         }
     }
+}
+
+#Preview("Welcome • iPhone (Light)") {
+    WelcomeView(onContinue: {}, onImport: {}, onTryDemo: {})
+        .preferredColorScheme(.light)
+}
+
+#Preview("Welcome • iPhone (Dark)") {
+    WelcomeView(onContinue: {}, onImport: {}, onTryDemo: {})
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Welcome • iPad (Dark)") {
+    WelcomeView(onContinue: {}, onImport: {}, onTryDemo: {})
+        .preferredColorScheme(.dark)
+        .previewInterfaceOrientation(.portrait)
 }

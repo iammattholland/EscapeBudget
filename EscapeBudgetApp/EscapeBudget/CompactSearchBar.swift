@@ -26,6 +26,6 @@ struct CompactSearchBar: View {
         .padding(.horizontal, showsBackground ? 12 : 4)
         .padding(.vertical, showsBackground ? 6 : 4)
         .background(showsBackground ? Color(.secondarySystemFill) : Color.clear)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous))
     }
 }

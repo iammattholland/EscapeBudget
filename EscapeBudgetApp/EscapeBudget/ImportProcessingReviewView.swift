@@ -246,7 +246,7 @@ struct ImportProcessingReviewView: View {
 
                                                         if let detail = event.detail, !detail.isEmpty {
                                                             Text(detail)
-                                                                .font(.caption)
+                                                                .appCaptionText()
                                                                 .foregroundStyle(.secondary)
                                                                 .padding(.leading, 26)
                                                         }
@@ -319,7 +319,7 @@ struct ImportProcessingReviewView: View {
                 .foregroundStyle(.primary)
             Spacer()
         }
-        .font(.subheadline)
+        .font(AppTheme.Typography.secondaryBody)
     }
 
     @ViewBuilder
@@ -329,29 +329,29 @@ struct ImportProcessingReviewView: View {
 
         VStack(alignment: .leading, spacing: 6) {
             Text("\(base?.payee ?? "Unknown") ↔︎ \(match?.payee ?? "Unknown")")
-                .font(.subheadline)
+                .appSecondaryBodyText()
                 .fontWeight(.medium)
 
             HStack(spacing: 8) {
                 Text(suggestion.amount, format: .currency(code: currencyCode))
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
 
                 Text("\(suggestion.daysApart)d apart")
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
 
                 Text("score \(String(format: "%.2f", suggestion.score))")
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
 
             if let baseAccount = base?.account?.name, let matchAccount = match?.account?.name {
                 Text("\(baseAccount) → \(matchAccount)")
-                    .font(.caption)
+                    .appCaptionText()
                     .foregroundStyle(.secondary)
             }
         }

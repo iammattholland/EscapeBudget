@@ -65,11 +65,11 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
             HStack {
                 VStack(alignment: .leading) {
                     Text(title)
-                        .font(.headline)
+                        .appSectionTitleText()
                     if let subtitle {
                         Text(subtitle)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
                     }
                 }
                 Spacer()
@@ -77,7 +77,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
                     Menu { menuContent() } label: {
                         Image(systemName: "ellipsis")
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.secondary)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -85,7 +85,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
             if series.allSatisfy({ $0.data.isEmpty }) {
                 Text("Not enough data yet. Add transactions to see trends.")
                     .font(.footnote)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .padding(.vertical, 24)
             } else {
                 Chart {
@@ -163,18 +163,18 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
                                     Text(selectedPoint.point.cumulativeAmount, format: .currency(code: lastUsedCurrencyCode))
-                                        .font(.caption)
+                                        .appCaptionText()
                                         .fontWeight(.semibold)
                                         .monospacedDigit()
                                 }
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 6)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
                                         .fill(Color(.systemBackground))
                                 )
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
                                         .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
                                 )
                                 .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 4)
@@ -192,7 +192,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
                             AxisValueLabel {
                                 Text(doubleValue, format: .currency(code: lastUsedCurrencyCode))
                                     .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
@@ -222,7 +222,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
             content
                 .padding()
                 .background(Color(.systemBackground))
-                .cornerRadius(12)
+                .cornerRadius(AppTheme.Radius.compact)
                 .shadow(color: Color.black.opacity(0.1), radius: 4)
         } else {
             content
@@ -293,11 +293,11 @@ struct MonthlyIncomeBarChart: View {
             HStack {
                 VStack(alignment: .leading) {
                     Text(title)
-                        .font(.headline)
+                        .appSectionTitleText()
                     if let subtitle {
                         Text(subtitle)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
                     }
                 }
                 Spacer()
@@ -313,14 +313,14 @@ struct MonthlyIncomeBarChart: View {
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                 }
             }
 
             if monthlyTotals.isEmpty || monthlyTotals.allSatisfy({ $0.total == 0 }) {
                 Text("Not enough income data yet. Add transactions to see trends.")
                     .font(.footnote)
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
                     .padding(.vertical, 24)
             } else {
                 Chart {
@@ -348,7 +348,7 @@ struct MonthlyIncomeBarChart: View {
                             AxisValueLabel {
                                 Text(doubleValue, format: .currency(code: currencyCode))
                                     .font(.caption2)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
@@ -372,7 +372,7 @@ struct MonthlyIncomeBarChart: View {
             content
                 .padding()
                 .background(Color(.systemBackground))
-                .cornerRadius(12)
+                .cornerRadius(AppTheme.Radius.compact)
                 .shadow(color: Color.black.opacity(0.1), radius: 4)
         } else {
             content
@@ -390,8 +390,8 @@ private struct SpendingLegendItem: View {
                 .fill(color)
                 .frame(width: 8, height: 8)
             Text(label)
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .appCaptionText()
+                .foregroundStyle(.secondary)
         }
     }
 }

@@ -69,14 +69,14 @@ struct TransferMatchPickerView: View {
             Section {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Amount")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                     Text(base.amount, format: .currency(code: currencyCode))
-                        .font(.headline)
+                        .appSectionTitleText()
 
                     if let accountName = base.account?.name {
                         Text("Account: \(accountName)")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -119,7 +119,7 @@ struct TransferMatchPickerView: View {
                             Label("Mark as External Transfer", systemImage: "arrow.left.arrow.right.circle")
                                 .fontWeight(.semibold)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .appPrimaryCTA()
                         Spacer()
                     }
                     .listRowSeparator(.hidden)
@@ -138,23 +138,23 @@ struct TransferMatchPickerView: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     HStack(spacing: 6) {
                                         Text(candidate.account?.name ?? "No Account")
-                                            .font(.headline)
+                                            .appSectionTitleText()
                                         if isBestMatch {
                                             Image(systemName: "star.fill")
-                                                .font(.caption)
+                                                .appCaptionText()
                                                 .foregroundStyle(.yellow)
                                         }
                                     }
                                     Text(candidate.date, format: .dateTime.month().day().year())
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                        .appCaptionText()
+                                        .foregroundStyle(.secondary)
                                     Text("\(Int(min(score, 100)))% match")
                                         .font(.caption2)
                                         .foregroundStyle(score >= 80 ? .green : score >= 60 ? .orange : .secondary)
                                 }
                                 Spacer()
                                 Text(candidate.amount, format: .currency(code: currencyCode))
-                                    .foregroundColor(.primary)
+                                    .foregroundStyle(.primary)
                                     .monospacedDigit()
                             }
                         }
@@ -279,7 +279,7 @@ struct TransferMatchPickerView: View {
                     Section {
                         if let match = matchingAccountForExternalLabel {
                             Text("An account named “\(match.name)” already exists.")
-                                .font(.subheadline)
+                                .appSecondaryBodyText()
                                 .foregroundStyle(.secondary)
 
                             Button {
@@ -295,7 +295,7 @@ struct TransferMatchPickerView: View {
                                     Label("Create External Account", systemImage: "plus.circle")
                                         .fontWeight(.semibold)
                                     Text("Creates an account in Accounts so you can track transfers to/from it.")
-                                        .font(.caption)
+                                        .appCaptionText()
                                         .foregroundStyle(.secondary)
                                 }
                             }
@@ -461,7 +461,7 @@ private struct TransferMatchConfirmView: View {
                     Label("Link as Transfer", systemImage: "link")
                         .fontWeight(.semibold)
                 }
-                .buttonStyle(.borderedProminent)
+                .appPrimaryCTA()
             } footer: {
                 Text("Confirm these two transactions are the same money movement between accounts. This will remove any budget category and exclude it from income/expense stats.")
             }
@@ -485,15 +485,15 @@ private struct TransferMatchConfirmView: View {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(transaction.payee)
-                        .font(.headline)
+                        .appSectionTitleText()
 
                     Text(transaction.account?.name ?? "No Account")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
 
                     if let memo = transaction.memo, !memo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         Text(memo)
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                             .lineLimit(2)
                     }
@@ -503,10 +503,10 @@ private struct TransferMatchConfirmView: View {
 
                 VStack(alignment: .trailing, spacing: 2) {
                     Text(transaction.amount, format: .currency(code: currencyCode))
-                        .font(.headline)
+                        .appSectionTitleText()
                         .monospacedDigit()
                     Text(transaction.date, format: .dateTime.month().day().year())
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                 }
             }

@@ -60,10 +60,10 @@ struct BulkCategorizeView: View {
                             Spacer()
                             if let category = selectedCategory {
                                 Text(category.name)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                             } else {
                                 Text("Select...")
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
@@ -84,43 +84,43 @@ struct BulkCategorizeView: View {
                             payeeSuggestionsRow
                         }
                         Text("Finds transactions with payee name that \(filterType == .payeeExact ? "exactly matches" : "contains") the text above")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
 
                     case .amountExact:
                         HStack(spacing: 8) {
                             Text(currencySymbol)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                             TextField("Amount", text: $filterValue)
                                 .keyboardType(.decimalPad)
                         }
                         Text("Finds transactions with this exact amount")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
 
                     case .amountRange:
                         VStack(alignment: .leading, spacing: 8) {
                             HStack(spacing: 8) {
                                 Text("Min:")
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 Text(currencySymbol)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 TextField("0", text: $amountMin)
                                     .keyboardType(.decimalPad)
                             }
 
                             HStack(spacing: 8) {
                                 Text("Max:")
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 Text(currencySymbol)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 TextField("0", text: $amountMax)
                                     .keyboardType(.decimalPad)
                             }
                         }
                         Text("Finds transactions within this amount range")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
 
                     case .account:
                         Picker("Account", selection: $selectedAccount) {
@@ -130,15 +130,15 @@ struct BulkCategorizeView: View {
                             }
                         }
                         Text("Finds transactions from the selected account")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
 
                     case .dateRange:
                         DatePicker("From", selection: $dateFrom, displayedComponents: .date)
                         DatePicker("To", selection: $dateTo, displayedComponents: .date)
                         Text("Finds transactions within this date range")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
 
                     case .combined:
                         TextField("Payee (optional)", text: $filterValue)
@@ -156,22 +156,22 @@ struct BulkCategorizeView: View {
 
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Amount Range (optional)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
                             HStack(spacing: 8) {
                                 Text("Min:")
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 Text(currencySymbol)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 TextField("0", text: $amountMin)
                                     .keyboardType(.decimalPad)
                             }
 
                             HStack(spacing: 8) {
                                 Text("Max:")
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 Text(currencySymbol)
-                                    .foregroundColor(.secondary)
+                                    .foregroundStyle(.secondary)
                                 TextField("0", text: $amountMax)
                                     .keyboardType(.decimalPad)
                             }
@@ -181,8 +181,8 @@ struct BulkCategorizeView: View {
                         DatePicker("To (optional)", selection: $dateTo, displayedComponents: .date)
 
                         Text("Combines multiple criteria - all specified filters must match")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -211,30 +211,30 @@ struct BulkCategorizeView: View {
                         Text("No suggested payee groupings yet.")
                             .foregroundStyle(.secondary)
                     } else {
-                        ForEach(suggestedPayeeOptions) { option in
-                            Button {
-                                selectedSuggestedOption = option
-                            } label: {
+	                        ForEach(suggestedPayeeOptions) { option in
+	                            Button {
+	                                selectedSuggestedOption = option
+	                            } label: {
                                 HStack(spacing: 12) {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(option.payeeDisplay)
-                                            .font(.headline)
-                                            .lineLimit(1)
+	                                    VStack(alignment: .leading, spacing: 4) {
+	                                        Text(option.payeeDisplay)
+	                                            .appSectionTitleText()
+	                                            .lineLimit(1)
 
                                         Text("Suggest: \(option.category.name)")
-                                            .font(.caption)
+                                            .appCaptionText()
                                             .foregroundStyle(.secondary)
                                     }
 
                                     Spacer()
 
-                                    Text("\(option.transactionIDs.count)")
-                                        .font(.headline)
-                                        .monospacedDigit()
-                                        .foregroundStyle(AppColors.tint(for: appColorMode))
+	                                    Text("\(option.transactionIDs.count)")
+	                                        .appSectionTitleText()
+	                                        .monospacedDigit()
+	                                        .foregroundStyle(AppColors.tint(for: appColorMode))
 
                                     Image(systemName: "chevron.right")
-                                        .font(.caption)
+                                        .appCaptionText()
                                         .foregroundStyle(.secondary)
                                 }
                             }
@@ -244,7 +244,7 @@ struct BulkCategorizeView: View {
                     Text("Suggested Options")
                 } footer: {
                     Text("Based on your already categorized transactions, Escape Budget suggests a category for uncategorized transactions with the same (or similar) payee name.")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                 }
             }
@@ -295,7 +295,7 @@ struct BulkCategorizeView: View {
                         Text(suggestion)
                             .lineLimit(1)
                     }
-                    .buttonStyle(.bordered)
+                    .appSecondaryCTA()
                     .controlSize(.small)
                 }
             }
@@ -356,7 +356,7 @@ struct BulkCategorizeView: View {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.currencyCode = currencyCode
-        return formatter.currencySymbol ?? "$"
+        return formatter.currencySymbol ?? currencyCode
     }
 
     private func findMatchingTransactions() {
@@ -556,16 +556,16 @@ private struct SuggestedPayeeCategorizeSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                Section {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(option.payeeDisplay)
-                            .font(.headline)
-                        Text("Suggested category: \(option.category.name)")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
-                }
+	                Section {
+	                    VStack(alignment: .leading, spacing: 6) {
+	                        Text(option.payeeDisplay)
+	                            .appSectionTitleText()
+	                        Text("Suggested category: \(option.category.name)")
+	                            .appSecondaryBodyText()
+	                            .foregroundStyle(.secondary)
+	                    }
+	                    .padding(.vertical, 4)
+	                }
 
                 Section {
                     if transactions.isEmpty {
@@ -586,12 +586,12 @@ private struct SuggestedPayeeCategorizeSheet: View {
                                     Image(systemName: selectedIDs.contains(id) ? "checkmark.circle.fill" : "circle")
                                         .foregroundStyle(selectedIDs.contains(id) ? AppColors.tint(for: appColorMode) : .secondary)
 
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(transaction.payee)
-                                            .font(.headline)
-                                            .lineLimit(1)
-                                        Text(transaction.date, format: .dateTime.month(.abbreviated).day().year())
-                                            .font(.caption)
+	                                    VStack(alignment: .leading, spacing: 2) {
+	                                        Text(transaction.payee)
+	                                            .appSectionTitleText()
+	                                            .lineLimit(1)
+	                                        Text(transaction.date, format: .dateTime.month(.abbreviated).day().year())
+	                                            .appCaptionText()
                                             .foregroundStyle(.secondary)
                                     }
 
@@ -609,7 +609,7 @@ private struct SuggestedPayeeCategorizeSheet: View {
                     Text("Preview")
                 } footer: {
                     Text("Tap to unselect any transactions you don’t want included in this categorization.")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                 }
             }
@@ -698,9 +698,9 @@ struct BulkCategorizePreviewView: View {
                         .font(.title2)
                         .fontWeight(.bold)
 
-                    Text("will be categorized as")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+	                    Text("will be categorized as")
+	                        .appSecondaryBodyText()
+	                        .foregroundStyle(.secondary)
 
                     Text(category.name)
                         .font(.title3)
@@ -709,7 +709,7 @@ struct BulkCategorizePreviewView: View {
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                         .background(
-                            RoundedRectangle(cornerRadius: 8)
+                            RoundedRectangle(cornerRadius: AppTheme.Radius.xSmall)
                                 .fill(AppColors.tint(for: appColorMode).opacity(0.15))
                         )
                 }
@@ -717,20 +717,20 @@ struct BulkCategorizePreviewView: View {
 
                 // Transaction List
                 List {
-                    ForEach(transactions) { transaction in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(transaction.payee)
-                                    .font(.headline)
+	                    ForEach(transactions) { transaction in
+	                        HStack {
+	                            VStack(alignment: .leading, spacing: 4) {
+	                                Text(transaction.payee)
+	                                    .appSectionTitleText()
 
-                                Text(transaction.date, format: .dateTime.month(.abbreviated).day().year())
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+	                                Text(transaction.date, format: .dateTime.month(.abbreviated).day().year())
+	                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
 
                                 if let account = transaction.account {
                                     Text(account.name)
                                         .font(.caption2)
-                                        .foregroundColor(.secondary)
+                                        .foregroundStyle(.secondary)
                                 }
                             }
 

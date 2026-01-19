@@ -45,12 +45,12 @@ struct ApplyRuleRetroactiveView: View {
             Section {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Rule")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                     Text(rule.name)
-                        .font(.headline)
+                        .appSectionTitleText()
                     Text(rule.matchSummary)
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
@@ -72,7 +72,7 @@ struct ApplyRuleRetroactiveView: View {
                     Spacer()
 
                     Text("\(selectedCount) selected")
-                        .font(.caption)
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
                 }
             }
@@ -96,7 +96,7 @@ struct ApplyRuleRetroactiveView: View {
 
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(tx.payee)
-                                        .font(.headline)
+                                        .appSectionTitleText()
                                         .foregroundStyle(.primary)
                                         .lineLimit(1)
                                     HStack(spacing: 6) {
@@ -104,7 +104,7 @@ struct ApplyRuleRetroactiveView: View {
                                         Text("•")
                                         Text(tx.date, format: .dateTime.year().month().day())
                                     }
-                                    .font(.caption)
+                                    .appCaptionText()
                                     .foregroundStyle(.secondary)
                                 }
 
@@ -115,7 +115,7 @@ struct ApplyRuleRetroactiveView: View {
                                         .monospacedDigit()
                                         .foregroundStyle(.primary)
                                     Text(tx.category?.name ?? "Uncategorized")
-                                        .font(.caption)
+                                        .appCaptionText()
                                         .foregroundStyle(.secondary)
                                         .lineLimit(1)
                                 }

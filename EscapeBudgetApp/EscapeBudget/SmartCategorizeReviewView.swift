@@ -94,18 +94,18 @@ struct SmartCategorizeReviewView: View {
                         Image(systemName: "sparkles")
                             .foregroundStyle(.yellow)
                         Text("Found \(visibleSuggestions.count) suggestion group\(visibleSuggestions.count == 1 ? "" : "s")")
-                            .font(.headline)
+                            .appSectionTitleText()
                     }
 
                     if totalTransactionsToCategize > 0 {
                         Text("\(totalTransactionsToCategize) transaction\(totalTransactionsToCategize == 1 ? "" : "s") selected to categorize")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                     }
 
                     if !dismissedGroups.isEmpty {
                         Text("\(dismissedGroups.count) group\(dismissedGroups.count == 1 ? "" : "s") dismissed (swipe to dismiss)")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -136,30 +136,30 @@ struct SmartCategorizeReviewView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 6) {
                             Text(group.displayPayee)
-                                .font(.headline)
+                                .appSectionTitleText()
 
                             if group.isTransferLikely {
                                 Image(systemName: "arrow.left.arrow.right.circle.fill")
-                                    .font(.caption)
+                                    .appCaptionText()
                                     .foregroundStyle(.orange)
                             }
                         }
 
                         HStack(spacing: 4) {
                             Text("\(group.transactions.count) transaction\(group.transactions.count == 1 ? "" : "s")")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
 
                             if group.confidence > 0 {
                                 Text("•")
-                                    .font(.caption)
+                                    .appCaptionText()
                                     .foregroundStyle(.secondary)
 
                                 HStack(spacing: 2) {
                                     Image(systemName: "chart.bar.fill")
                                         .font(.caption2)
                                     Text("\(Int(group.confidence * 100))%")
-                                        .font(.caption)
+                                        .appCaptionText()
                                 }
                                 .foregroundStyle(confidenceColor(group.confidence))
                             }
@@ -167,11 +167,11 @@ struct SmartCategorizeReviewView: View {
 
                         if group.isTransferLikely {
                             Text("Likely transfer - consider categorizing as Transfer")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.orange)
                         } else if let reason = group.reason, !reason.isEmpty, group.suggestedCategory != nil {
                             Text(reason)
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -179,7 +179,8 @@ struct SmartCategorizeReviewView: View {
                     Spacer()
 
                     Text(group.totalAmount, format: .currency(code: currencyCode))
-                        .font(.subheadline.weight(.semibold))
+                        .appSecondaryBodyText()
+                        .fontWeight(.semibold)
                         .monospacedDigit()
                 }
 
@@ -196,7 +197,7 @@ struct SmartCategorizeReviewView: View {
                                 .foregroundStyle(.primary)
                             Spacer()
                             Image(systemName: "chevron.right")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -213,7 +214,8 @@ struct SmartCategorizeReviewView: View {
                                     .foregroundStyle(.primary)
                                 Spacer()
                                 Text("Accept")
-                                    .font(.subheadline.weight(.semibold))
+                                    .appSecondaryBodyText()
+                                    .fontWeight(.semibold)
                                     .foregroundStyle(.white)
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 6)
@@ -228,7 +230,7 @@ struct SmartCategorizeReviewView: View {
                         showingCategoryPicker = true
                     } label: {
                         Text("Change")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(AppColors.tint(for: appColorMode))
                     }
                 } else {
@@ -243,7 +245,7 @@ struct SmartCategorizeReviewView: View {
                                 .foregroundStyle(.secondary)
                             Spacer()
                             Image(systemName: "chevron.right")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -268,10 +270,10 @@ struct SmartCategorizeReviewView: View {
                             .foregroundStyle(.primary)
                         Spacer()
                         Text("\(selectedCount)/\(group.transactions.count)")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                         Image(systemName: "chevron.right")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -426,14 +428,15 @@ private struct SmartCategorizeGroupDetailView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(group.displayPayee)
-                            .font(.headline)
+                            .appSectionTitleText()
                         Text("\(selectedIDs.count) selected")
-                            .font(.caption)
+                            .appCaptionText()
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
                     Text(group.totalAmount, format: .currency(code: currencyCode))
-                        .font(.subheadline.weight(.semibold))
+                        .appSecondaryBodyText()
+                        .fontWeight(.semibold)
                         .monospacedDigit()
                 }
             }
@@ -462,7 +465,7 @@ private struct SmartCategorizeGroupDetailView: View {
                                         Text(accountName)
                                     }
                                 }
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                             }
 
