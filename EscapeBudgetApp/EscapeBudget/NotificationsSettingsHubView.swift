@@ -23,7 +23,7 @@ struct NotificationsSettingsHubView: View {
                             selection: selectedTabBinding,
                             tabs: Tab.allCases.map { .init(id: $0, title: $0.rawValue) }
                         )
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, AppTheme.Spacing.medium)
                             .padding(.top, 6)
                             .padding(.bottom, 6)
                             .frame(maxWidth: maxContentWidth)

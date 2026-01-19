@@ -146,7 +146,7 @@ struct BudgetView: View {
                 RoundedRectangle(cornerRadius: monthChromeCornerRadius, style: .continuous)
                     .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
             )
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppTheme.Spacing.medium)
             .padding(.top, 6)
             .padding(.bottom, 6)
     }
@@ -710,7 +710,7 @@ struct BudgetView: View {
                 .fontWeight(.semibold)
                 .disabled(selectedCategoryIDs.isEmpty || bulkSelectionType == nil)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppTheme.Spacing.medium)
             .padding(.vertical, 12)
             .background(.thinMaterial)
         }
@@ -1134,8 +1134,8 @@ struct CategoryTransactionsSheet: View {
         NavigationStack {
             VStack(spacing: 0) {
                 // Summary header
-                VStack(spacing: 16) {
-                    HStack(spacing: 20) {
+                VStack(spacing: AppTheme.Spacing.medium) {
+                    HStack(spacing: AppTheme.Spacing.large) {
                         VStack(spacing: 4) {
                             Text("Budget")
                                 .appCaptionText()
@@ -1189,7 +1189,7 @@ struct CategoryTransactionsSheet: View {
                 .background(Color(.systemGroupedBackground))
                 
 	                if transactions.isEmpty {
-	                    VStack(spacing: 16) {
+	                    VStack(spacing: AppTheme.Spacing.medium) {
 	                        Spacer()
 	                        Image(systemName: "tray")
 	                            .font(.system(size: 50))
@@ -1578,7 +1578,7 @@ struct EmojiPickerSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 20) {
+                LazyVStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
                     VStack(alignment: .leading, spacing: 10) {
                         TextField("Search (e.g., groceries, rent, travel)", text: $searchText)
                             .textInputAutocapitalization(.never)

@@ -527,7 +527,7 @@ struct ImportDataViewImpl: View {
                     RoundedRectangle(cornerRadius: AppTheme.Radius.overlay, style: .continuous)
                         .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
                 )
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppTheme.Spacing.large)
             }
         }
     }
@@ -555,7 +555,7 @@ struct ImportDataViewImpl: View {
     
     // MARK: - File Selection View
 	    private var fileSelectionView: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: AppTheme.Spacing.xLarge) {
             Image(systemName: "doc.text")
                 .font(.system(size: 60))
                 .foregroundColor(AppColors.tint(for: appColorMode))
@@ -734,7 +734,7 @@ struct ImportDataViewImpl: View {
 
     // MARK: - Header Selection View
     private var headerSelectionView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: AppTheme.Spacing.medium) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Select Header Row")
                     .appSectionTitleText()
@@ -1978,7 +1978,7 @@ struct ImportDataViewImpl: View {
     }
 
 	    private var importingView: some View {
-	        VStack(spacing: 24) {
+	        VStack(spacing: AppTheme.Spacing.xLarge) {
 	            if let progress = importProgress {
 	                if let totalRaw = progress.total {
 	                    let total = max(totalRaw, 1)
@@ -2008,7 +2008,7 @@ struct ImportDataViewImpl: View {
     
 		    private var completeView: some View {
             ScrollView {
-	            VStack(spacing: 24) {
+	            VStack(spacing: AppTheme.Spacing.xLarge) {
 	                Image(systemName: "checkmark.circle.fill")
 	                    .font(.system(size: 80))
 	                    .foregroundColor(AppColors.success(for: appColorMode))
@@ -2064,16 +2064,16 @@ struct ImportDataViewImpl: View {
                             .buttonStyle(.bordered)
                             .disabled(result.summary.changedCount == 0 && result.summary.transferSuggestionsInvolvingProcessed == 0)
                         }
-                        .padding(14)
+                        .padding(AppTheme.Spacing.cardPadding)
                         .background(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
                                 .fill(Color(.secondarySystemGroupedBackground))
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
                                 .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
                         )
-                        .padding(.horizontal, 18)
+                        .padding(.horizontal, AppTheme.Spacing.relaxed)
                     }
 	                
 	                Button("Done") {

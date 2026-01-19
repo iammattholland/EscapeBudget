@@ -213,7 +213,7 @@ struct TransfersInboxView: View {
                         .appPrimaryCTA()
                         .disabled(selectedSuggestionIDs.isEmpty)
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppTheme.Spacing.medium)
                     .padding(.top, 10)
                     .padding(.bottom, 12)
                     .background(.ultraThinMaterial)

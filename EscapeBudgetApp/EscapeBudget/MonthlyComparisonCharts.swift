@@ -86,7 +86,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
                 Text("Not enough data yet. Add transactions to see trends.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, 24)
+                    .padding(.vertical, AppTheme.Spacing.xLarge)
             } else {
                 Chart {
                     ForEach(orderedSeries) { monthSeries in
@@ -321,7 +321,7 @@ struct MonthlyIncomeBarChart: View {
                 Text("Not enough income data yet. Add transactions to see trends.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, 24)
+                    .padding(.vertical, AppTheme.Spacing.xLarge)
             } else {
                 Chart {
                     ForEach(monthlyTotals, id: \.month) { item in

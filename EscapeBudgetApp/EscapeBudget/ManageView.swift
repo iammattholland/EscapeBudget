@@ -147,7 +147,7 @@ private struct ManageBudgetHeroCard: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
             MonthNavigationHeader(selectedDate: $selectedDate)
 
             HStack(spacing: 12) {
@@ -411,7 +411,7 @@ private struct BudgetEmptyStateCard: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: AppTheme.Spacing.medium) {
             Image(systemName: "chart.pie.fill")
                 .font(.system(size: 48))
                 .foregroundColor(AppColors.tint(for: appColorMode))
@@ -428,13 +428,13 @@ private struct BudgetEmptyStateCard: View {
             Button(action: action) {
                 Text("Set Up Budget")
                     .fontWeight(.semibold)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, AppTheme.Spacing.xLarge)
                     .padding(.vertical, 12)
                     .frame(maxWidth: .infinity)
             }
             .appPrimaryCTA()
         }
-        .padding(32)
+        .padding(AppTheme.Spacing.xxLarge)
         .background(
             RoundedRectangle(cornerRadius: AppTheme.Radius.pillLarge, style: .continuous)
                 .fill(Color(.systemBackground))
@@ -557,7 +557,7 @@ struct BudgetSetupWizardView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.xLarge) {
                 ProgressView(value: progressValue)
                     .tint(AppColors.tint(for: appColorMode))
 
@@ -648,7 +648,7 @@ struct BudgetSetupWizardView: View {
                     .disabled(nextDisabled)
                 }
             }
-            .padding(24)
+            .padding(AppTheme.Spacing.xLarge)
             .navigationTitle("Budget Setup")
             .navigationBarTitleDisplayMode(.inline)
             .globalKeyboardDoneToolbar()
@@ -861,7 +861,7 @@ private struct BudgetIncomeSourcesView: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
             Text("Income sources")
                 .font(.title3)
                 .fontWeight(.semibold)
@@ -916,7 +916,7 @@ private struct BudgetIncomeSourcesView: View {
 
 private struct BudgetSetupIntro: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
             Text("Let's build your budget")
                 .font(.largeTitle)
                 .fontWeight(.bold)
@@ -944,7 +944,7 @@ private struct BudgetTemplateSelectionView: View {
     @State private var expandedGroupIDs: Set<UUID> = []
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
             Text("Choose budget groups")
                 .font(.title3)
                 .fontWeight(.semibold)
@@ -1130,14 +1130,14 @@ private struct BudgetAssignmentView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
             Text("Assign monthly amounts")
                 .font(.title3)
                 .fontWeight(.semibold)
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                         Text("Budget amounts")
                             .appSectionTitleText()
 
@@ -1291,7 +1291,7 @@ private struct BudgetSuggestionView: View {
 	var body: some View {
 		NavigationStack {
 			ScrollView {
-				VStack(alignment: .leading, spacing: 24) {
+				VStack(alignment: .leading, spacing: AppTheme.Spacing.xLarge) {
                     // Income Input Section
                     VStack(alignment: .leading, spacing: 12) {
                         Text("Monthly Net Income")
@@ -1331,7 +1331,7 @@ private struct BudgetSuggestionView: View {
 
                     // Summary Card
                     if monthlyIncome > 0 {
-                        VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                             Text("Budget Summary")
                                 .appSectionTitleText()
 
@@ -1399,7 +1399,7 @@ private struct BudgetSuggestionView: View {
 
                     // Suggested Amounts
                     if !suggestedAmounts.isEmpty {
-                        VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                             Text("Suggested Budget Allocation")
                                 .appSectionTitleText()
 

@@ -566,7 +566,7 @@ struct PreviewMatchesSheet: View {
         NavigationStack {
             Group {
                 if transactions.isEmpty {
-                    VStack(spacing: 16) {
+                    VStack(spacing: AppTheme.Spacing.medium) {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 48))
                             .foregroundStyle(.secondary)

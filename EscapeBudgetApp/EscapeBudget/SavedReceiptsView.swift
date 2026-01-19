@@ -114,7 +114,7 @@ struct ReceiptDetailView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
                     // Receipt Image
                     if let imageData = receipt.imageData,
                        let uiImage = UIImage(data: imageData) {

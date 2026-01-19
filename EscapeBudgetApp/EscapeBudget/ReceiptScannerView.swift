@@ -15,7 +15,7 @@ struct ReceiptScannerView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
+            VStack(spacing: AppTheme.Spacing.xLarge) {
                 Spacer()
 
                 Image(systemName: "doc.text.image")

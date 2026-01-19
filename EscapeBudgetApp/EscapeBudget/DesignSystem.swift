@@ -11,15 +11,16 @@ enum AppTheme {
         static let compact: CGFloat = 8
         static let small: CGFloat = 10
         static let tight: CGFloat = 12
+        static let relaxed: CGFloat = 18
         static let medium: CGFloat = 16
         static let large: CGFloat = 20
         static let xLarge: CGFloat = 24
         static let xxLarge: CGFloat = 32
-        static let screenHorizontal: CGFloat = 16
+        static let screenHorizontal: CGFloat = medium
         static let screenVertical: CGFloat = 12
 
-        static let screenHorizontalRegular: CGFloat = 24
-        static let screenVerticalRegular: CGFloat = 16
+        static let screenHorizontalRegular: CGFloat = xLarge
+        static let screenVerticalRegular: CGFloat = medium
 
         static let cardPadding: CGFloat = 14
         static let cardGap: CGFloat = 14
@@ -30,6 +31,10 @@ enum AppTheme {
     }
 
     enum Radius {
+        static let hairline: CGFloat = 2
+        static let micro: CGFloat = 3
+        static let mini: CGFloat = 4
+        static let tag: CGFloat = 6
         static let xSmall: CGFloat = 8
         static let compact: CGFloat = 12
         static let small: CGFloat = 14

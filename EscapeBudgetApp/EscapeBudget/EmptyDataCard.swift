@@ -10,7 +10,7 @@ struct EmptyDataCard: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: AppTheme.Spacing.medium) {
             Image(systemName: systemImage)
                 .font(.system(size: 36, weight: .semibold))
                 .foregroundStyle(.secondary)
@@ -37,7 +37,7 @@ struct EmptyDataCard: View {
         .frame(maxWidth: .infinity)
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous))
-        .padding(.vertical, 32)
+        .padding(.vertical, AppTheme.Spacing.xxLarge)
         .padding(.horizontal, AppTheme.Spacing.screenHorizontal)
     }
 }

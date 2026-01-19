@@ -106,7 +106,7 @@ struct ExportDataView: View {
         NavigationStack {
             List {
 	                Section {
-	                    VStack(alignment: .leading, spacing: 16) {
+	                    VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
 	                        Text("Export Transactions")
 	                            .appSectionTitleText()
 	                        Text("Export your transactions to CSV, with optional password protection.")

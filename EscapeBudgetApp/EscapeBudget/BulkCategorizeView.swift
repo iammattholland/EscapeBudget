@@ -687,7 +687,7 @@ struct BulkCategorizePreviewView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
+            VStack(spacing: AppTheme.Spacing.medium) {
                 // Summary Card
                 VStack(spacing: 12) {
                     Image(systemName: "checkmark.circle.fill")
@@ -706,7 +706,7 @@ struct BulkCategorizePreviewView: View {
                         .font(.title3)
                         .fontWeight(.semibold)
                         .foregroundColor(AppColors.tint(for: appColorMode))
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, AppTheme.Spacing.medium)
                         .padding(.vertical, 8)
                         .background(
                             RoundedRectangle(cornerRadius: AppTheme.Radius.xSmall)

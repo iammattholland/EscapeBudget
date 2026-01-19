@@ -238,7 +238,7 @@ struct SuggestedWidgetsView: View {
                                     Text(template.dataType.description)
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
-                                        .padding(.leading, 32)
+                                        .padding(.leading, AppTheme.Spacing.xxLarge)
                                 }
                                 .padding(.vertical, 4)
                             }

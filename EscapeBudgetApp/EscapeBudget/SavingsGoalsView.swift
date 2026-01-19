@@ -208,7 +208,7 @@ struct SavingsGoalRow: View {
 
     var body: some View {
         NavigationLink(destination: SavingsGoalDetailView(goal: goal)) {
-            HStack(spacing: 16) {
+            HStack(spacing: AppTheme.Spacing.medium) {
                 // Circular Progress Ring (simplified)
                 ZStack {
                     Circle()
@@ -402,7 +402,7 @@ struct SavingsGoalDetailView: View {
     var body: some View {
         List {
             Section {
-                VStack(spacing: 16) {
+                VStack(spacing: AppTheme.Spacing.medium) {
                     Text(goal.progressPercentage, format: .percent.precision(.fractionLength(1)))
                         .font(.system(size: 48, weight: .bold))
                         .foregroundColor(Color(hex: goal.colorHex) ?? AppColors.tint(for: appColorMode))

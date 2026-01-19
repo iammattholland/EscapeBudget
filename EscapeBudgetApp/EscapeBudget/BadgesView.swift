@@ -21,14 +21,14 @@ struct BadgesView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                 ScrollOffsetReader(coordinateSpace: "BadgesView.scroll", id: "BadgesView.scroll")
 
                 streaksCard
                 
                 Text("Badges")
                     .appSectionTitleText()
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppTheme.Spacing.medium)
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                     ForEach(orderedBadges) { badge in
@@ -41,8 +41,8 @@ struct BadgesView: View {
                         )
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+                .padding(.horizontal, AppTheme.Spacing.medium)
+                .padding(.bottom, AppTheme.Spacing.medium)
             }
             .padding(.top, 12)
         }
@@ -97,7 +97,7 @@ struct BadgesView: View {
             }
         }
         .appElevatedCardSurface(padding: 16, stroke: Color.primary.opacity(0.05))
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppTheme.Spacing.medium)
     }
 }
 

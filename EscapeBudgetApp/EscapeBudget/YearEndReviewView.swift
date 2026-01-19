@@ -55,7 +55,7 @@ struct YearEndReviewView: View {
                     )
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppTheme.Spacing.medium)
             .padding(.vertical, 12)
         }
         .background(Color(.systemGroupedBackground))
@@ -2487,8 +2487,8 @@ private struct YearEndWrappedStoriesOverlay: View {
                 ForEach(Array(stories.enumerated()), id: \.offset) { index, story in
                     YearEndWrappedStoryCard(story: story)
                         .tag(index)
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 18)
+                        .padding(.horizontal, AppTheme.Spacing.relaxed)
+                        .padding(.vertical, AppTheme.Spacing.relaxed)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .always))

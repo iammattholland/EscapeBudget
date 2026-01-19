@@ -108,7 +108,7 @@ struct ReportsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: AppTheme.Spacing.xLarge) {
                     // Date Range Selector
                     dateRangeHeader
                     
@@ -154,7 +154,7 @@ struct ReportsView: View {
     
     private var reportTypeCards: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 16) {
+            HStack(spacing: AppTheme.Spacing.medium) {
                 ForEach(ReportType.allCases) { type in
                     ReportTypeCard(
                         type: type,
@@ -191,9 +191,9 @@ struct ReportsView: View {
     // MARK: - Overview Report
     
     private var overviewReport: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: AppTheme.Spacing.large) {
             // Summary Cards
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppTheme.Spacing.medium) {
                 SummaryCard(
                     title: "Income",
                     value: totalIncome,
@@ -229,7 +229,7 @@ struct ReportsView: View {
             
             // Income vs Spending Chart
             GlassCard {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                     Text("Income vs Spending")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -255,7 +255,7 @@ struct ReportsView: View {
                         .frame(height: 200)
                         .chartLegend(position: .bottom)
                         
-                        HStack(spacing: 24) {
+                        HStack(spacing: AppTheme.Spacing.xLarge) {
                             LegendItem(color: AppColors.success(for: appColorMode), label: "Income", value: totalIncome)
                             LegendItem(color: AppColors.danger(for: appColorMode), label: "Spending", value: totalSpending)
                         }
@@ -267,7 +267,7 @@ struct ReportsView: View {
             
             // Recent Transactions Preview
             GlassCard {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                     Text("Recent Activity")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -294,7 +294,7 @@ struct ReportsView: View {
     // MARK: - Spending Report
     
     private var spendingReport: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: AppTheme.Spacing.large) {
             // Total Spending Header
             GlassCard {
                 VStack(spacing: 8) {
@@ -310,7 +310,7 @@ struct ReportsView: View {
             
             // Spending by Category
             GlassCard {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                     Text("Spending by Category")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -349,7 +349,7 @@ struct ReportsView: View {
             
             // Top Spending Transactions
             GlassCard {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                     Text("Top Spending")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -377,7 +377,7 @@ struct ReportsView: View {
     // MARK: - Income Report
     
     private var incomeReport: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: AppTheme.Spacing.large) {
             // Total Income Header
             GlassCard {
                 VStack(spacing: 8) {
@@ -393,7 +393,7 @@ struct ReportsView: View {
             
             // Income Sources
             GlassCard {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                     Text("Income Sources")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -428,7 +428,7 @@ struct ReportsView: View {
             
             // Top Income Transactions
             GlassCard {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                     Text("Top Income")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -456,10 +456,10 @@ struct ReportsView: View {
     // MARK: - Trends Report
     
     private var trendsReport: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: AppTheme.Spacing.large) {
             // Daily Cash Flow Chart
             GlassCard {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                     Text("Cash Flow Over Time")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -501,7 +501,7 @@ struct ReportsView: View {
                             }
                         }
                         
-                        HStack(spacing: 24) {
+                        HStack(spacing: AppTheme.Spacing.xLarge) {
                             HStack(spacing: 6) {
                                 Circle().fill(AppColors.success(for: appColorMode)).frame(width: 8, height: 8)
                                 Text("Income").appCaptionText().foregroundStyle(.secondary)
@@ -517,7 +517,7 @@ struct ReportsView: View {
             
             // Net Flow Trend
             GlassCard {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                     Text("Net Flow Trend")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -543,14 +543,14 @@ struct ReportsView: View {
             
             // Statistics
             GlassCard {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                     Text("Statistics")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
                     
                     let stats = calculateStatistics()
                     
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppTheme.Spacing.medium) {
                         StatRow(label: "Avg Daily Spending", value: stats.avgDailySpending)
                         StatRow(label: "Avg Transaction", value: stats.avgTransaction)
                         StatRow(label: "Total Transactions", count: stats.transactionCount)
@@ -564,7 +564,7 @@ struct ReportsView: View {
     // MARK: - Accounts Report
     
     private var accountsReport: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: AppTheme.Spacing.large) {
             // Total Balance
             GlassCard {
                 VStack(spacing: 8) {
@@ -580,7 +580,7 @@ struct ReportsView: View {
             
             // Account Distribution Chart
             GlassCard {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                     Text("Account Distribution")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -604,7 +604,7 @@ struct ReportsView: View {
             
             // Account List
             GlassCard {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                     Text("Account Details")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -745,7 +745,7 @@ struct GlassCard<Content: View>: View {
     
     var body: some View {
         content
-            .padding(20)
+            .padding(AppTheme.Spacing.large)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: AppTheme.Radius.large)

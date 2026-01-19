@@ -18,7 +18,7 @@ struct CustomDashboardView: View {
     
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
+            LazyVStack(spacing: AppTheme.Spacing.medium) {
                 ScrollOffsetReader(coordinateSpace: scrollCoordinateSpace, id: scrollCoordinateSpace)
                 // Header
                 ForEach(widgets) { widget in

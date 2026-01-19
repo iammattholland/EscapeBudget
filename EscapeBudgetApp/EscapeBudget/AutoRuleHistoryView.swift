@@ -162,7 +162,7 @@ struct AutoRuleHistoryView: View {
 	                        .font(AppTheme.Typography.secondaryBody)
 	                    }
 	                    .frame(maxWidth: .infinity)
-	                    .padding(.vertical, 20)
+	                    .padding(.vertical, AppTheme.Spacing.large)
 	                }
             }
         }
@@ -172,7 +172,7 @@ struct AutoRuleHistoryView: View {
     // MARK: - Empty State
 
     private var emptyStateView: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: AppTheme.Spacing.large) {
             Spacer()
 
             Image(systemName: "clock.arrow.circlepath")
@@ -188,7 +188,7 @@ struct AutoRuleHistoryView: View {
 	                    .appSecondaryBodyText()
 	                    .foregroundStyle(.secondary)
 	                    .multilineTextAlignment(.center)
-	                    .padding(.horizontal, 32)
+	                    .padding(.horizontal, AppTheme.Spacing.xxLarge)
 	            }
 
             Spacer()
@@ -339,7 +339,7 @@ struct AutoRuleStatsView: View {
 	            Text("Statistics")
 	                .appSectionTitleText()
 
-            HStack(spacing: 16) {
+            HStack(spacing: AppTheme.Spacing.medium) {
                 StatBox(value: "\(totalChanges)", label: "Total Changes")
 
                 ForEach(changesByField.prefix(3), id: \.0) { field, count in

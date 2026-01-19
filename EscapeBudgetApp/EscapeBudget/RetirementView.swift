@@ -140,7 +140,7 @@ struct RetirementView: View {
                         settingsCard
                         dataSourcesCard
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppTheme.Spacing.medium)
                     .padding(.vertical, 12)
                 }
                 .background(Color(.systemGroupedBackground))

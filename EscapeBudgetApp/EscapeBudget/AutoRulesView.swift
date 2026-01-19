@@ -190,7 +190,7 @@ struct AutoRulesView: View {
     // MARK: - Empty State
 
     private var emptyStateView: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: AppTheme.Spacing.large) {
             Spacer()
 
             Image(systemName: "wand.and.stars")
@@ -206,7 +206,7 @@ struct AutoRulesView: View {
                     .appSecondaryBodyText()
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
+                    .padding(.horizontal, AppTheme.Spacing.xxLarge)
             }
 
             Button {

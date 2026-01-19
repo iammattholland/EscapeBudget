@@ -18,7 +18,7 @@ struct LockScreenView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 32) {
+            VStack(spacing: AppTheme.Spacing.xxLarge) {
                 Spacer()
 
                 // App Icon / Lock Icon
@@ -46,7 +46,7 @@ struct LockScreenView: View {
                 Spacer()
 
                 // Unlock Button
-                VStack(spacing: 16) {
+                VStack(spacing: AppTheme.Spacing.medium) {
                     Button {
                         authenticate()
                     } label: {
@@ -75,7 +75,7 @@ struct LockScreenView: View {
                             .transition(.opacity)
                     }
                 }
-                .padding(.horizontal, 32)
+                .padding(.horizontal, AppTheme.Spacing.xxLarge)
                 .padding(.bottom, 60)
             }
         }

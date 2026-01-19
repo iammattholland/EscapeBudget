@@ -289,7 +289,7 @@ struct PurchasePlanRow: View {
     
     var body: some View {
         NavigationLink(destination: PurchasePlanDetailView(purchase: purchase)) {
-            HStack(spacing: 16) {
+            HStack(spacing: AppTheme.Spacing.medium) {
                 // Category Icon
                 ZStack {
                     RoundedRectangle(cornerRadius: AppTheme.Radius.compact)

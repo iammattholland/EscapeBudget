@@ -50,7 +50,7 @@ struct OperationProgressOverlay: View {
             Color.black.opacity(0.3)
                 .ignoresSafeArea()
 
-            VStack(spacing: 20) {
+            VStack(spacing: AppTheme.Spacing.large) {
                 VStack(alignment: .leading, spacing: 10) {
                     if let fractionComplete {
                         ProgressView(value: fractionComplete)

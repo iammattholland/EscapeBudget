@@ -230,7 +230,7 @@ struct CashFlowForecastView: View {
                 accountsCard
                 eventsCard
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppTheme.Spacing.medium)
             .padding(.vertical, 12)
         }
         .coordinateSpace(name: "PlanForecastHubView.scroll")
@@ -320,7 +320,7 @@ struct CashFlowForecastView: View {
                     description: Text("Add recurring bills or planned purchases to see your projected balance.")
                 )
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 18)
+                .padding(.vertical, AppTheme.Spacing.relaxed)
             } else {
                 Chart(balanceSeries) { point in
                     LineMark(

@@ -348,7 +348,7 @@ struct SpendingForecastView: View {
     
     private var calendarView: some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
+            LazyVStack(spacing: AppTheme.Spacing.medium) {
                 ScrollOffsetReader(coordinateSpace: scrollCoordinateSpace, id: scrollCoordinateSpace)
 	                ForEach(groupedByMonth(), id: \.0) { month, items in
 	                    VStack(alignment: .leading, spacing: 12) {

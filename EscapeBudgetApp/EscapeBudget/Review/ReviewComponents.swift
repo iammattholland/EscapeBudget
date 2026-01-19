@@ -516,7 +516,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                     OverviewDeepDiveLinks(selectedDate: $selectedDate)
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppTheme.Spacing.medium)
             .padding(.vertical, 12)
         }
         .background(Color(.systemGroupedBackground))
@@ -550,7 +550,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                         .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
                 )
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppTheme.Spacing.medium)
             .padding(.top, 0)
             .padding(.bottom, 8)
         }
@@ -1667,7 +1667,7 @@ private struct ReportsSpendingStandaloneView: View {
                 RoundedRectangle(cornerRadius: isHeaderCompact ? 18 : 22, style: .continuous)
                     .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
             )
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppTheme.Spacing.medium)
             .padding(.top, 6)
             .padding(.bottom, 8)
         }
@@ -1723,7 +1723,7 @@ private struct ReportsIncomeStandaloneView: View {
                 RoundedRectangle(cornerRadius: isHeaderCompact ? 18 : 22, style: .continuous)
                     .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
             )
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppTheme.Spacing.medium)
             .padding(.top, 6)
             .padding(.bottom, 8)
         }
@@ -1775,7 +1775,7 @@ private struct BudgetPerformanceStandaloneView: View {
                 RoundedRectangle(cornerRadius: isHeaderCompact ? 18 : 22, style: .continuous)
                     .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
             )
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppTheme.Spacing.medium)
             .padding(.top, 6)
             .padding(.bottom, 8)
         }
@@ -2271,7 +2271,7 @@ struct ReportsSpendingView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppTheme.Spacing.medium)
             .padding(.vertical, 12)
         }
         .background(Color(.systemGroupedBackground))
@@ -2500,7 +2500,7 @@ struct ReportsIncomeView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppTheme.Spacing.medium)
             .padding(.vertical, 12)
         }
         .background(Color(.systemGroupedBackground))
@@ -3353,7 +3353,7 @@ struct BudgetPerformanceView: View {
                     }
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, AppTheme.Spacing.medium)
             .padding(.vertical, 12)
         }
         .coordinateSpace(name: "BudgetPerformanceView.scroll")

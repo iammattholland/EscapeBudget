@@ -18,8 +18,8 @@ struct QuickCategorizeView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                VStack(spacing: 16) {
-                    HStack(spacing: 16) {
+                VStack(spacing: AppTheme.Spacing.medium) {
+                    HStack(spacing: AppTheme.Spacing.medium) {
                         Button(action: triggerSkip) {
                             SwipeOptionLabel(text: "Skip", color: .gray, icon: "arrow.left")
                         }
@@ -43,7 +43,7 @@ struct QuickCategorizeView: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, AppTheme.Spacing.xLarge)
                     .padding(.top, 60)
                     
                     Spacer()
@@ -252,7 +252,7 @@ struct SwipeOptionLabel: View {
         }
         .foregroundColor(.white)
         .padding(.vertical, AppTheme.Spacing.small)
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppTheme.Spacing.medium)
         .background(color)
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous))
         .shadow(radius: 4)

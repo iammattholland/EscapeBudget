@@ -7,7 +7,7 @@ struct WelcomeView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 32) {
+            VStack(spacing: AppTheme.Spacing.xxLarge) {
                 Spacer()
 
                 VStack(spacing: 12) {
@@ -15,7 +15,7 @@ struct WelcomeView: View {
                         .resizable()
                         .scaledToFill()
                         .frame(width: 88, height: 88)
-                        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.chrome, style: .continuous))
                         .clipped()
 
                     Text("Escape Budget")
@@ -34,7 +34,7 @@ struct WelcomeView: View {
                         .padding(.horizontal)
                 }
 
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                     FeatureRow(icon: "chart.bar.doc.horizontal", title: "Track every dollar", detail: "Import transactions and see where your money goes")
                     FeatureRow(icon: "target", title: "Reach your goals", detail: "Save for vacations, gadgets, or emergencies")
                     FeatureRow(icon: "brain.head.profile", title: "Smart insights", detail: "Get personalized tips based on your spending")

@@ -127,7 +127,7 @@ struct MonthYearPicker: View {
 
     
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: AppTheme.Spacing.medium) {
             Button(action: previousMonth) {
                 Image(systemName: "chevron.left")
                     .font(.body)
@@ -292,7 +292,7 @@ struct DateRangeSummaryView: View {
 }
 
 #Preview {
-    VStack(spacing: 20) {
+    VStack(spacing: AppTheme.Spacing.large) {
         DateRangePicker(
             selectedRange: .constant(.thisMonth),
             customStartDate: .constant(Date()),

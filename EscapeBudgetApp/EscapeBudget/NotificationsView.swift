@@ -134,7 +134,7 @@ struct NotificationsView: View {
                     }
                     .appPrimaryCTA()
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, AppTheme.Spacing.medium)
                 .padding(.top, 10)
                 .padding(.bottom, 12)
                 .background(.ultraThinMaterial)
@@ -202,7 +202,7 @@ struct NotificationRow: View {
     }
     
     var body: some View {
-        HStack(alignment: .top, spacing: 16) {
+        HStack(alignment: .top, spacing: AppTheme.Spacing.medium) {
             Image(systemName: notification.type.icon)
                 .font(.title2)
                 .foregroundColor(iconColor)

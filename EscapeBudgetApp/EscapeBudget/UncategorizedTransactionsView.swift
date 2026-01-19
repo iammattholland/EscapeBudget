@@ -28,7 +28,7 @@ struct UncategorizedTransactionsView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 actionButtons
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, AppTheme.Spacing.medium)
                     .padding(.top, 10)
                     .padding(.bottom, 6)
 
