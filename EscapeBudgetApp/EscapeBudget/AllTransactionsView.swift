@@ -183,7 +183,7 @@ struct AllTransactionsView: View {
 	            }
 	        }
 	        ToolbarItem(placement: .navigationBarTrailing) {
-		            Menu {
+		        Menu {
 		                Button {
 		                    do { try undoRedoManager.undo() } catch { }
 		                } label: {
@@ -242,21 +242,24 @@ struct AllTransactionsView: View {
 
 	                Divider()
 
-	                Button { showingAutoRules = true } label: {
-	                    Label("Auto Rules", systemImage: "wand.and.stars")
-	                }
+		                Button { showingAutoRules = true } label: {
+		                    Label("Auto Rules", systemImage: "wand.and.stars")
+		                }
+                        .accessibilityIdentifier("transactions.menu.autoRules")
 
 	                Divider()
 
 	                Toggle(isOn: $showTransactionTags) {
 	                    Label("Show Tags", systemImage: "tag")
 	                }
-	            } label: {
-	                Image(systemName: "ellipsis.circle")
-	                    .imageScale(.large)
-	            }
-	        }
-	    }
+		            } label: {
+		                Image(systemName: "ellipsis.circle")
+		                    .imageScale(.large)
+		            }
+                    .accessibilityLabel("Transactions Menu")
+                    .accessibilityIdentifier("transactions.menu")
+		        }
+		    }
 
     @ViewBuilder
     private func transactionSheet(_ transaction: Transaction) -> some View {
@@ -472,11 +475,11 @@ struct AllTransactionsView: View {
 		                            .id(section.id)
 		                    ) {
 		                        ForEach(section.transactions) { transaction in
-		                            TransactionRowContent(
-		                                transaction: transaction,
-		                                currencyCode: currencyCode,
-		                                categoryGroups: categoryGroups,
-		                                onCategoryChanged: handleCategoryChange,
+			                            TransactionRowContent(
+			                                transaction: transaction,
+			                                currencyCode: currencyCode,
+			                                categoryGroups: categoryGroups,
+			                                onCategoryChanged: handleCategoryChange,
 		                                onTransferSelected: { tx in
 		                                    handleTransferSelection(tx)
 		                                },
@@ -486,11 +489,13 @@ struct AllTransactionsView: View {
 		                                onCreateNewCategory: { tx in
 		                                    beginNewCategoryCreation(for: tx)
 		                                },
-		                                isBulkEditing: isBulkEditing,
-		                                isSelected: selectedTransactionIDs.contains(transaction.persistentModelID),
-		                                showTags: showTransactionTags
-		                            )
-		                            .contentShape(Rectangle())
+			                                isBulkEditing: isBulkEditing,
+			                                isSelected: selectedTransactionIDs.contains(transaction.persistentModelID),
+			                                showTags: showTransactionTags
+			                            )
+                                        .accessibilityElement(children: .combine)
+                                        .accessibilityIdentifier("transactions.row")
+			                            .contentShape(Rectangle())
 		                            .onTapGesture {
 		                                if isBulkEditing {
 		                                    toggleSelection(transaction)

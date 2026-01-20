@@ -58,6 +58,10 @@ final class AutoRule {
     var matchAmountValue: Decimal?
     var matchAmountValueMax: Decimal? // For "between" condition
 
+    /// Payee exceptions (normalized, case-insensitive).
+    /// If the incoming payee matches one of these keys, the rule won't apply.
+    var excludedPayeeKeys: [String]?
+
     // MARK: - Actions
 
     /// Rename payee to this value
@@ -203,12 +207,25 @@ final class AutoRule {
         self.matchPayeeCaseSensitive = false
         self.actionAppendMemo = false
         self.timesApplied = 0
+        self.excludedPayeeKeys = nil
     }
 
     // MARK: - Matching Logic
 
     /// Check if a transaction matches this rule's conditions
     func matches(payee: String, account: Account?, amount: Decimal) -> Bool {
+        // Exclusions take precedence over matches.
+        if let excludedPayeeKeys, !excludedPayeeKeys.isEmpty {
+            // Backwards compatible: older exceptions stored the raw lowercased payee,
+            // newer ones store `PayeeNormalizer.normalizeForComparison`.
+            let rawKey = payee.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            let normalizedKey = PayeeNormalizer.normalizeForComparison(payee)
+
+            if excludedPayeeKeys.contains(rawKey) || excludedPayeeKeys.contains(normalizedKey) {
+                return false
+            }
+        }
+
         // Check payee condition
         if let condition = matchPayeeCondition, let value = matchPayeeValue, !value.isEmpty {
             let payeeToMatch = matchPayeeCaseSensitive ? payee : payee.lowercased()
@@ -301,11 +318,22 @@ final class AutoRuleApplication {
 // MARK: - Field Change Type
 
 enum AutoRuleFieldChange: String, CaseIterable {
-    case payee = "Payee"
-    case category = "Category"
-    case tags = "Tags"
-    case memo = "Memo"
-    case status = "Status"
+    /// Stored values (backed by `AutoRuleApplication.fieldChanged`).
+    case payee = "payee"
+    case category = "category"
+    case tags = "tags"
+    case memo = "memo"
+    case status = "status"
+
+    var displayName: String {
+        switch self {
+        case .payee: return "Payee"
+        case .category: return "Category"
+        case .tags: return "Tags"
+        case .memo: return "Memo"
+        case .status: return "Status"
+        }
+    }
 
     var systemImage: String {
         switch self {
@@ -314,6 +342,21 @@ enum AutoRuleFieldChange: String, CaseIterable {
         case .tags: return "tag"
         case .memo: return "note.text"
         case .status: return "checkmark.circle"
+        }
+    }
+
+    /// Backwards-compatible decode for persisted `AutoRuleApplication.fieldChanged` values.
+    /// Older builds stored capitalized strings (e.g. `"Payee"`); newer builds store lowercase keys (e.g. `"payee"`).
+    static func fromStored(_ storedValue: String) -> AutoRuleFieldChange? {
+        if let direct = AutoRuleFieldChange(rawValue: storedValue) { return direct }
+
+        switch storedValue.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "payee": return .payee
+        case "category": return .category
+        case "tags": return .tags
+        case "memo": return .memo
+        case "status": return .status
+        default: return nil
         }
     }
 }

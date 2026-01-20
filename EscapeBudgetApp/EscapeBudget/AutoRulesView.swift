@@ -63,6 +63,8 @@ struct AutoRulesView: View {
                         } label: {
                             Image(systemName: "plus")
                         }
+                        .accessibilityLabel("Add Rule")
+                        .accessibilityIdentifier("autoRules.addRule")
                     }
                 }
             }

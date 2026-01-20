@@ -12,10 +12,18 @@ struct ImportProcessingReviewView: View {
     @AppStorage("currencyCode") private var currencyCode = "USD"
 
     @State private var editingTransaction: TransactionSheetItem?
+    @State private var selectedRuleImpact: RuleImpactSheetItem?
 
     private struct TransactionSheetItem: Identifiable {
         let id: PersistentIdentifier
         let transaction: Transaction
+    }
+
+    private struct RuleImpactSheetItem: Identifiable {
+        let id = UUID()
+        let ruleName: String
+        let rule: AutoRule?
+        let transactions: [Transaction]
     }
 
     private var sortedChangedTransactions: [Transaction] {
@@ -96,6 +104,24 @@ struct ImportProcessingReviewView: View {
             .sorted { $0.count > $1.count }
             .prefix(8)
             .map { $0 }
+    }
+
+    private func makeRuleImpactItem(ruleName: String) -> RuleImpactSheetItem {
+        let descriptor = FetchDescriptor<AutoRule>(
+            predicate: #Predicate<AutoRule> { $0.name == ruleName }
+        )
+        let rule = (try? modelContext.fetch(descriptor))?.first
+
+        let affected = sortedChangedTransactions.filter { tx in
+            let events = result.eventsByTransactionID[tx.persistentModelID] ?? []
+            return events.contains { event in
+                guard event.kind == .ruleApplied else { return false }
+                let detail = event.detail ?? ""
+                return detail.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.contains(ruleName)
+            }
+        }
+
+        return RuleImpactSheetItem(ruleName: ruleName, rule: rule, transactions: affected)
     }
 
     private var transferSuggestionCounts: (high: Int, medium: Int, low: Int) {
@@ -180,7 +206,12 @@ struct ImportProcessingReviewView: View {
                         if !topAutoRules.isEmpty {
                             DisclosureGroup("Top auto rules") {
                                 ForEach(topAutoRules) { item in
-                                    summaryRow(title: item.key, value: "\(item.count)")
+                                    Button {
+                                        selectedRuleImpact = makeRuleImpactItem(ruleName: item.key)
+                                    } label: {
+                                        summaryRow(title: item.key, value: "\(item.count)")
+                                    }
+                                    .buttonStyle(.plain)
                                 }
                             }
                         }
@@ -272,12 +303,113 @@ struct ImportProcessingReviewView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
-            }
-            .sheet(item: $editingTransaction) { item in
-                TransactionFormView(transaction: item.transaction)
-            }
+        }
+        .sheet(item: $editingTransaction) { item in
+            TransactionFormView(transaction: item.transaction)
+        }
+        .sheet(item: $selectedRuleImpact) { item in
+            RuleImpactSheet(
+                ruleName: item.ruleName,
+                rule: item.rule,
+                transactions: item.transactions,
+                currencyCode: currencyCode
+            )
         }
     }
+}
+
+private struct RuleImpactSheet: View {
+    let ruleName: String
+    let rule: AutoRule?
+    let transactions: [Transaction]
+    let currencyCode: String
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var editingTransaction: Transaction?
+    @State private var editingRule: AutoRule?
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Rule") {
+                    HStack(alignment: .top, spacing: AppTheme.Spacing.compact) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                            Text(ruleName)
+                                .appSectionTitleText()
+                            if let rule {
+                                Text(rule.matchSummary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
+                                Text(rule.actionSummary)
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Text("This rule no longer exists.")
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        Spacer()
+
+                        if let rule {
+                            Button("Edit") {
+                                editingRule = rule
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+                    }
+                    .padding(.vertical, AppTheme.Spacing.micro)
+                }
+
+                Section("Affected Transactions") {
+                    if transactions.isEmpty {
+                        ContentUnavailableView(
+                            "No transactions found",
+                            systemImage: "tray",
+                            description: Text("This import summary didn’t include any changed transactions for this rule.")
+                        )
+                        .listRowSeparator(.hidden)
+                    } else {
+                        ForEach(transactions) { tx in
+                            Button {
+                                editingTransaction = tx
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                                        Text(tx.payee)
+                                            .appSecondaryBodyText()
+                                        Text(tx.date, format: .dateTime.year().month().day())
+                                            .appCaptionText()
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Text(tx.amount, format: .currency(code: currencyCode))
+                                        .appSecondaryBodyText()
+                                        .monospacedDigit()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Auto Rule")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .sheet(item: $editingTransaction) { tx in
+            TransactionFormView(transaction: tx)
+        }
+        .sheet(item: $editingRule) { rule in
+            AutoRuleEditorView(rule: rule)
+        }
+    }
+}
 
     @ViewBuilder
     private func summaryRow(title: String, value: String) -> some View {

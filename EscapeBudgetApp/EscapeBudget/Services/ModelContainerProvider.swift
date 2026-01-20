@@ -36,10 +36,12 @@ enum ModelContainerProvider {
 
     static func makeContainer(demoMode: Bool, iCloudSyncEnabled: Bool = false) throws -> ModelContainer {
         let configuration: ModelConfiguration
+        let isUITesting = ProcessInfo.processInfo.arguments.contains("ui_testing")
 
         // Use separate persistent storage for demo mode to avoid conflicts with user data
         if demoMode {
-            configuration = ModelConfiguration("demo", schema: schema, isStoredInMemoryOnly: false, cloudKitDatabase: .none)
+            // UI tests need a clean, deterministic store across runs.
+            configuration = ModelConfiguration("demo", schema: schema, isStoredInMemoryOnly: isUITesting, cloudKitDatabase: .none)
         } else {
             if iCloudSyncEnabled {
                 configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false, cloudKitDatabase: .automatic)

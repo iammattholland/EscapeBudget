@@ -52,9 +52,16 @@ struct TransactionFormView: View {
     @State private var showingDeleteConfirmation = false
 	@Query(sort: \Transaction.date, order: .reverse) private var existingTransactions: [Transaction]
 	@State private var payeeSuggestions: [String] = []
-	@State private var transferBaseTransaction: Transaction?
+    @State private var transferBaseTransaction: Transaction?
     @State private var processingReview: ProcessingReviewSheetItem?
+    @State private var autoRuleEditSheet: AutoRuleEditSheetItem?
+    @State private var autoRuleApplications: [AutoRuleApplication] = []
+    @State private var ruleToExcludeFromPayee: AutoRule?
+    @State private var payeeExceptionDisplay: String = ""
+    @State private var payeeExceptionKey: String = ""
+    @State private var payeeExceptionImpactCount: Int?
     private let memoLimit = TransactionTextLimits.maxMemoLength
+    private let originalSnapshot: OriginalTransactionSnapshot?
 
     private var sortedHistoryEntries: [TransactionHistoryEntry] {
         guard let transaction = transactionToEdit else { return [] }
@@ -631,9 +638,33 @@ struct TransactionFormView: View {
         let transaction: Transaction
         let events: [TransactionProcessor.Event]
     }
+
+    private struct AutoRuleEditSheetItem: Identifiable {
+        let id = UUID()
+        let rule: AutoRule
+    }
+
+    private struct OriginalTransactionSnapshot {
+        let payee: String
+        let categoryID: PersistentIdentifier?
+        let tagIDs: Set<PersistentIdentifier>
+        let memo: String?
+        let status: TransactionStatus
+    }
     
     init(transaction: Transaction? = nil, defaultAccount: Account? = nil) {
         self.transactionToEdit = transaction
+        if let transaction {
+            self.originalSnapshot = OriginalTransactionSnapshot(
+                payee: transaction.payee,
+                categoryID: transaction.category?.persistentModelID,
+                tagIDs: Set((transaction.tags ?? []).map(\.persistentModelID)),
+                memo: transaction.memo,
+                status: transaction.status
+            )
+        } else {
+            self.originalSnapshot = nil
+        }
         let existingAmount = transaction?.amount ?? 0
         let initialAmountType: AmountType = {
             if let transaction, transaction.amount < 0 {
@@ -694,6 +725,7 @@ struct TransactionFormView: View {
                             .appCaptionText()
                             .foregroundStyle(.secondary)
                         TextField("Enter payee name", text: $payee)
+                            .accessibilityIdentifier("transactionForm.payee")
                         if !payeeSuggestions.isEmpty {
                             VStack(alignment: .leading, spacing: 0) {
                                 ForEach(payeeSuggestions, id: \.self) { suggestion in
@@ -728,6 +760,7 @@ struct TransactionFormView: View {
                                 .keyboardType(.decimalPad)
                                 .focused($focusedField, equals: .amount)
                                 .foregroundStyle(amountColor)
+                                .accessibilityIdentifier("transactionForm.amount")
                             
                             if let indicator = amountIndicator {
                                 Text(indicator.text)
@@ -797,6 +830,7 @@ struct TransactionFormView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Account")
+                        .accessibilityIdentifier("transactionForm.account")
                         
                         Button {
                             showingNewAccountSheet = true
@@ -874,21 +908,22 @@ struct TransactionFormView: View {
                                         }
                                     }
                                 }
-                            } label: {
-                                HStack {
-                                    Text(categorySelectionLabel)
-                                        .foregroundStyle(.primary)
-                                    Spacer()
-                                    Image(systemName: "chevron.up.chevron.down")
-                                        .appCaptionText()
-                                        .foregroundStyle(.secondary)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, AppTheme.Spacing.xSmall)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Category")
+	                            } label: {
+	                                HStack {
+	                                    Text(categorySelectionLabel)
+	                                        .foregroundStyle(.primary)
+	                                    Spacer()
+	                                    Image(systemName: "chevron.up.chevron.down")
+	                                        .appCaptionText()
+	                                        .foregroundStyle(.secondary)
+	                                }
+	                                .frame(maxWidth: .infinity, alignment: .leading)
+	                                .padding(.vertical, AppTheme.Spacing.xSmall)
+	                                .contentShape(Rectangle())
+	                            }
+	                            .buttonStyle(.plain)
+	                            .accessibilityLabel("Category")
+                                .accessibilityIdentifier("transactionForm.category")
 	                            
 	                        Button {
 	                            if newCategoryGroup == nil {
@@ -901,10 +936,27 @@ struct TransactionFormView: View {
                                     .appCaptionText()
                                     .foregroundStyle(.secondary)
                             }
-                            .buttonStyle(.plain)
-                            .padding(.top, AppTheme.Spacing.micro)
-                            
-	                        if !categorySuggestions.isEmpty {
+	                            .buttonStyle(.plain)
+	                            .padding(.top, AppTheme.Spacing.micro)
+
+                                if let provenance = autoRuleApplications.first(where: { AutoRuleFieldChange.fromStored($0.fieldChanged) == .category }) {
+                                    HStack(spacing: AppTheme.Spacing.xSmall) {
+                                        Image(systemName: "wand.and.stars")
+                                            .appCaptionText()
+                                            .foregroundStyle(.secondary)
+                                        Text(provenance.wasOverridden ? "Category rule overridden" : "Category set by: \(provenance.rule?.name ?? "Deleted Rule")")
+                                            .appCaptionText()
+                                            .foregroundStyle(.secondary)
+                                        Spacer()
+                                        if !provenance.wasOverridden, let rule = provenance.rule {
+                                            Button("Edit") { autoRuleEditSheet = AutoRuleEditSheetItem(rule: rule) }
+                                                .font(.caption.weight(.semibold))
+                                        }
+                                    }
+                                    .padding(.top, AppTheme.Spacing.micro)
+                                }
+		                            
+		                        if !categorySuggestions.isEmpty {
 	                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
 	                                Text("Quick Categories")
                                         .appCaptionText()
@@ -980,6 +1032,79 @@ struct TransactionFormView: View {
                         showingTagPicker = true
                     } label: {
                         Label(selectedTags.isEmpty ? "Add Tags" : "Edit Tags", systemImage: "tag")
+                    }
+                }
+
+                if let transaction = transactionToEdit, !autoRuleApplications.isEmpty {
+                    Section("Auto Rules") {
+                        ForEach(autoRuleApplications.prefix(6)) { application in
+                            HStack(alignment: .top, spacing: AppTheme.Spacing.compact) {
+                                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                                    Text(application.rule?.name ?? "Deleted Rule")
+                                        .appSecondaryBodyText()
+                                        .fontWeight(.medium)
+
+                                    Text("\(AutoRuleFieldChange.fromStored(application.fieldChanged)?.displayName ?? application.fieldChanged): \(application.oldValue ?? "—") → \(application.newValue ?? "—")")
+                                        .appCaptionText()
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(2)
+
+                                    Text(application.appliedAt, format: .dateTime.month().day().hour().minute())
+                                        .appCaptionText()
+                                        .foregroundStyle(.tertiary)
+                                }
+
+                                Spacer(minLength: 0)
+
+                                if application.wasOverridden {
+                                    Text("Overridden")
+                                        .appCaptionText()
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(AppColors.warning(for: appColorMode))
+                                } else if let rule = application.rule {
+                                    Menu {
+                                        Button {
+                                            autoRuleEditSheet = AutoRuleEditSheetItem(rule: rule)
+                                        } label: {
+                                            Label("Edit Rule", systemImage: "pencil")
+                                        }
+
+                                        Button(role: .destructive) {
+                                            let display = payeeExceptionCandidateDisplay(for: application)
+                                            payeeExceptionDisplay = display
+                                            payeeExceptionKey = PayeeNormalizer.normalizeForComparison(display)
+                                            payeeExceptionImpactCount = nil
+                                            computePayeeExceptionImpact(rule: rule, key: payeeExceptionKey)
+                                            ruleToExcludeFromPayee = rule
+                                        } label: {
+                                            Label("Stop applying to this payee", systemImage: "hand.raised.fill")
+                                        }
+                                        .accessibilityIdentifier("transactionForm.stopApplyingMenuItem")
+                                    } label: {
+                                        Text("Actions")
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .controlSize(.small)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                guard let rule = application.rule else { return }
+                                autoRuleEditSheet = AutoRuleEditSheetItem(rule: rule)
+                            }
+                        }
+
+                        if autoRuleApplications.count > 6 {
+                            Text("Showing the most recent 6 changes for this transaction.")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Button("Refresh rule history") {
+                            refreshAutoRuleApplications(for: transaction)
+                        }
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
                     }
                 }
                 
@@ -1179,6 +1304,7 @@ struct TransactionFormView: View {
                         }
                     }
                     .disabled(!canSave)
+                    .accessibilityIdentifier("transactionForm.save")
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     if numericFieldFocused {
@@ -1271,6 +1397,9 @@ struct TransactionFormView: View {
         })
         .onAppear {
             updatePayeeSuggestions()
+            if let transaction = transactionToEdit {
+                refreshAutoRuleApplications(for: transaction)
+            }
             if memo.count > memoLimit {
                 memo = String(memo.prefix(memoLimit))
             }
@@ -1505,6 +1634,39 @@ struct TransactionFormView: View {
                 transaction: item.transaction,
                 events: item.events
             )
+        }
+        .sheet(item: $autoRuleEditSheet) { item in
+            AutoRuleEditorView(rule: item.rule)
+        }
+        .confirmationDialog(
+            "Stop Applying Rule",
+            isPresented: Binding(
+                get: { ruleToExcludeFromPayee != nil },
+                set: { if !$0 { ruleToExcludeFromPayee = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(role: .destructive) {
+                guard let rule = ruleToExcludeFromPayee else { return }
+                AutoRulesService(modelContext: modelContext).addPayeeException(payeeExceptionDisplay, to: rule)
+                _ = modelContext.safeSave(context: "TransactionFormView.addRuleException")
+                ruleToExcludeFromPayee = nil
+                if let transaction = transactionToEdit {
+                    refreshAutoRuleApplications(for: transaction)
+                }
+            } label: {
+                Text("Stop applying to this payee")
+            }
+            .accessibilityIdentifier("transactionForm.confirmStopApplying")
+            Button("Cancel", role: .cancel) {
+                ruleToExcludeFromPayee = nil
+            }
+        } message: {
+            if let payeeExceptionImpactCount {
+                Text("This rule will no longer apply when the payee matches “\(payeeExceptionDisplay)”. This affects \(payeeExceptionImpactCount) recent transaction\(payeeExceptionImpactCount == 1 ? "" : "s") that currently match this rule.")
+            } else {
+                Text("This rule will no longer apply when the payee matches “\(payeeExceptionDisplay)”.")
+            }
         }
         .sheet(isPresented: $showingReceiptScanner) {
             ReceiptScannerView { image in
@@ -1817,6 +1979,7 @@ struct TransactionFormView: View {
         }
 
         var savedTransaction: Transaction?
+        var userChangedFields: Set<AutoRuleFieldChange> = []
 
 	        if let transaction = transactionToEdit {
             let oldPurchasedItems: [PurchasedItemSnapshot] = (transaction.purchasedItems ?? [])
@@ -1839,11 +2002,13 @@ struct TransactionFormView: View {
 	            let oldAmount = transaction.amount
 	            let oldAccount = transaction.account
 	            let oldCategory = transaction.category
+                let oldTags = Set((transaction.tags ?? []).map(\.persistentModelID))
 	            let oldKind = transaction.kind
 	            let oldTransferID = transaction.transferID
 	            let oldPayee = transaction.payee
 	            let oldDate = transaction.date
 	            let oldMemo = transaction.memo
+                let oldStatus = transaction.status
 	            let wasSplit = !(transaction.subtransactions ?? []).isEmpty
                 let oldSnapshot = TransactionSnapshot(from: transaction)
                 TransactionStatsUpdateCoordinator.markDirty(transactionSnapshot: oldSnapshot)
@@ -1932,6 +2097,16 @@ struct TransactionFormView: View {
 	            syncReceipt(into: transaction)
                 TransactionStatsUpdateCoordinator.markDirty(transaction: transaction)
 	            savedTransaction = transaction
+
+                if oldPayee != transaction.payee { userChangedFields.insert(.payee) }
+                if oldCategory?.persistentModelID != transaction.category?.persistentModelID { userChangedFields.insert(.category) }
+                if oldTags != Set((transaction.tags ?? []).map(\.persistentModelID)) { userChangedFields.insert(.tags) }
+                if (oldMemo ?? "") != (transaction.memo ?? "") { userChangedFields.insert(.memo) }
+                if oldStatus != transaction.status { userChangedFields.insert(.status) }
+
+                if !userChangedFields.isEmpty {
+                    markAutoRuleApplicationsOverridden(for: transaction, fields: userChangedFields)
+                }
 	        } else {
             // Create new
 	            let newTransaction = Transaction(
@@ -2025,6 +2200,51 @@ struct TransactionFormView: View {
             transaction: savedTransaction,
             events: events
         )
+    }
+
+    private func refreshAutoRuleApplications(for transaction: Transaction) {
+        let service = AutoRulesService(modelContext: modelContext)
+        let recent = service.fetchRecentApplications(limit: 250)
+        autoRuleApplications = recent
+            .filter { $0.transaction?.persistentModelID == transaction.persistentModelID }
+            .sorted { $0.appliedAt > $1.appliedAt }
+    }
+
+    private func payeeExceptionCandidateDisplay(for application: AutoRuleApplication) -> String {
+        // Prefer the pre-rule payee if this application renamed the payee.
+        if AutoRuleFieldChange.fromStored(application.fieldChanged) == .payee,
+           let old = application.oldValue?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !old.isEmpty {
+            return old
+        }
+        return payee.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func computePayeeExceptionImpact(rule: AutoRule, key: String) {
+        guard !key.isEmpty else { return }
+        Task { @MainActor in
+            let service = AutoRulesService(modelContext: modelContext)
+            let matches = service.previewMatchingTransactions(for: rule, limit: 500)
+            let impacted = matches.filter { PayeeNormalizer.normalizeForComparison($0.payee) == key }.count
+            payeeExceptionImpactCount = impacted
+        }
+    }
+
+    private func markAutoRuleApplicationsOverridden(for transaction: Transaction, fields: Set<AutoRuleFieldChange>) {
+        let service = AutoRulesService(modelContext: modelContext)
+        let recent = service.fetchRecentApplications(limit: 500)
+
+        let targets = recent.filter { app in
+            guard !app.wasOverridden else { return false }
+            guard app.transaction?.persistentModelID == transaction.persistentModelID else { return false }
+            guard let field = AutoRuleFieldChange.fromStored(app.fieldChanged) else { return false }
+            return fields.contains(field)
+        }
+
+        guard !targets.isEmpty else { return }
+        for app in targets {
+            service.markAsOverridden(app)
+        }
     }
     
     private func toggleNegativeForFocusedField() {

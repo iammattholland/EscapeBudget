@@ -825,6 +825,10 @@ struct TransactionRowView: View {
     var showRank: Int? = nil
     @AppStorage("currencyCode") private var currencyCode = "USD"
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.modelContext) private var modelContext
+    @State private var showingRuleWhy = false
+    @State private var ruleApplications: [AutoRuleApplication] = []
+    @State private var editingRule: AutoRule?
     
     var body: some View {
         HStack(spacing: AppTheme.Spacing.tight) {
@@ -864,6 +868,126 @@ struct TransactionRowView: View {
                 .appSecondaryBodyText()
                 .fontWeight(.semibold)
                 .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+        }
+        .contextMenu {
+            Button {
+                loadRuleProvenance()
+                showingRuleWhy = true
+            } label: {
+                Label("Why this category?", systemImage: "wand.and.stars")
+            }
+
+            if let rule = ruleApplications.first?.rule {
+                Button {
+                    editingRule = rule
+                } label: {
+                    Label("Edit Rule", systemImage: "pencil")
+                }
+            }
+        }
+        .sheet(isPresented: $showingRuleWhy) {
+            TransactionRuleProvenanceSheet(
+                transaction: transaction,
+                applications: ruleApplications,
+                currencyCode: currencyCode
+            )
+        }
+        .sheet(item: $editingRule) { rule in
+            AutoRuleEditorView(rule: rule)
+        }
+    }
+
+    private func loadRuleProvenance() {
+        var descriptor = FetchDescriptor<AutoRuleApplication>(
+            sortBy: [SortDescriptor(\.appliedAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 250
+        let recent = (try? modelContext.fetch(descriptor)) ?? []
+        let txID = transaction.persistentModelID
+        ruleApplications = recent
+            .filter { $0.transaction?.persistentModelID == txID }
+            .sorted { $0.appliedAt > $1.appliedAt }
+    }
+}
+
+private struct TransactionRuleProvenanceSheet: View {
+    let transaction: Transaction
+    let applications: [AutoRuleApplication]
+    let currencyCode: String
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var editingRule: AutoRule?
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Transaction") {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                        Text(transaction.payee)
+                            .appSectionTitleText()
+                        Text(transaction.date, format: .dateTime.year().month().day())
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
+                        Text(transaction.amount, format: .currency(code: currencyCode))
+                            .appSecondaryBodyText()
+                            .monospacedDigit()
+                    }
+                    .padding(.vertical, AppTheme.Spacing.micro)
+                }
+
+                Section("Rule Changes") {
+                    if applications.isEmpty {
+                        ContentUnavailableView(
+                            "No rule history",
+                            systemImage: "clock.arrow.circlepath",
+                            description: Text("No auto rule applications were found for this transaction.")
+                        )
+                        .listRowSeparator(.hidden)
+                    } else {
+                        ForEach(applications.prefix(12)) { app in
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                                HStack {
+                                    Text(app.rule?.name ?? "Deleted Rule")
+                                        .appSecondaryBodyText()
+                                        .fontWeight(.medium)
+                                    Spacer()
+                                    if app.wasOverridden {
+                                        Text("Overridden")
+                                            .font(.caption2)
+                                            .padding(.horizontal, AppTheme.Spacing.xSmall)
+                                            .padding(.vertical, AppTheme.Spacing.hairline)
+                                            .background(Color(.tertiarySystemFill))
+                                            .cornerRadius(AppTheme.Radius.mini)
+                                    } else if let rule = app.rule {
+                                        Button("Edit") { editingRule = rule }
+                                            .font(.caption.weight(.semibold))
+                                    }
+                                }
+
+                                Text("\(AutoRuleFieldChange.fromStored(app.fieldChanged)?.displayName ?? app.fieldChanged): \(app.oldValue ?? "—") → \(app.newValue ?? "—")")
+                                    .appCaptionText()
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(2)
+
+                                Text(app.appliedAt, format: .dateTime.month().day().hour().minute())
+                                    .appCaptionText()
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .padding(.vertical, AppTheme.Spacing.micro)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Why")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .sheet(item: $editingRule) { rule in
+            AutoRuleEditorView(rule: rule)
         }
     }
 }

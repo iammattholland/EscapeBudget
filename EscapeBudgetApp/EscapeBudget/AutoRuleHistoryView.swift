@@ -10,6 +10,9 @@ struct AutoRuleHistoryView: View {
 
     @State private var selectedFilter: HistoryFilter = .all
     @State private var selectedFieldFilter: AutoRuleFieldChange?
+    @State private var showOverriddenOnly = false
+    @State private var editingTransaction: Transaction?
+    @State private var editingRule: AutoRule?
 
     enum HistoryFilter: String, CaseIterable {
         case all = "All"
@@ -36,7 +39,11 @@ struct AutoRuleHistoryView: View {
 
         // Filter by field type
         if let fieldFilter = selectedFieldFilter {
-            result = result.filter { $0.fieldChanged == fieldFilter.rawValue }
+            result = result.filter { AutoRuleFieldChange.fromStored($0.fieldChanged) == fieldFilter }
+        }
+
+        if showOverriddenOnly {
+            result = result.filter(\.wasOverridden)
         }
 
         return result
@@ -83,6 +90,12 @@ struct AutoRuleHistoryView: View {
                 }
             }
         }
+        .sheet(item: $editingTransaction) { _ in
+            transactionSheet
+        }
+        .sheet(item: $editingRule) { _ in
+            ruleSheet
+        }
     }
 
     // MARK: - Filter Bar
@@ -100,6 +113,14 @@ struct AutoRuleHistoryView: View {
                     }
                 }
 
+                FilterChip(
+                    label: "Overridden",
+                    icon: "arrow.uturn.backward.circle.fill",
+                    isSelected: showOverriddenOnly
+                ) {
+                    showOverriddenOnly.toggle()
+                }
+
                 Divider()
                     .frame(height: 20)
 
@@ -113,7 +134,7 @@ struct AutoRuleHistoryView: View {
 
                 ForEach(AutoRuleFieldChange.allCases, id: \.self) { field in
                     FilterChip(
-                        label: field.rawValue,
+                        label: field.displayName,
                         icon: field.systemImage,
                         isSelected: selectedFieldFilter == field
                     ) {
@@ -135,6 +156,31 @@ struct AutoRuleHistoryView: View {
                 Section {
                     ForEach(apps) { app in
                         HistoryRowView(application: app, currencyCode: currencyCode)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                if let tx = app.transaction {
+                                    editingTransaction = tx
+                                } else if let rule = app.rule {
+                                    editingRule = rule
+                                }
+                            }
+                            .contextMenu {
+                                if let tx = app.transaction {
+                                    Button {
+                                        editingTransaction = tx
+                                    } label: {
+                                        Label("Open Transaction", systemImage: "pencil.line")
+                                    }
+                                }
+
+                                if let rule = app.rule {
+                                    Button {
+                                        editingRule = rule
+                                    } label: {
+                                        Label("Edit Rule", systemImage: "wand.and.stars")
+                                    }
+                                }
+                            }
                     }
                 } header: {
                     HStack {
@@ -158,6 +204,7 @@ struct AutoRuleHistoryView: View {
 	                        Button("Clear Filters") {
 	                            selectedFilter = .all
 	                            selectedFieldFilter = nil
+                                showOverriddenOnly = false
 	                        }
 	                        .font(AppTheme.Typography.secondaryBody)
 	                    }
@@ -179,6 +226,26 @@ struct AutoRuleHistoryView: View {
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemGroupedBackground))
+    }
+}
+
+extension AutoRuleHistoryView {
+    @ViewBuilder
+    private var transactionSheet: some View {
+        NavigationStack {
+            if let editingTransaction {
+                TransactionFormView(transaction: editingTransaction)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var ruleSheet: some View {
+        NavigationStack {
+            if let editingRule {
+                AutoRuleEditorView(rule: editingRule)
+            }
+        }
     }
 }
 
@@ -218,7 +285,7 @@ struct HistoryRowView: View {
     @Environment(\.appColorMode) private var appColorMode
 
     private var fieldChange: AutoRuleFieldChange? {
-        AutoRuleFieldChange(rawValue: application.fieldChanged)
+        AutoRuleFieldChange.fromStored(application.fieldChanged)
     }
 
     var body: some View {
@@ -329,7 +396,7 @@ struct AutoRuleStatsView: View {
                 ForEach(changesByField.prefix(3), id: \.0) { field, count in
                     StatBox(
                         value: "\(count)",
-                        label: field.rawValue,
+                        label: field.displayName,
                         icon: field.systemImage
                     )
                 }

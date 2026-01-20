@@ -57,6 +57,14 @@ struct EscapeBudgetApp: App {
         // Improves UX across the app by dismissing the keyboard when users scroll.
         UIScrollView.appearance().keyboardDismissMode = .onDrag
 #endif
+        let isUITesting = ProcessInfo.processInfo.arguments.contains("ui_testing")
+        // UI tests: force a stable starting state (no onboarding, demo data, deterministic processing).
+        if isUITesting {
+            let defaults = UserDefaults.standard
+            defaults.set(false, forKey: "shouldShowWelcome")
+            defaults.set(true, forKey: "isDemoMode")
+            defaults.set(true, forKey: "transactions.applyAutoRulesOnManual")
+        }
         // Create both containers at initialization
         do {
             // User data container - persistent storage
@@ -72,10 +80,41 @@ struct EscapeBudgetApp: App {
             Task { @MainActor in
                 DataSeeder.ensureSystemGroups(context: userContainer.mainContext)
                 DataSeeder.ensureSystemGroups(context: demoContainer.mainContext)
+                if isUITesting {
+                    EscapeBudgetApp.seedUITestDemoDataIfNeeded(context: demoContainer.mainContext)
+                }
             }
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
+    }
+
+    @MainActor
+    private static func seedUITestDemoDataIfNeeded(context: ModelContext) {
+        // Ensure the UI tests always have at least one account + transaction to interact with.
+        let existingAccounts = (try? context.fetch(FetchDescriptor<Account>())) ?? []
+        let existingTransactions = (try? context.fetch(FetchDescriptor<Transaction>())) ?? []
+        guard existingAccounts.isEmpty && existingTransactions.isEmpty else { return }
+
+        let account = Account(name: "UI Test Account", type: .chequing, balance: 1000, isDemoData: true)
+        context.insert(account)
+
+        let tx = Transaction(
+            date: Date(),
+            payee: "Seed Transaction",
+            amount: Decimal(-12.34),
+            memo: nil,
+            status: .uncleared,
+            kind: .standard,
+            transferID: nil,
+            account: account,
+            category: nil,
+            tags: nil,
+            isDemoData: true
+        )
+        context.insert(tx)
+
+        _ = context.safeSave(context: "EscapeBudgetApp.seedUITestDemoData", showErrorToUser: false)
     }
 
     var body: some Scene {

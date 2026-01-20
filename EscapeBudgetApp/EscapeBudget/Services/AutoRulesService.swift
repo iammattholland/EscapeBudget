@@ -101,7 +101,7 @@ final class AutoRulesService {
 
                 // Track which fields changed
                 for app in applications {
-                    if let field = AutoRuleFieldChange(rawValue: app.fieldChanged),
+                    if let field = AutoRuleFieldChange.fromStored(app.fieldChanged),
                        !result.fieldsChanged.contains(field) {
                         result.fieldsChanged.append(field)
                     }
@@ -418,5 +418,27 @@ final class AutoRulesService {
     /// Bulk learn from transaction history
     func learnFromHistory(limit: Int = 500) async {
         await categoryPredictor.patternLearner.learnFromHistory(limit: limit)
+    }
+
+    // MARK: - Exceptions
+
+    func addPayeeException(_ payee: String, to rule: AutoRule) {
+        let key = PayeeNormalizer.normalizeForComparison(payee)
+        guard !key.isEmpty else { return }
+
+        var keys = rule.excludedPayeeKeys ?? []
+        if !keys.contains(key) {
+            keys.append(key)
+            keys.sort()
+            rule.excludedPayeeKeys = keys
+            rule.updatedAt = Date()
+        }
+    }
+
+    func removePayeeException(_ key: String, from rule: AutoRule) {
+        guard var keys = rule.excludedPayeeKeys, !keys.isEmpty else { return }
+        keys.removeAll { $0 == key }
+        rule.excludedPayeeKeys = keys.isEmpty ? nil : keys
+        rule.updatedAt = Date()
     }
 }

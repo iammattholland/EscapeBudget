@@ -50,6 +50,9 @@ struct AutoRuleEditorView: View {
     @State private var showingPreview: Bool = false
     @State private var previewTransactions: [Transaction] = []
     @State private var showingRetroactiveApply: Bool = false
+    @State private var payeeExceptionToRemove: String?
+    @State private var payeeExceptionPayeeInput: String = ""
+    @State private var excludedPayeeKeysDraft: [String] = []
 
     private var isEditing: Bool { rule != nil }
 
@@ -73,12 +76,38 @@ struct AutoRuleEditorView: View {
         actionStatusEnabled
     }
 
+    private var payeeExceptionKeyPreview: String {
+        PayeeNormalizer.normalizeForComparison(payeeExceptionPayeeInput)
+    }
+
+    private static func exceptionRowIdentifier(for key: String) -> String {
+        let safe = key
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "[^a-zA-Z0-9_]", with: "", options: .regularExpression)
+        return "autoRuleEditor.exceptionRow.\(safe)"
+    }
+
+    private static func exceptionKeyIdentifier(for key: String) -> String {
+        let safe = key
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "[^a-zA-Z0-9_]", with: "", options: .regularExpression)
+        return "autoRuleEditor.exceptionKey.\(safe)"
+    }
+
+    private static func exceptionRemoveButtonIdentifier(for key: String) -> String {
+        let safe = key
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "[^a-zA-Z0-9_]", with: "", options: .regularExpression)
+        return "autoRuleEditor.exceptionRemoveButton.\(safe)"
+    }
+
     var body: some View {
         NavigationStack {
             Form {
                 // Basic Info
                 Section {
                     TextField("Rule Name", text: $name)
+                        .accessibilityIdentifier("autoRuleEditor.name")
                     Toggle("Enabled", isOn: $isEnabled)
                 } header: {
                     Text("Rule Info")
@@ -100,6 +129,7 @@ struct AutoRuleEditorView: View {
                         TextField("Payee text to match", text: $matchPayeeValue)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
+                            .accessibilityIdentifier("autoRuleEditor.matchPayeeValue")
 
                         Toggle("Case Sensitive", isOn: $matchPayeeCaseSensitive)
                     } label: {
@@ -169,6 +199,7 @@ struct AutoRuleEditorView: View {
                     // Rename Payee
                     DisclosureGroup(isExpanded: $actionRenameEnabled) {
                         TextField("New Payee Name", text: $actionRenamePayee)
+                            .accessibilityIdentifier("autoRuleEditor.actionRenamePayee")
                     } label: {
                         ActionToggleLabel(
                             icon: "person.text.rectangle",
@@ -194,6 +225,7 @@ struct AutoRuleEditorView: View {
                                 .tag(Optional(category))
                             }
                         }
+                        .accessibilityIdentifier("autoRuleEditor.actionCategoryPicker")
                     } label: {
                         ActionToggleLabel(
                             icon: "folder",
@@ -305,6 +337,63 @@ struct AutoRuleEditorView: View {
                         Text("Preview")
                     }
                 }
+
+                Section {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                        TextField("Payee to exclude (e.g. AMZN*123)", text: $payeeExceptionPayeeInput)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                            .accessibilityIdentifier("autoRuleEditor.exceptionPayeeInput")
+
+                        if !payeeExceptionKeyPreview.isEmpty {
+                            Text("Saved as: \(payeeExceptionKeyPreview)")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Button {
+                            addPayeeExceptionFromInput()
+                        } label: {
+                            Label("Add Exception", systemImage: "plus.circle")
+                        }
+                        .disabled(payeeExceptionKeyPreview.isEmpty)
+                        .accessibilityIdentifier("autoRuleEditor.addExceptionButton")
+                    }
+
+                    if !excludedPayeeKeysDraft.isEmpty {
+                        ForEach(excludedPayeeKeysDraft, id: \.self) { key in
+                            HStack {
+                                Text(key)
+                                    .lineLimit(1)
+                                    .accessibilityIdentifier(Self.exceptionKeyIdentifier(for: key))
+                                Spacer()
+                                Button(role: .destructive) {
+                                    payeeExceptionToRemove = key
+                                } label: {
+                                    Image(systemName: "minus.circle")
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityIdentifier(Self.exceptionRemoveButtonIdentifier(for: key))
+                            }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityIdentifier(Self.exceptionRowIdentifier(for: key))
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    payeeExceptionToRemove = key
+                                } label: {
+                                    Label("Remove", systemImage: "trash")
+                                }
+                            }
+                        }
+                    } else {
+                        Text("No exceptions")
+                            .foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("Exceptions")
+                } footer: {
+                    Text("This rule won’t apply when the payee matches one of these keys (case-insensitive; punctuation ignored).")
+                }
             }
             .navigationTitle(isEditing ? "Edit Rule" : "New Rule")
             .navigationBarTitleDisplayMode(.inline)
@@ -334,13 +423,40 @@ struct AutoRuleEditorView: View {
                 loadRuleData()
             }
             .sheet(isPresented: $showingPreview) {
-                PreviewMatchesSheet(transactions: previewTransactions)
+                PreviewMatchesSheet(
+                    transactions: previewTransactions,
+                    onExcludePayee: { payee in
+                        let key = PayeeNormalizer.normalizeForComparison(payee)
+                        guard !key.isEmpty else { return }
+                        if !excludedPayeeKeysDraft.contains(key) {
+                            excludedPayeeKeysDraft.append(key)
+                            excludedPayeeKeysDraft.sort()
+                        }
+                    }
+                )
             }
             .sheet(isPresented: $showingRetroactiveApply) {
                 if let rule {
                     NavigationStack {
                         ApplyRuleRetroactiveView(rule: rule)
                     }
+                }
+            }
+            .confirmationDialog(
+                "Remove Exception",
+                isPresented: Binding(
+                    get: { payeeExceptionToRemove != nil },
+                    set: { if !$0 { payeeExceptionToRemove = nil } }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Remove", role: .destructive) {
+                    guard let key = payeeExceptionToRemove else { return }
+                    excludedPayeeKeysDraft.removeAll { $0 == key }
+                    payeeExceptionToRemove = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    payeeExceptionToRemove = nil
                 }
             }
         }
@@ -353,6 +469,7 @@ struct AutoRuleEditorView: View {
 
         name = rule.name
         isEnabled = rule.isEnabled
+        excludedPayeeKeysDraft = (rule.excludedPayeeKeys ?? []).sorted()
 
         // Conditions
         if let condition = rule.matchPayeeCondition, let value = rule.matchPayeeValue {
@@ -424,6 +541,7 @@ struct AutoRuleEditorView: View {
 
         targetRule.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         targetRule.isEnabled = isEnabled
+        targetRule.excludedPayeeKeys = excludedPayeeKeysDraft.isEmpty ? nil : excludedPayeeKeysDraft.sorted()
 
         // Save conditions
         if matchPayeeEnabled && !matchPayeeValue.isEmpty {
@@ -462,9 +580,20 @@ struct AutoRuleEditorView: View {
         }
     }
 
+    private func addPayeeExceptionFromInput() {
+        let key = payeeExceptionKeyPreview
+        guard !key.isEmpty else { return }
+        if !excludedPayeeKeysDraft.contains(key) {
+            excludedPayeeKeysDraft.append(key)
+            excludedPayeeKeysDraft.sort()
+        }
+        payeeExceptionPayeeInput = ""
+    }
+
     private func loadPreview() {
         // Create a temporary rule for preview
         let tempRule = AutoRule(name: "Preview", isEnabled: true)
+        tempRule.excludedPayeeKeys = excludedPayeeKeysDraft.isEmpty ? nil : excludedPayeeKeysDraft.sorted()
 
         if matchPayeeEnabled && !matchPayeeValue.isEmpty {
             tempRule.matchPayeeCondition = matchPayeeCondition
@@ -560,6 +689,7 @@ struct PreviewMatchesSheet: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("currencyCode") private var currencyCode = "USD"
     let transactions: [Transaction]
+    var onExcludePayee: ((String) -> Void)? = nil
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
@@ -592,6 +722,15 @@ struct PreviewMatchesSheet: View {
                                     Spacer()
                                     Text(tx.amount, format: .currency(code: currencyCode))
                                         .foregroundStyle(tx.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                                }
+                                .contextMenu {
+                                    if let onExcludePayee {
+                                        Button {
+                                            onExcludePayee(tx.payee)
+                                        } label: {
+                                            Label("Exclude this payee from the rule", systemImage: "hand.raised.fill")
+                                        }
+                                    }
                                 }
                             }
                         } header: {

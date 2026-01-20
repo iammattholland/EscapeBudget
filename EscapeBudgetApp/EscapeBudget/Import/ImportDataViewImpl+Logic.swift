@@ -705,7 +705,7 @@ extension ImportDataViewImpl {
                         throw NSError(domain: "Import", code: 3, userInfo: [NSLocalizedDescriptionKey: "File exceeds maximum of \(maxRows) rows"])
                     }
 
-                    if let data = self.extractTransactionData(
+                    if let data = Self.extractTransactionData(
                         from: row,
                         headers: headers,
                         columnMapping: mapping,
@@ -1280,7 +1280,7 @@ extension ImportDataViewImpl {
     // TransactionImportData struct removed, using ImportedTransaction from ImportModels.swift
 
     // Using simple creation logic consistent with old one but handling Inflow/Outflow columns
-    nonisolated private func extractTransactionData(
+    nonisolated private static func extractTransactionData(
         from row: [String],
         headers: [String],
         columnMapping: [Int: String],
@@ -1289,7 +1289,7 @@ extension ImportDataViewImpl {
     ) -> ImportedTransaction? {
         var rowsSkipped = 0
         var skipSamples: [(rowNumber: Int, dateValue: String?, amountValue: String?, reason: String)] = []
-        return extractTransactionData(
+        return Self.extractTransactionData(
             from: row,
             headers: headers,
             columnMapping: columnMapping,
@@ -1301,7 +1301,7 @@ extension ImportDataViewImpl {
         )
     }
 
-    nonisolated private func extractTransactionData(
+    nonisolated private static func extractTransactionData(
         from row: [String],
         headers: [String],
         columnMapping: [Int: String],
@@ -1443,7 +1443,7 @@ extension ImportDataViewImpl {
     
     // For Preview (MainActor)
     func createTransaction(from row: [String], headers: [String], columnMapping: [Int: String], dateFormatOption: DateFormatOption?, signConvention: AmountSignConvention) -> Transaction? {
-        guard let data = extractTransactionData(from: row, headers: headers, columnMapping: columnMapping, dateFormatOption: dateFormatOption, signConvention: signConvention) else { return nil }
+        guard let data = Self.extractTransactionData(from: row, headers: headers, columnMapping: columnMapping, dateFormatOption: dateFormatOption, signConvention: signConvention) else { return nil }
         return Transaction(date: data.date, payee: data.payee, amount: data.amount, memo: TransactionTextLimits.normalizedMemo(data.memo), status: data.status)
     }
 }

@@ -248,6 +248,94 @@ struct AutoRulesServiceTests {
         #expect(result.fieldsChanged.contains(.payee))
     }
 
+    @Test func testPayeeExceptionPreventsRuleApplication() {
+        let container = createTestContainer()
+        let context = container.mainContext
+        let (account, _, _) = createTestData(context: context)
+        let service = AutoRulesService(modelContext: context)
+
+        let rule = AutoRule(name: "Rename AMZN")
+        rule.matchPayeeCondition = .contains
+        rule.matchPayeeValue = "amzn"
+        rule.actionRenamePayee = "Amazon"
+        service.addPayeeException("AMZN*123", to: rule)
+        context.insert(rule)
+
+        let transaction = Transaction(
+            date: Date(),
+            payee: "AMZN*123",
+            amount: Decimal(-25.00),
+            kind: .standard,
+            account: account
+        )
+        context.insert(transaction)
+
+        let result = service.applyRules(to: transaction, originalPayee: "AMZN*123")
+
+        #expect(result.rulesApplied.isEmpty)
+        #expect(transaction.payee == "AMZN*123")
+        #expect(result.fieldsChanged.contains(.payee) == false)
+    }
+
+    @Test func testPayeeExceptionPreventsRuleAfterPreviouslyApplied() {
+        let container = createTestContainer()
+        let context = container.mainContext
+        let (account, _, _) = createTestData(context: context)
+
+        let config = TransactionProcessor.Config(
+            normalizePayee: false,
+            applyAutoRules: true,
+            suggestTransfers: false,
+            saveDetailedHistory: false,
+            maxDetailedTransactions: 250,
+            maxEventsPerTransaction: 8
+        )
+
+        let tx = Transaction(
+            date: Date(),
+            payee: "AMZN*123",
+            amount: Decimal(-25.00),
+            kind: .standard,
+            account: account
+        )
+        context.insert(tx)
+
+        let rule = AutoRule(name: "Rename AMZN")
+        rule.matchPayeeCondition = .contains
+        rule.matchPayeeValue = "amzn"
+        rule.actionRenamePayee = "Amazon"
+        context.insert(rule)
+
+        try! context.save()
+
+        _ = TransactionProcessor.process(
+            transactions: [tx],
+            in: context,
+            source: .manual,
+            originalPayeeByTransactionID: [tx.persistentModelID: "AMZN*123"],
+            configOverride: config
+        )
+        try! context.save()
+
+        #expect(tx.payee == "Amazon")
+
+        // Add an exception based on the original payee and confirm the rule no longer applies.
+        AutoRulesService(modelContext: context).addPayeeException("AMZN*123", to: rule)
+        tx.payee = "AMZN*123"
+        try! context.save()
+
+        _ = TransactionProcessor.process(
+            transactions: [tx],
+            in: context,
+            source: .manual,
+            originalPayeeByTransactionID: [tx.persistentModelID: "AMZN*123"],
+            configOverride: config
+        )
+        try! context.save()
+
+        #expect(tx.payee == "AMZN*123")
+    }
+
     @Test func testApplyRuleSetCategory() {
         let container = createTestContainer()
         let context = container.mainContext
@@ -302,6 +390,37 @@ struct AutoRulesServiceTests {
         #expect(result.rulesApplied.count == 1)
         #expect(transaction.tags?.count == 2)
         #expect(result.fieldsChanged.contains(.tags))
+    }
+
+    @Test func testApplyRuleSetTagsNoOpDoesNotCreateApplication() {
+        let container = createTestContainer()
+        let context = container.mainContext
+        let (account, _, tags) = createTestData(context: context)
+        let service = AutoRulesService(modelContext: context)
+
+        let transaction = Transaction(
+            date: Date(),
+            payee: "Business Expense",
+            amount: Decimal(-100.00),
+            kind: .standard,
+            account: account,
+            tags: [tags[0]]
+        )
+        context.insert(transaction)
+
+        let rule = AutoRule(name: "Tag Business")
+        rule.matchPayeeCondition = .contains
+        rule.matchPayeeValue = "Business"
+        rule.actionTags = [tags[0]]
+        context.insert(rule)
+
+        let result = service.applyRules(to: transaction)
+
+        #expect(result.rulesApplied.isEmpty)
+        #expect(result.fieldsChanged.contains(.tags) == false)
+        #expect(transaction.tags?.count == 1)
+        #expect(transaction.tags?.first?.persistentModelID == tags[0].persistentModelID)
+        #expect(result.applications.isEmpty)
     }
 
     @Test func testApplyRuleSetMemo() {
