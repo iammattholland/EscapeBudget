@@ -26,7 +26,8 @@ enum ModelContainerProvider {
         RecurringPattern.self,
         BudgetForecast.self,
         DiagnosticEvent.self,
-        ReceiptImage.self
+        ReceiptImage.self,
+        DebtAccount.self
     ])
 
     private static let logger = Logger(

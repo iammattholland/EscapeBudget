@@ -607,6 +607,44 @@ final class DemoDataService {
         )
         restaurantReceipt.transaction = restaurantTransaction
         modelContext.insert(restaurantReceipt)
+
+        // 8. Create Debt Accounts
+        let chaseVisa = DebtAccount(
+            name: "Chase Visa",
+            currentBalance: 4850,
+            originalBalance: 6500,
+            interestRate: 0.2199,  // 21.99% APR
+            minimumPayment: 145,
+            extraPayment: 50,
+            colorHex: "FF3B30",
+            notes: "High interest - prioritize payoff",
+            isDemoData: true
+        )
+        modelContext.insert(chaseVisa)
+
+        let carLoan = DebtAccount(
+            name: "Car Loan",
+            currentBalance: 12500,
+            originalBalance: 22000,
+            interestRate: 0.0649,  // 6.49% APR
+            minimumPayment: 385,
+            colorHex: "007AFF",
+            notes: "2022 Honda Accord",
+            isDemoData: true
+        )
+        modelContext.insert(carLoan)
+
+        let studentLoan = DebtAccount(
+            name: "Student Loan",
+            currentBalance: 18200,
+            originalBalance: 35000,
+            interestRate: 0.0525,  // 5.25% APR
+            minimumPayment: 210,
+            colorHex: "5856D6",
+            notes: "Federal loan - income-driven repayment",
+            isDemoData: true
+        )
+        modelContext.insert(studentLoan)
     }
     
 	    @MainActor
