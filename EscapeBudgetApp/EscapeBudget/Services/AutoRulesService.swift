@@ -158,31 +158,27 @@ final class AutoRulesService {
 
         // Set tags
         if let tags = rule.actionTags, !tags.isEmpty {
-            let existingTagIDs = Set(transaction.tags?.map(\.persistentModelID) ?? [])
-            let newTagIDs = Set(tags.map(\.persistentModelID))
+            let currentTags = transaction.tags ?? []
+            let existingTagIDs = Set(currentTags.map(\.persistentModelID))
+            let tagsToAdd = tags.filter { !existingTagIDs.contains($0.persistentModelID) }
 
-            if existingTagIDs != newTagIDs {
-                let oldTags = transaction.tags?.map(\.name).joined(separator: ", ")
-                let newTagNames = tags.map(\.name).joined(separator: ", ")
+            if !tagsToAdd.isEmpty {
+                let oldTags = currentTags.map(\.name).sorted().joined(separator: ", ")
+
+                var mergedTags = currentTags
+                mergedTags.append(contentsOf: tagsToAdd)
+                let newTags = mergedTags.map(\.name).sorted().joined(separator: ", ")
 
                 let app = AutoRuleApplication(
                     rule: rule,
                     transaction: transaction,
                     fieldChanged: AutoRuleFieldChange.tags.rawValue,
-                    oldValue: oldTags,
-                    newValue: newTagNames
+                    oldValue: oldTags.isEmpty ? nil : oldTags,
+                    newValue: newTags.isEmpty ? nil : newTags
                 )
                 modelContext.insert(app)
                 applications.append(app)
-
-                // Merge tags (add new ones, keep existing)
-                var currentTags = transaction.tags ?? []
-                for tag in tags {
-                    if !currentTags.contains(where: { $0.persistentModelID == tag.persistentModelID }) {
-                        currentTags.append(tag)
-                    }
-                }
-                transaction.tags = currentTags
+                transaction.tags = mergedTags
             }
         }
 

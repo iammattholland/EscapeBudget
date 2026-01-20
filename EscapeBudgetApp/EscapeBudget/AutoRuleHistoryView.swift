@@ -89,7 +89,7 @@ struct AutoRuleHistoryView: View {
 
     private var filterBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: AppTheme.Spacing.compact) {
                 // Date filter
                 ForEach(HistoryFilter.allCases, id: \.self) { filter in
                     FilterChip(
@@ -148,9 +148,9 @@ struct AutoRuleHistoryView: View {
 
 	            if filteredApplications.isEmpty && !applications.isEmpty {
 	                Section {
-	                    VStack(spacing: 12) {
+	                    VStack(spacing: AppTheme.Spacing.tight) {
 	                        Image(systemName: "line.3.horizontal.decrease.circle")
-	                            .font(.system(size: 32))
+	                            .appIconMedium()
 	                            .foregroundStyle(.secondary)
 	                        Text("No matches for current filters")
 	                            .appSecondaryBodyText()
@@ -172,27 +172,11 @@ struct AutoRuleHistoryView: View {
     // MARK: - Empty State
 
     private var emptyStateView: some View {
-        VStack(spacing: AppTheme.Spacing.large) {
-            Spacer()
-
-            Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 64))
-                .foregroundColor(.secondary.opacity(0.6))
-
-	            VStack(spacing: 8) {
-	                Text("No History Yet")
-	                    .font(.title2)
-	                    .fontWeight(.semibold)
-
-	                Text("When auto rules modify transactions during import, the changes will appear here.")
-	                    .appSecondaryBodyText()
-	                    .foregroundStyle(.secondary)
-	                    .multilineTextAlignment(.center)
-	                    .padding(.horizontal, AppTheme.Spacing.xxLarge)
-	            }
-
-            Spacer()
-        }
+        EmptyDataCard(
+            systemImage: "clock.arrow.circlepath",
+            title: "No History Yet",
+            message: "When auto rules modify transactions during import, the changes will appear here."
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemGroupedBackground))
     }
@@ -209,7 +193,7 @@ struct FilterChip: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 4) {
+            HStack(spacing: AppTheme.Spacing.micro) {
                 if let icon = icon {
                     Image(systemName: icon)
                         .font(.caption2)
@@ -217,10 +201,10 @@ struct FilterChip: View {
                 Text(label)
                     .appCaptionText()
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.horizontal, AppTheme.Spacing.tight)
+            .padding(.vertical, AppTheme.Spacing.xSmall)
             .background(isSelected ? AppColors.tint(for: appColorMode) : Color(.tertiarySystemFill))
-            .foregroundColor(isSelected ? .white : .primary)
+            .foregroundStyle(isSelected ? .white : .primary)
             .cornerRadius(AppTheme.Radius.card)
         }
     }
@@ -238,7 +222,7 @@ struct HistoryRowView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
             // Header: Rule name and time
 	            HStack {
 	                if let rule = application.rule {
@@ -270,21 +254,21 @@ struct HistoryRowView: View {
 
                     Text(transaction.amount, format: .currency(code: currencyCode))
                         .appCaptionText()
-                        .foregroundColor(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .secondary)
+                        .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .secondary)
                 }
             }
 
             // Change details
-            HStack(spacing: 8) {
+            HStack(spacing: AppTheme.Spacing.compact) {
                 if let field = fieldChange {
                     Image(systemName: field.systemImage)
                         .appCaptionText()
-                        .foregroundColor(AppColors.tint(for: appColorMode))
+                        .foregroundStyle(AppColors.tint(for: appColorMode))
                 }
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
                     if let oldValue = application.oldValue, !oldValue.isEmpty {
-                        HStack(spacing: 4) {
+                        HStack(spacing: AppTheme.Spacing.micro) {
                             Text(oldValue)
                                 .strikethrough()
                                 .foregroundStyle(.secondary)
@@ -304,18 +288,18 @@ struct HistoryRowView: View {
 
                 Spacer()
 
-                if application.wasOverridden {
-                    Text("Overridden")
-                        .font(.caption2)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(AppColors.warning(for: appColorMode).opacity(0.2))
-                        .foregroundColor(AppColors.warning(for: appColorMode))
-                        .cornerRadius(4)
-                }
-            }
-        }
-        .padding(.vertical, 4)
+	                if application.wasOverridden {
+	                    Text("Overridden")
+	                        .font(.caption2)
+	                        .padding(.horizontal, AppTheme.Spacing.xSmall)
+	                        .padding(.vertical, AppTheme.Spacing.hairline)
+	                        .background(AppColors.warning(for: appColorMode).opacity(0.2))
+	                        .foregroundStyle(AppColors.warning(for: appColorMode))
+	                        .cornerRadius(AppTheme.Radius.mini)
+	                }
+	            }
+	        }
+        .padding(.vertical, AppTheme.Spacing.micro)
     }
 }
 
@@ -335,7 +319,7 @@ struct AutoRuleStatsView: View {
     }
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: 12) {
+	        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
 	            Text("Statistics")
 	                .appSectionTitleText()
 
@@ -364,14 +348,14 @@ struct StatBox: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: AppTheme.Spacing.micro) {
             if let icon = icon {
                 Image(systemName: icon)
                     .appCaptionText()
-                    .foregroundColor(AppColors.tint(for: appColorMode))
+                    .foregroundStyle(AppColors.tint(for: appColorMode))
             }
             Text(value)
-                .font(.title2)
+                .appTitleText()
                 .fontWeight(.bold)
             Text(label)
                 .font(.caption2)

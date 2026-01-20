@@ -160,7 +160,7 @@ struct AutoRuleEditorView: View {
                 } footer: {
                     if !hasConditions {
                         Text("Add at least one condition to match transactions.")
-                            .foregroundColor(AppColors.warning(for: appColorMode))
+                            .foregroundStyle(AppColors.warning(for: appColorMode))
                     }
                 }
 
@@ -219,7 +219,7 @@ struct AutoRuleEditorView: View {
                                     Spacer()
                                     if actionTags.contains(tag) {
                                         Image(systemName: "checkmark")
-                                            .foregroundColor(AppColors.tint(for: appColorMode))
+                                            .foregroundStyle(AppColors.tint(for: appColorMode))
                                     }
                                 }
                                 .contentShape(Rectangle())
@@ -277,7 +277,7 @@ struct AutoRuleEditorView: View {
                 } footer: {
                     if !hasActions {
                         Text("Add at least one action to apply to matching transactions.")
-                            .foregroundColor(AppColors.warning(for: appColorMode))
+                            .foregroundStyle(AppColors.warning(for: appColorMode))
                     }
                 }
 
@@ -498,16 +498,16 @@ struct ConditionToggleLabel: View {
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .foregroundColor(isEnabled ? AppColors.tint(for: appColorMode) : .secondary)
+                .foregroundStyle(isEnabled ? AppColors.tint(for: appColorMode) : .secondary)
                 .frame(width: 24)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
                 Text(title)
-                    .foregroundColor(isEnabled ? .primary : .secondary)
+                    .foregroundStyle(isEnabled ? .primary : .secondary)
                 if let summary = summary {
                     Text(summary)
                         .appCaptionText()
-                        .foregroundColor(AppColors.tint(for: appColorMode))
+                        .foregroundStyle(AppColors.tint(for: appColorMode))
                 }
             }
 
@@ -515,7 +515,7 @@ struct ConditionToggleLabel: View {
 
             if isEnabled {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(AppColors.success(for: appColorMode))
+                    .foregroundStyle(AppColors.success(for: appColorMode))
                     .appCaptionText()
             }
         }
@@ -532,16 +532,16 @@ struct ActionToggleLabel: View {
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .foregroundColor(isEnabled ? AppColors.warning(for: appColorMode) : .secondary)
+                .foregroundStyle(isEnabled ? AppColors.warning(for: appColorMode) : .secondary)
                 .frame(width: 24)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
                 Text(title)
-                    .foregroundColor(isEnabled ? .primary : .secondary)
+                    .foregroundStyle(isEnabled ? .primary : .secondary)
                 if let summary = summary {
                     Text(summary)
                         .appCaptionText()
-                        .foregroundColor(AppColors.warning(for: appColorMode))
+                        .foregroundStyle(AppColors.warning(for: appColorMode))
                 }
             }
 
@@ -549,7 +549,7 @@ struct ActionToggleLabel: View {
 
             if isEnabled {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(AppColors.success(for: appColorMode))
+                    .foregroundStyle(AppColors.success(for: appColorMode))
                     .appCaptionText()
             }
         }
@@ -566,27 +566,21 @@ struct PreviewMatchesSheet: View {
         NavigationStack {
             Group {
                 if transactions.isEmpty {
-                    VStack(spacing: AppTheme.Spacing.medium) {
-                        Image(systemName: "magnifyingglass")
-                            .font(.system(size: 48))
-                            .foregroundStyle(.secondary)
-                        Text("No Matching Transactions")
-                            .appSectionTitleText()
-                        Text("No existing transactions match these conditions.")
-                            .appSecondaryBodyText()
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
+                    EmptyDataCard(
+                        systemImage: "magnifyingglass",
+                        title: "No Matching Transactions",
+                        message: "No existing transactions match these conditions."
+                    )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     List {
                         Section {
                             ForEach(transactions) { tx in
                                 HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
+                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                         Text(tx.payee)
-                                            .font(.body)
-                                        HStack(spacing: 8) {
+                                            .font(AppTheme.Typography.body)
+                                        HStack(spacing: AppTheme.Spacing.compact) {
                                             Text(tx.date.formatted(date: .abbreviated, time: .omitted))
                                             if let account = tx.account {
                                                 Text("• \(account.name)")
@@ -597,7 +591,7 @@ struct PreviewMatchesSheet: View {
                                     }
                                     Spacer()
                                     Text(tx.amount, format: .currency(code: currencyCode))
-                                        .foregroundColor(tx.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                                        .foregroundStyle(tx.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
                                 }
                             }
                         } header: {

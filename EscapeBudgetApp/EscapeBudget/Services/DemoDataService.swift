@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-class DemoDataService {
+final class DemoDataService {
     static func generateDemoData(modelContext: ModelContext) {
         // 1. Create Accounts
         let checking = Account(name: "Chequing", type: .chequing, balance: 3450.50, isDemoData: true)

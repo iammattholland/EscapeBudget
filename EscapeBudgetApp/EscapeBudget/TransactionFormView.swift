@@ -138,14 +138,14 @@ struct TransactionFormView: View {
                 Text("Add items from this purchase for quick reference and future insights.")
                     .appCaptionText()
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, AppTheme.Spacing.micro)
             } else {
                 ForEach(purchasedItems) { item in
                     Button {
                         editingPurchasedItemID = item.id
                     } label: {
-                        HStack(alignment: .firstTextBaseline, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 2) {
+                        HStack(alignment: .firstTextBaseline, spacing: AppTheme.Spacing.tight) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
                                 Text(item.name.isEmpty ? "Item" : item.name)
                                     .foregroundStyle(.primary)
                                 if !item.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -169,7 +169,7 @@ struct TransactionFormView: View {
         } header: {
             Text("Purchased Items")
         } footer: {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                 Text("Items: \(purchasedItems.count) • Total: \(formatCurrency(purchasedItemsTotal))")
                 if purchasedItemsShouldWarnMismatch {
                     Text("Total doesn’t match transaction amount (\(formatCurrency(decimalAbs(amount)))). Difference: \(formatCurrency(purchasedItemsAmountDiff)).")
@@ -189,7 +189,7 @@ struct TransactionFormView: View {
         Section {
             if let receipt = receiptImage {
                 // Receipt preview
-                HStack(spacing: 12) {
+                HStack(spacing: AppTheme.Spacing.tight) {
                     if let imageData = receipt.imageData,
 	                       let uiImage = UIImage(data: imageData) {
 	                        Image(uiImage: uiImage)
@@ -200,7 +200,7 @@ struct TransactionFormView: View {
 	                            .clipped()
 	                    }
 
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         Text(receipt.merchant ?? "Receipt")
                             .appSectionTitleText()
                         if let date = receipt.receiptDate {
@@ -689,7 +689,7 @@ struct TransactionFormView: View {
         NavigationStack {
             Form {
                 Section("Details") {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         Text("Payee")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -706,8 +706,8 @@ struct TransactionFormView: View {
                                                 .foregroundStyle(.primary)
                                             Spacer()
                                         }
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 6)
+                                        .padding(.horizontal, AppTheme.Spacing.compact)
+                                        .padding(.vertical, AppTheme.Spacing.xSmall)
 	                                    }
 	                                }
 	                            }
@@ -716,34 +716,33 @@ struct TransactionFormView: View {
 	                        }
 	                    }
                     
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         Text("Amount")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
-                        HStack(spacing: 8) {
+                        HStack(spacing: AppTheme.Spacing.compact) {
                             Text(currencySymbol)
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                                .foregroundColor(amountColor)
+                                .appTitleText()
+                                .foregroundStyle(amountColor)
                             TextField("", text: amountTextBinding, prompt: Text("0.00"))
                                 .keyboardType(.decimalPad)
                                 .focused($focusedField, equals: .amount)
-                                .foregroundColor(amountColor)
+                                .foregroundStyle(amountColor)
                             
                             if let indicator = amountIndicator {
                                 Text(indicator.text)
                                     .appCaptionText()
                                     .fontWeight(.semibold)
-                                    .foregroundColor(indicator.color)
+                                    .foregroundStyle(indicator.color)
                                     .padding(.horizontal, AppTheme.Spacing.small)
-                                    .padding(.vertical, 4)
+                                    .padding(.vertical, AppTheme.Spacing.micro)
                                     .background(indicator.color.opacity(0.15))
                                     .cornerRadius(AppTheme.Radius.button)
                             }
                         }
                     }
                     
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         Text("Date")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -751,7 +750,7 @@ struct TransactionFormView: View {
                             .labelsHidden()
                     }
                     
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         Text("Memo")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -773,7 +772,7 @@ struct TransactionFormView: View {
                 }
                 
                 Section("Account & Category") {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         Text("Account")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -793,7 +792,7 @@ struct TransactionFormView: View {
                                     .foregroundStyle(.secondary)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, 6)
+                            .padding(.vertical, AppTheme.Spacing.xSmall)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -807,11 +806,11 @@ struct TransactionFormView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
-                        .padding(.top, 4)
+                        .padding(.top, AppTheme.Spacing.micro)
                     }
                     
                     if !isSplit {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                             Text("Category")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
@@ -885,7 +884,7 @@ struct TransactionFormView: View {
                                         .foregroundStyle(.secondary)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.vertical, 6)
+                                .padding(.vertical, AppTheme.Spacing.xSmall)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
@@ -903,15 +902,15 @@ struct TransactionFormView: View {
                                     .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)
-                            .padding(.top, 4)
+                            .padding(.top, AppTheme.Spacing.micro)
                             
 	                        if !categorySuggestions.isEmpty {
-	                            VStack(alignment: .leading, spacing: 6) {
+	                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
 	                                Text("Quick Categories")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
                                     ScrollView(.horizontal, showsIndicators: false) {
-                                        HStack(spacing: 8) {
+                                        HStack(spacing: AppTheme.Spacing.compact) {
                                             ForEach(categorySuggestions) { suggestion in
                                                 Button {
                                                     selectedCategory = suggestion
@@ -919,8 +918,8 @@ struct TransactionFormView: View {
                                                     Text(suggestion.name)
                                                         .appCaptionText()
                                                         .fontWeight(.semibold)
-                                                        .padding(.horizontal, 12)
-                                                        .padding(.vertical, 6)
+                                                        .padding(.horizontal, AppTheme.Spacing.tight)
+                                                        .padding(.vertical, AppTheme.Spacing.xSmall)
                                                         .background(
                                                             Capsule()
                                                                 .fill((selectedCategory?.persistentModelID == suggestion.persistentModelID) ? AppColors.tint(for: appColorMode).opacity(0.2) : Color(.systemGray6))
@@ -935,7 +934,7 @@ struct TransactionFormView: View {
                                         }
                                     }
 	                            }
-	                            .padding(.top, 4)
+	                            .padding(.top, AppTheme.Spacing.micro)
 	                        }
 		                    }
 		                }
@@ -950,7 +949,7 @@ struct TransactionFormView: View {
                     } else {
                         // For new transactions being created as transfers
                         Section("Transfer Information") {
-                            VStack(alignment: .leading, spacing: 12) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
                                 Text("Save this transaction first to match it with a transfer in another account.")
                                     .appCaptionText()
                                     .foregroundStyle(.secondary)
@@ -965,7 +964,7 @@ struct TransactionFormView: View {
                             .foregroundStyle(.secondary)
                     } else {
                         ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
+                            HStack(spacing: AppTheme.Spacing.compact) {
                                 ForEach(selectedTags) { tag in
                                     TransactionTagChip(tag: tag)
                                         .onTapGesture {
@@ -973,7 +972,7 @@ struct TransactionFormView: View {
                                         }
                                 }
                             }
-                            .padding(.vertical, 4)
+                            .padding(.vertical, AppTheme.Spacing.micro)
                         }
                     }
 
@@ -986,7 +985,7 @@ struct TransactionFormView: View {
                 
                 Section("Split Transaction") {
                     Toggle(isOn: $isSplit) {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
                             Text("Enable Split")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
@@ -1011,14 +1010,14 @@ struct TransactionFormView: View {
                     if isSplit {
                         ForEach($subtransactions) { $sub in
                             let subID = sub.id
-                            VStack(alignment: .leading, spacing: 8) {
-                                VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                     Text("Split Amount")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
-                                    HStack(spacing: 4) {
+                                    HStack(spacing: AppTheme.Spacing.micro) {
                                         Text(amount < 0 ? "-\(currencySymbol)" : currencySymbol)
-                                            .font(.body)
+                                            .font(AppTheme.Typography.body)
                                             .foregroundStyle(.secondary)
                                         TextField("", text: splitAmountTextBinding(for: $sub), prompt: Text("0.00"))
                                             .keyboardType(.decimalPad)
@@ -1027,7 +1026,7 @@ struct TransactionFormView: View {
                                     }
                                 }
                                 
-                                VStack(alignment: .leading, spacing: 4) {
+                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                     Text("Split Category")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
@@ -1044,7 +1043,7 @@ struct TransactionFormView: View {
                                     .labelsHidden()
                                 }
                                 
-                                VStack(alignment: .leading, spacing: 4) {
+                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                     Text("Split Memo")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
@@ -1064,7 +1063,7 @@ struct TransactionFormView: View {
                                     }
                                 }
                             }
-                            .padding(.vertical, 6)
+                            .padding(.vertical, AppTheme.Spacing.xSmall)
                         }
                         .onDelete { indexSet in
                             subtransactions.remove(atOffsets: indexSet)
@@ -1077,13 +1076,13 @@ struct TransactionFormView: View {
                             Label("Add Split", systemImage: "plus.circle")
                         }
                         
-                        VStack(spacing: 6) {
+                        VStack(spacing: AppTheme.Spacing.xSmall) {
                             HStack {
                                 Text("Split Total")
                                 Spacer()
                                 Text(splitTotal, format: .currency(code: currencyCode))
                                     .fontWeight(.semibold)
-                                    .foregroundColor(splitTotal == amount ? .primary : AppColors.warning(for: appColorMode))
+                                    .foregroundStyle(splitTotal == amount ? .primary : AppColors.warning(for: appColorMode))
                             }
                             
                             HStack {
@@ -1091,14 +1090,14 @@ struct TransactionFormView: View {
                                 Spacer()
                                 Text(splitRemaining, format: .currency(code: currencyCode))
                                     .fontWeight(.semibold)
-                                    .foregroundColor(splitRemaining == 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
+                                    .foregroundStyle(splitRemaining == 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
                             }
                             
                             Text("Split amounts must equal the transaction total before saving.")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
-                        .padding(.top, 4)
+                        .padding(.top, AppTheme.Spacing.micro)
                     }
                 }
                 
@@ -1124,17 +1123,17 @@ struct TransactionFormView: View {
                             Text("No history yet")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
-                                .padding(.vertical, 4)
+                                .padding(.vertical, AppTheme.Spacing.micro)
                         } else {
 	                            ForEach(sortedHistoryEntries) { entry in
-	                                VStack(alignment: .leading, spacing: 4) {
+	                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
 	                                    Text(entry.detail)
 	                                        .appSecondaryBodyText()
 	                                    Text(entry.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
 	                                        .appCaptionText()
 	                                        .foregroundStyle(.secondary)
 	                                }
-                                .padding(.vertical, 2)
+                                .padding(.vertical, AppTheme.Spacing.hairline)
                             }
                         }
                     }
@@ -1185,16 +1184,16 @@ struct TransactionFormView: View {
                     if numericFieldFocused {
                         if focusedField == .amount {
                             let isIncomeSelected = isAmountIncome
-                            HStack(spacing: 8) {
+                            HStack(spacing: AppTheme.Spacing.compact) {
                                 Button {
                                     applyAmountSign(isIncome: false)
                                 } label: {
                                     Text("Expense")
                                         .appCaptionText()
                                         .fontWeight(.semibold)
-                                        .foregroundColor(AppColors.danger(for: appColorMode))
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
+                                        .foregroundStyle(AppColors.danger(for: appColorMode))
+                                        .padding(.horizontal, AppTheme.Spacing.tight)
+                                        .padding(.vertical, AppTheme.Spacing.xSmall)
                                         .background(
                                             RoundedRectangle(cornerRadius: AppTheme.Radius.button)
                                                 .fill((amount < 0 ? AppColors.danger(for: appColorMode).opacity(0.2) : AppColors.danger(for: appColorMode).opacity(0.08)))
@@ -1211,9 +1210,9 @@ struct TransactionFormView: View {
                                     Text("Income")
                                         .appCaptionText()
                                         .fontWeight(.semibold)
-                                        .foregroundColor(AppColors.success(for: appColorMode))
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
+                                        .foregroundStyle(AppColors.success(for: appColorMode))
+                                        .padding(.horizontal, AppTheme.Spacing.tight)
+                                        .padding(.vertical, AppTheme.Spacing.xSmall)
                                         .background(
                                             RoundedRectangle(cornerRadius: AppTheme.Radius.button)
                                                 .fill((isIncomeSelected ? AppColors.success(for: appColorMode).opacity(0.2) : AppColors.success(for: appColorMode).opacity(0.08)))
@@ -1279,7 +1278,7 @@ struct TransactionFormView: View {
         .sheet(isPresented: $showingNewAccountSheet) {
             NavigationStack {
                 Form {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
                         Text("Account Name")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -1303,17 +1302,17 @@ struct TransactionFormView: View {
 	                    ZStack(alignment: .leading) {
 	                        RoundedRectangle(cornerRadius: AppTheme.Radius.compact)
 	                            .fill(Color(.secondarySystemFill))
-	                        HStack(spacing: 6) {
+	                        HStack(spacing: AppTheme.Spacing.xSmall) {
                                 Text(currencySymbol)
                                     .foregroundStyle(.secondary)
                                 TextField("0.00", text: $newAccountBalanceInput)
                                     .keyboardType(.decimalPad)
                             }
-                            .padding(.horizontal, 12)
+                            .padding(.horizontal, AppTheme.Spacing.tight)
 	                            .padding(.vertical, AppTheme.Spacing.small)
 	                    }
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, AppTheme.Spacing.compact)
                 }
                 .navigationTitle("New Account")
                 .toolbar {
@@ -1337,7 +1336,7 @@ struct TransactionFormView: View {
             NavigationStack {
                 Form {
                     if categoryCreationStep == .groupSelection {
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
                             Text("Choose a Group")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
@@ -1361,11 +1360,11 @@ struct TransactionFormView: View {
                                     .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)
-                            .padding(.top, 4)
+                            .padding(.top, AppTheme.Spacing.micro)
                         }
-                        .padding(.vertical, 8)
+                        .padding(.vertical, AppTheme.Spacing.compact)
                     } else {
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
                             if let group = newCategoryGroup {
                                 Text("Group: \(group.name)")
                                     .appCaptionText()
@@ -1379,7 +1378,7 @@ struct TransactionFormView: View {
 	                                .padding(AppTheme.Spacing.tight)
 	                                .background(RoundedRectangle(cornerRadius: AppTheme.Radius.compact).fill(Color(.secondarySystemFill)))
                         }
-                        .padding(.vertical, 8)
+                        .padding(.vertical, AppTheme.Spacing.compact)
                     }
                 }
                 .navigationTitle(categoryCreationStep == .groupSelection ? "Select Group" : "New Category")
@@ -1417,7 +1416,7 @@ struct TransactionFormView: View {
         .sheet(isPresented: $showingNewGroupSheet) {
             NavigationStack {
                 Form {
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
                         Text("Group Name")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -1435,7 +1434,7 @@ struct TransactionFormView: View {
                         }
                         .pickerStyle(.segmented)
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, AppTheme.Spacing.compact)
                 }
                 .navigationTitle("New Group")
                 .toolbar {
@@ -1582,13 +1581,13 @@ struct TransactionFormView: View {
             .fill(Color(.secondarySystemFill))
             .frame(height: 36)
             .overlay(
-                HStack(spacing: 6) {
+                HStack(spacing: AppTheme.Spacing.xSmall) {
                     Text("Select")
                     Image(systemName: "chevron.down")
                         .appCaptionText()
                 }
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 12)
+                .padding(.horizontal, AppTheme.Spacing.tight)
                 .frame(maxWidth: .infinity, alignment: .leading)
             )
         .allowsHitTesting(false)
@@ -1643,9 +1642,9 @@ struct TransactionFormView: View {
     private func transferInformationContent(for transaction: Transaction) -> some View {
         // Check if transaction is marked as external transfer
         if let externalLabel = transaction.externalTransferLabel {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
                 HStack {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         Text("External Transfer")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -1655,7 +1654,7 @@ struct TransactionFormView: View {
                     }
                     Spacer()
                     Image(systemName: "arrow.left.arrow.right.circle.fill")
-                        .font(.title3)
+                        .appTitleText()
                         .foregroundStyle(AppColors.tint(for: appColorMode))
                 }
                 .padding()
@@ -1673,10 +1672,10 @@ struct TransactionFormView: View {
             }
         } else if let transferID = transaction.transferID {
             // Show matched transfer info
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
                 if let matched = fetchMatchedTransfer(transferID: transferID, excluding: transaction.persistentModelID) {
                     HStack {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                             Text("Matched Transfer")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
@@ -1713,7 +1712,7 @@ struct TransactionFormView: View {
             }
         } else {
             // Show Find Match button for unmatched transfers
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
                 Text("This transaction is marked as a transfer but not yet matched with a corresponding transaction in another account.")
                     .appCaptionText()
                     .foregroundStyle(.secondary)
@@ -2219,7 +2218,7 @@ private struct PurchasedItemEditorView: View {
     var body: some View {
         Form {
             Section("Item") {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                     Text("Name")
                         .appCaptionText()
                         .foregroundStyle(.secondary)
@@ -2240,8 +2239,8 @@ private struct PurchasedItemEditorView: View {
                                             .foregroundStyle(.primary)
                                         Spacer()
                                     }
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 6)
+                                    .padding(.horizontal, AppTheme.Spacing.compact)
+                                    .padding(.vertical, AppTheme.Spacing.xSmall)
                                 }
                                 .buttonStyle(.plain)
                                 if index != nameSuggestions.count - 1 {
@@ -2265,11 +2264,11 @@ private struct PurchasedItemEditorView: View {
                     }
                 }
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                     Text("Price")
                         .appCaptionText()
                         .foregroundStyle(.secondary)
-                    HStack(spacing: 6) {
+                    HStack(spacing: AppTheme.Spacing.xSmall) {
                         Text(currencySymbol)
                             .foregroundStyle(.secondary)
                         TextField("0.00", text: $item.priceInput)
@@ -2283,7 +2282,7 @@ private struct PurchasedItemEditorView: View {
             }
 
             Section("Note") {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
                     TextField("Optional note", text: $item.note, axis: .vertical)
                         .lineLimit(3...6)
                         .onChange(of: item.note) { _, newValue in

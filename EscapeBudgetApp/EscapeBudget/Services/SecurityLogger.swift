@@ -160,10 +160,16 @@ final class SecurityLogger {
     // MARK: - Error Events
 
     func logSecurityError(_ error: Error, context: String) {
+        let nsError = error as NSError
         let event = SecurityEvent(
             type: .error,
             action: "security_error",
-            details: ["context": context, "error_type": String(describing: type(of: error))]
+            details: [
+                "context": context,
+                "error_type": String(describing: type(of: error)),
+                "error_domain": nsError.domain,
+                "error_code": String(nsError.code)
+            ]
         )
         log(event)
 

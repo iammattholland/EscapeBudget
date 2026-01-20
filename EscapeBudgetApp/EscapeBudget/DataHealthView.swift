@@ -45,14 +45,14 @@ struct DataHealthView: View {
     var body: some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
                     Text("Data Health")
                         .appSectionTitleText()
                     Text("A quick overview of your data, storage, and safety net settings.")
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, AppTheme.Spacing.micro)
             }
 
             Section("Sync") {
@@ -81,7 +81,7 @@ struct DataHealthView: View {
                 }
 
                 if !lastSyncError.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         Text("Last error")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
@@ -240,12 +240,12 @@ struct DataHealthView: View {
     }
 
     private func auditRow(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
             Text(title)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             Text(value)
-                .font(.callout)
+                .font(AppTheme.Typography.secondaryBody)
                 .foregroundStyle(.primary)
                 .textSelection(.enabled)
         }

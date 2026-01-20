@@ -416,14 +416,12 @@ Date,Payee,Amount
         let fileURL = createTempCSVFile(content: content)
         defer { cleanup(fileURL) }
 
-        let parser = RobustCSVParser()
-        var rows: [[String]] = []
-
-        for try await row in RobustCSVParser.parse(url: fileURL) {
-            rows.append(row)
+        do {
+            for try await _ in RobustCSVParser.parse(url: fileURL) {
+            }
+            Issue.record("Expected parse error for unterminated quote")
+        } catch {
         }
-
-        #expect(!rows.isEmpty)
     }
 
     @Test func testParseMixedLineEndings() async throws {

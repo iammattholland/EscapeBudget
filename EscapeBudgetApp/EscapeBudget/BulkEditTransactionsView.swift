@@ -160,7 +160,7 @@ struct BulkEditTransactionsView: View {
                     Toggle("Mark as Transfers", isOn: $convertToTransfer)
                         .disabled(!supportsConvertToTransfer)
                     if convertToTransfer {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
                             Label {
                                 Text("This will convert \(standardTransactionCount) transaction(s) to unmatched transfers and remove their categories.")
                                     .appCaptionText()

@@ -84,7 +84,7 @@ struct UndoRedoStatusView: View {
                         .appCaptionText()
                 } icon: {
                     Image(systemName: "arrow.uturn.backward.circle.fill")
-                        .foregroundColor(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                 }
             }
 
@@ -94,7 +94,7 @@ struct UndoRedoStatusView: View {
                         .appCaptionText()
                 } icon: {
                     Image(systemName: "arrow.uturn.forward.circle.fill")
-                        .foregroundColor(.accentColor)
+                        .foregroundStyle(Color.accentColor)
                 }
             }
 

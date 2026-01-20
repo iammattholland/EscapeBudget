@@ -194,12 +194,12 @@ struct AutoRulesView: View {
             Spacer()
 
             Image(systemName: "wand.and.stars")
-                .font(.system(size: 64))
-                .foregroundColor(AppColors.tint(for: appColorMode).opacity(0.6))
+                .appIconHero()
+                .foregroundStyle(AppColors.tint(for: appColorMode).opacity(0.6))
 
-            VStack(spacing: 8) {
+            VStack(spacing: AppTheme.Spacing.compact) {
                 Text("No Auto Rules Yet")
-                    .font(.title2)
+                    .appTitleText()
                     .fontWeight(.semibold)
 
                 Text("Auto rules automatically rename, categorize, and tag your transactions during import.")
@@ -221,7 +221,7 @@ struct AutoRulesView: View {
             Spacer()
 
             // Tips Section
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
                 Text("What can Auto Rules do?")
                     .appSectionTitleText()
 
@@ -308,7 +308,7 @@ struct RuleRowView: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AppTheme.Spacing.tight) {
             // Enable Toggle
             Toggle("", isOn: Binding(
                 get: { rule.isEnabled },
@@ -318,23 +318,23 @@ struct RuleRowView: View {
             .toggleStyle(SwitchToggleStyle(tint: AppColors.tint(for: appColorMode)))
 
             // Rule Info
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                 HStack {
                     Text(rule.name)
-                        .font(.body)
+                        .font(AppTheme.Typography.body)
                         .fontWeight(.medium)
-                        .foregroundColor(rule.isEnabled ? .primary : .secondary)
+                        .foregroundStyle(rule.isEnabled ? .primary : .secondary)
 
-                    if rule.timesApplied > 0 {
-                        Text("\(rule.timesApplied)×")
-                            .font(.caption2)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(AppColors.tint(for: appColorMode).opacity(0.1))
-                            .foregroundColor(AppColors.tint(for: appColorMode))
-                            .cornerRadius(4)
-                    }
-                }
+	                    if rule.timesApplied > 0 {
+	                        Text("\(rule.timesApplied)×")
+	                            .font(.caption2)
+	                            .padding(.horizontal, AppTheme.Spacing.xSmall)
+	                            .padding(.vertical, AppTheme.Spacing.hairline)
+	                            .background(AppColors.tint(for: appColorMode).opacity(0.1))
+	                            .foregroundStyle(AppColors.tint(for: appColorMode))
+	                            .cornerRadius(AppTheme.Radius.mini)
+	                    }
+	                }
 
                 Text(rule.matchSummary)
                     .appCaptionText()
@@ -342,7 +342,7 @@ struct RuleRowView: View {
                     .lineLimit(1)
 
                 // Action icons
-                HStack(spacing: 8) {
+                HStack(spacing: AppTheme.Spacing.compact) {
                     if rule.actionRenamePayee != nil && !rule.actionRenamePayee!.isEmpty {
                         ActionBadge(icon: "person.text.rectangle", label: "Rename")
                     }
@@ -367,7 +367,7 @@ struct RuleRowView: View {
                 .appCaptionText()
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, AppTheme.Spacing.micro)
         .contentShape(Rectangle())
         .onTapGesture { onTap() }
     }
@@ -380,18 +380,18 @@ struct ActionBadge: View {
     let label: String
 
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: AppTheme.Spacing.nano) {
             Image(systemName: icon)
                 .font(.caption2)
             Text(label)
                 .font(.caption2)
         }
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
-        .background(Color(.tertiarySystemFill))
-        .cornerRadius(4)
-    }
+	        .foregroundStyle(.secondary)
+	        .padding(.horizontal, AppTheme.Spacing.xSmall)
+	        .padding(.vertical, AppTheme.Spacing.hairline)
+	        .background(Color(.tertiarySystemFill))
+	        .cornerRadius(AppTheme.Radius.mini)
+	    }
 }
 
 // MARK: - Tip Row
@@ -403,13 +403,13 @@ struct TipRow: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: AppTheme.Spacing.tight) {
             Image(systemName: icon)
-                .font(.body)
-                .foregroundColor(AppColors.tint(for: appColorMode))
+                .font(AppTheme.Typography.body)
+                .foregroundStyle(AppColors.tint(for: appColorMode))
                 .frame(width: 24)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
                 Text(title)
                     .appSecondaryBodyText()
                     .fontWeight(.medium)

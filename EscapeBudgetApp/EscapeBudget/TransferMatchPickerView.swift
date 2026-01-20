@@ -67,7 +67,7 @@ struct TransferMatchPickerView: View {
             }
 
             Section {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
                     Text("Amount")
                         .appCaptionText()
                         .foregroundStyle(.secondary)
@@ -80,7 +80,7 @@ struct TransferMatchPickerView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, AppTheme.Spacing.micro)
 
                 Picker("Search window", selection: $window) {
                     Text("7d").tag(TransferLinker.SearchWindow.days(7))
@@ -135,8 +135,8 @@ struct TransferMatchPickerView: View {
                             showingConfirm = true
                         } label: {
                             HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    HStack(spacing: 6) {
+                                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                                    HStack(spacing: AppTheme.Spacing.xSmall) {
                                         Text(candidate.account?.name ?? "No Account")
                                             .appSectionTitleText()
                                         if isBestMatch {
@@ -291,7 +291,7 @@ struct TransferMatchPickerView: View {
                             Button {
                                 showingCreateTrackingConfirm = true
                             } label: {
-                                VStack(alignment: .leading, spacing: 4) {
+                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                     Label("Create External Account", systemImage: "plus.circle")
                                         .fontWeight(.semibold)
                                     Text("Creates an account in Accounts so you can track transfers to/from it.")
@@ -477,13 +477,13 @@ private struct TransferMatchConfirmView: View {
 
     @ViewBuilder
     private func transferRow(title: String, transaction: Transaction) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
             Text(title)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
 
             HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
                     Text(transaction.payee)
                         .appSectionTitleText()
 
@@ -501,7 +501,7 @@ private struct TransferMatchConfirmView: View {
 
                 Spacer()
 
-                VStack(alignment: .trailing, spacing: 2) {
+                VStack(alignment: .trailing, spacing: AppTheme.Spacing.hairline) {
                     Text(transaction.amount, format: .currency(code: currencyCode))
                         .appSectionTitleText()
                         .monospacedDigit()
@@ -511,6 +511,6 @@ private struct TransferMatchConfirmView: View {
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, AppTheme.Spacing.micro)
     }
 }

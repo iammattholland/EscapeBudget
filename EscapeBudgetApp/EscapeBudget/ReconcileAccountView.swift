@@ -103,11 +103,11 @@ struct ReconcileAccountView: View {
 
     private var actualBalanceSection: some View {
         Section("Actual Balance") {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
                 Text("Enter the current balance shown by your bank. Escape Budget will create an adjustment transaction to match it.")
                     .appCaptionText()
                     .foregroundStyle(.secondary)
-                HStack(spacing: 6) {
+                HStack(spacing: AppTheme.Spacing.xSmall) {
                     Text(currencySymbol(for: currencyCode))
                         .foregroundStyle(.secondary)
                     TextField("0.00", text: $actualBalanceInput)

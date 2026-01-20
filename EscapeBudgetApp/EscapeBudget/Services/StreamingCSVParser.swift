@@ -364,7 +364,7 @@ actor StreamingCSVParser {
 // MARK: - Dedicated Parser Implementation
 // Since the async stream above had some complexity with lookahead and state,
 // here is a robust character-by-character implementation that manages the buffer manually.
-class RobustCSVParser {
+final class RobustCSVParser {
     /// Maximum file size allowed for CSV import (50 MB)
     nonisolated private static let maxFileSize: Int64 = 50 * 1024 * 1024
     nonisolated private static let maxColumnsPerRow: Int = 256
@@ -437,18 +437,24 @@ class RobustCSVParser {
                     let data = try fileHandle.read(upToCount: bufferSize)
                     if let data = data, !data.isEmpty {
                         buffer.append(data)
-                    } else {
-                        // EOF
-                        if buffer.isEmpty {
-                            // Really done
-                            if insideQuotes || pendingQuote {
-                                continuation.finish(throwing: NSError(
-                                    domain: "CSVParser",
-                                    code: 8,
-                                    userInfo: [NSLocalizedDescriptionKey: "Malformed CSV: unterminated quote."]
-                                ))
-                                return
-                            }
+	                    } else {
+	                        // EOF
+	                        if buffer.isEmpty {
+	                            // Really done
+	                            if pendingQuote {
+	                                // A trailing `"` at EOF closes the quoted field.
+	                                insideQuotes = false
+	                                pendingQuote = false
+	                            }
+
+	                            if insideQuotes {
+	                                continuation.finish(throwing: NSError(
+	                                    domain: "CSVParser",
+	                                    code: 8,
+	                                    userInfo: [NSLocalizedDescriptionKey: "Malformed CSV: unterminated quote."]
+	                                ))
+	                                return
+	                            }
                             if !currentField.isEmpty || !currentRow.isEmpty {
                                 currentRow.append(currentField)
                                 continuation.yield(currentRow)

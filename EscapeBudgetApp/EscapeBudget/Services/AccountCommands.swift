@@ -3,7 +3,7 @@ import SwiftData
 
 // MARK: - Add Account Command
 
-class AddAccountCommand: Command {
+final class AddAccountCommand: Command {
     let description: String
     private let modelContext: ModelContext
     private var account: Account?
@@ -87,7 +87,7 @@ class AddAccountCommand: Command {
 
 // MARK: - Delete Account Command
 
-class DeleteAccountCommand: Command {
+final class DeleteAccountCommand: Command {
     let description: String
     private let modelContext: ModelContext
     private var accountPersistentID: PersistentIdentifier
@@ -149,7 +149,7 @@ class DeleteAccountCommand: Command {
 
 // MARK: - Update Account Command
 
-class UpdateAccountCommand: Command {
+final class UpdateAccountCommand: Command {
     let description: String
     private let modelContext: ModelContext
     private let accountPersistentID: PersistentIdentifier

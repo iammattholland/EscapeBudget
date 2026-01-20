@@ -5,7 +5,7 @@ import SwiftData
 import os.log
 
 @MainActor
-class NotificationService: ObservableObject {
+final class NotificationService: ObservableObject {
     static let shared = NotificationService()
 
     @Published var notificationsEnabled = false

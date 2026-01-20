@@ -45,33 +45,32 @@ struct SavingsGoalsView: View {
 
                     // Summary Card
                     Section {
-                        VStack(spacing: 12) {
+                        VStack(spacing: AppTheme.Spacing.tight) {
                             HStack {
-                                VStack(alignment: .leading, spacing: 4) {
+                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                     Text("Total Saved")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
                                     Text(totalSaved, format: .currency(code: currencyCode))
-                                        .font(.title2)
+                                        .appTitleText()
                                         .fontWeight(.bold)
                                 }
-                                
+
                                 Spacer()
-                                
-                                VStack(alignment: .trailing, spacing: 4) {
+
+                                VStack(alignment: .trailing, spacing: AppTheme.Spacing.micro) {
                                     Text("Total Goal")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
                                     Text(totalTarget, format: .currency(code: currencyCode))
-                                        .font(.title3)
-                                        .fontWeight(.semibold)
+                                        .appTitleText()
                                 }
                             }
                             
                             ProgressView(value: overallProgress)
                                 .tint(AppColors.tint(for: appColorMode))
                         }
-                        .padding(.vertical, 8)
+                        .padding(.vertical, AppTheme.Spacing.compact)
                     }
                     
                     // Goals List
@@ -223,18 +222,18 @@ struct SavingsGoalRow: View {
 
                     if goal.isAchieved {
                         Image(systemName: "checkmark")
-                            .font(.title3)
-                            .foregroundColor(color)
+                            .appTitleText()
+                            .foregroundStyle(color)
                     } else {
                         Text("\(Int(goal.progressPercentage))%")
                             .appCaptionText()
                             .fontWeight(.bold)
-                            .foregroundColor(color)
+                            .foregroundStyle(color)
                     }
                 }
 
                 // Content
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
                     Text(goal.name)
                         .appSectionTitleText()
 
@@ -251,7 +250,7 @@ struct SavingsGoalRow: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(.vertical, 8)
+            .padding(.vertical, AppTheme.Spacing.compact)
         }
     }
 }
@@ -328,7 +327,7 @@ struct AddSavingsGoalView: View {
                 }
                 
                 Section("Color") {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 12) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: AppTheme.Spacing.tight) {
                         ForEach(colorOptions, id: \.0) { hex, name in
                             Circle()
                                 .fill(Color(hex: hex) ?? AppColors.tint(for: appColorMode))
@@ -405,13 +404,13 @@ struct SavingsGoalDetailView: View {
                 VStack(spacing: AppTheme.Spacing.medium) {
                     Text(goal.progressPercentage, format: .percent.precision(.fractionLength(1)))
                         .font(.system(size: 48, weight: .bold))
-                        .foregroundColor(Color(hex: goal.colorHex) ?? AppColors.tint(for: appColorMode))
+                        .foregroundStyle(Color(hex: goal.colorHex) ?? AppColors.tint(for: appColorMode))
                     
                     ProgressView(value: goal.progressPercentage / 100)
                         .tint(Color(hex: goal.colorHex) ?? AppColors.tint(for: appColorMode))
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
+                .padding(.vertical, AppTheme.Spacing.compact)
             }
             
             Section("Progress") {
@@ -439,7 +438,7 @@ struct SavingsGoalDetailView: View {
             if let notes = goal.notes {
                 Section("Notes") {
                     Text(notes)
-                        .font(.body)
+                        .font(AppTheme.Typography.body)
                 }
             }
         }

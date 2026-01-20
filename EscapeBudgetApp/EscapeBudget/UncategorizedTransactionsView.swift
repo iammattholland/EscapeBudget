@@ -29,8 +29,8 @@ struct UncategorizedTransactionsView: View {
             VStack(spacing: 0) {
                 actionButtons
                     .padding(.horizontal, AppTheme.Spacing.medium)
-                    .padding(.top, 10)
-                    .padding(.bottom, 6)
+                    .padding(.top, AppTheme.Spacing.small)
+                    .padding(.bottom, AppTheme.Spacing.xSmall)
 
                 transactionList
             }
@@ -86,22 +86,19 @@ struct UncategorizedTransactionsView: View {
     private var transactionList: some View {
         List {
                     if transactions.isEmpty {
-                        VStack(alignment: .center, spacing: 12) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 48))
-                                .foregroundColor(AppColors.success(for: appColorMode))
-                            Text("All transactions categorized")
-                                .appSectionTitleText()
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 40)
+                        EmptyDataCard(
+                            systemImage: "checkmark.circle.fill",
+                            title: "All transactions categorized",
+                            message: "Great job! All your transactions have been assigned to categories."
+                        )
+                        .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     } else {
                         ForEach(transactions) { transaction in
-                            VStack(alignment: .leading, spacing: 6) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
                                 HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
+                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                         Text(transaction.payee)
                                             .appSectionTitleText()
                                         
@@ -113,7 +110,7 @@ struct UncategorizedTransactionsView: View {
                                     Spacer()
                                     
                                     Text(transaction.amount, format: .currency(code: currencyCode))
-                                        .foregroundColor(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                                        .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
                                 }
                                 
                                 Menu {
@@ -146,10 +143,10 @@ struct UncategorizedTransactionsView: View {
                                 } label: {
                                     Text("Assign Category")
                                         .appCaptionText()
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
+                                        .padding(.horizontal, AppTheme.Spacing.compact)
+                                        .padding(.vertical, AppTheme.Spacing.micro)
                                         .background(Capsule().fill(AppColors.warning(for: appColorMode).opacity(0.15)))
-                                        .foregroundColor(AppColors.warning(for: appColorMode))
+                                        .foregroundStyle(AppColors.warning(for: appColorMode))
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -177,7 +174,7 @@ struct UncategorizedTransactionsView: View {
     }
 
     private var actionButtons: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: AppTheme.Spacing.compact) {
             Button {
                 showingSmartCategorize = true
             } label: {
@@ -188,7 +185,7 @@ struct UncategorizedTransactionsView: View {
             .appPrimaryCTA()
             .disabled(transactions.isEmpty)
 
-            HStack(spacing: 8) {
+            HStack(spacing: AppTheme.Spacing.compact) {
                 Button {
                     showingQuickCategorize = true
                 } label: {

@@ -23,8 +23,8 @@ struct PlanView: View {
                         tabs: PlanSection.allCases.map { .init(id: $0, title: $0.rawValue) }
                     )
                     .appAdaptiveScreenHorizontalPadding()
-                    .padding(.top, 6)
-                    .padding(.bottom, 6)
+                    .padding(.top, AppTheme.Spacing.xSmall)
+                    .padding(.bottom, AppTheme.Spacing.xSmall)
                 }
                 .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
                     let key: String
@@ -94,8 +94,8 @@ private struct PlanForecastHubView: View {
                 .pickerStyle(.segmented)
                 .topChromeSegmentedStyle(isCompact: true)
                 .appAdaptiveScreenHorizontalPadding()
-                .padding(.top, 6)
-                .padding(.bottom, 6)
+                .padding(.top, AppTheme.Spacing.xSmall)
+                .padding(.bottom, AppTheme.Spacing.xSmall)
 
                 Group {
                     switch selectedTab {
@@ -167,5 +167,4 @@ private struct PlanForecastHubView: View {
             inMemory: true
         )
         .preferredColorScheme(.dark)
-        .previewDevice("iPad Pro (12.9-inch) (6th generation)")
 }

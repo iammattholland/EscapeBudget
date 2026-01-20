@@ -44,7 +44,7 @@ struct QuickCategorizeView: View {
                         .buttonStyle(.plain)
                     }
                     .padding(.horizontal, AppTheme.Spacing.xLarge)
-                    .padding(.top, 60)
+                    .padding(.top, AppTheme.Spacing.hero)
                     
                     Spacer()
                     
@@ -55,28 +55,28 @@ struct QuickCategorizeView: View {
                             SwipeOptionLabel(text: bottom.name, color: AppColors.success(for: appColorMode), icon: "arrow.down")
                         }
                         .buttonStyle(.plain)
-                        .padding(.bottom, 40)
+                        .padding(.bottom, AppTheme.Spacing.emptyState)
                     }
                 }
                 .zIndex(0)
                 
                 // Card
-                VStack(spacing: 12) {
+                VStack(spacing: AppTheme.Spacing.tight) {
                     Text(displayTitle(for: transaction))
-                        .font(.title) // Smaller than largeTitle
+                        .font(.title)
                         .fontWeight(.bold)
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.5)
                         .lineLimit(3)
-                    
+
                     Text(transaction.amount, format: .currency(code: currencyCode))
-                        .font(.system(size: 32, weight: .heavy)) // Smaller size
-                        .foregroundColor(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                        .font(.system(size: 32, weight: .heavy))
+                        .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
                         .minimumScaleFactor(0.5)
                         .lineLimit(1)
-                    
+
                     Text(transaction.date, format: .dateTime.month().day().year())
-                        .font(.body)
+                        .font(AppTheme.Typography.body)
                         .foregroundStyle(.secondary)
                 }
                 .padding(AppTheme.Spacing.screenHorizontal)
@@ -240,9 +240,9 @@ struct SwipeOptionLabel: View {
     let icon: String // System image name
     
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: AppTheme.Spacing.micro) {
             Image(systemName: icon)
-                .font(.title3)
+                .appTitleText()
                 .fontWeight(.bold)
             Text(text)
                 .appSecondaryBodyText()
@@ -250,7 +250,7 @@ struct SwipeOptionLabel: View {
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
         }
-        .foregroundColor(.white)
+        .foregroundStyle(.white)
         .padding(.vertical, AppTheme.Spacing.small)
         .padding(.horizontal, AppTheme.Spacing.medium)
         .background(color)
@@ -305,11 +305,11 @@ struct QuickCategorizeSessionView: View {
                 } else {
                     VStack {
                         Image(systemName: "checkmark.seal.fill")
-                            .font(.system(size: 64))
-                            .foregroundColor(AppColors.success(for: appColorMode))
+                            .appIconHero()
+                            .foregroundStyle(AppColors.success(for: appColorMode))
                             .padding()
                         Text("All Done!")
-                            .font(.title)
+                            .appTitleText()
                             .fontWeight(.bold)
                         Button("Finish") {
                             dismiss()
@@ -354,7 +354,7 @@ struct QuickCategorizeSessionView: View {
                                 showingManualPicker = false
                             } label: {
                                 Label("Transfer", systemImage: "arrow.left.arrow.right")
-                                    .foregroundColor(AppColors.tint(for: appColorMode))
+                                    .foregroundStyle(AppColors.tint(for: appColorMode))
                             }
                             .disabled(currentIndex >= sortedTransactions.count)
 

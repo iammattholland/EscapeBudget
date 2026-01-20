@@ -28,18 +28,18 @@ struct LockScreenView: View {
                         .frame(width: 120, height: 120)
 
                     Image(systemName: authService.biometricType.systemImage)
-                        .font(.system(size: 50))
-                        .foregroundColor(AppColors.tint(for: appColorMode))
+                        .appIcon(size: AppTheme.IconSize.emptyState)
+                        .foregroundStyle(AppColors.tint(for: appColorMode))
                 }
 
                 // Title
-                VStack(spacing: 8) {
+                VStack(spacing: AppTheme.Spacing.compact) {
                     Text("Escape Budget")
                         .font(.largeTitle)
                         .fontWeight(.bold)
 
                     Text("Locked")
-                        .font(.title3)
+                        .appTitleText()
                         .foregroundStyle(.secondary)
                 }
 
@@ -50,7 +50,7 @@ struct LockScreenView: View {
                     Button {
                         authenticate()
                     } label: {
-                        HStack(spacing: 12) {
+                        HStack(spacing: AppTheme.Spacing.tight) {
                             if isAuthenticating {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
@@ -60,7 +60,7 @@ struct LockScreenView: View {
                             Text(isAuthenticating ? "Authenticating..." : "Unlock with \(authService.biometricType.displayName)")
                         }
                         .font(AppTheme.Typography.buttonLabel.weight(.semibold))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(AppColors.tint(for: appColorMode))
@@ -71,12 +71,12 @@ struct LockScreenView: View {
                     if showError {
                         Text("Authentication failed. Please try again.")
                             .appCaptionText()
-                            .foregroundColor(AppColors.danger(for: appColorMode))
+                            .foregroundStyle(AppColors.danger(for: appColorMode))
                             .transition(.opacity)
                     }
                 }
                 .padding(.horizontal, AppTheme.Spacing.xxLarge)
-                .padding(.bottom, 60)
+                .padding(.bottom, AppTheme.Spacing.hero)
             }
         }
         .task {

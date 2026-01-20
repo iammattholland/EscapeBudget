@@ -8,6 +8,7 @@ struct ReviewView: View {
         case custom = "Custom"
     }
 
+    @EnvironmentObject private var navigator: AppNavigator
     @State private var selectedSection: ReportSection = .budget
     @State private var sharedMonth = Date()
     @State private var filterMode: DateRangeFilterHeader.FilterMode = .month
@@ -37,7 +38,7 @@ struct ReviewView: View {
         NavigationStack {
             reviewBody
                 .safeAreaInset(edge: .top, spacing: 0) {
-                    VStack(spacing: 8) {
+                    VStack(spacing: AppTheme.Spacing.compact) {
                         TopChromeTabs(
                             selection: $selectedSection,
                             tabs: ReportSection.allCases.map { .init(id: $0, title: $0.rawValue) },
@@ -55,8 +56,8 @@ struct ReviewView: View {
                     }
                     .padding(.top, topChromeLargeTitleClearance)
                     .appAdaptiveScreenHorizontalPadding()
-                    .padding(.top, 6)
-                    .padding(.bottom, 6)
+                    .padding(.top, AppTheme.Spacing.xSmall)
+                    .padding(.bottom, AppTheme.Spacing.xSmall)
                 }
                 .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
                     let offset = activeScrollKey.flatMap { offsets[$0] } ?? 0
@@ -73,6 +74,12 @@ struct ReviewView: View {
                 }
                 .onChange(of: selectedSection) { _, _ in
                     isTopChromeCompact = false
+                }
+                .onAppear {
+                    applyDeepLinkIfNeeded()
+                }
+                .onChange(of: navigator.reviewDeepLink) { _, _ in
+                    applyDeepLinkIfNeeded()
                 }
                 .navigationTitle("Review")
                 .navigationBarTitleDisplayMode(.inline)
@@ -113,5 +120,25 @@ struct ReviewView: View {
         .if(filterMode == .month && selectedSection != .custom) { view in
             view.monthSwipeNavigation(selectedDate: $sharedMonth)
         }
+    }
+
+    private func applyDeepLinkIfNeeded() {
+        guard let link = navigator.reviewDeepLink else { return }
+
+        switch link.section {
+        case .budget:
+            selectedSection = .budget
+        case .income:
+            selectedSection = .income
+        case .expenses:
+            selectedSection = .expenses
+        }
+
+        filterMode = link.filterMode
+        sharedMonth = link.date
+        customStartDate = link.customStartDate
+        customEndDate = link.customEndDate
+
+        navigator.reviewDeepLink = nil
     }
 }

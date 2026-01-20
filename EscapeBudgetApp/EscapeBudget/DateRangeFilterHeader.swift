@@ -42,7 +42,7 @@ struct DateRangeFilterHeader: View {
                 Image(systemName: "chevron.left")
                     .font(isCompact ? .callout : .body)
                     .foregroundStyle(.primary)
-                    .padding(isCompact ? 6 : 8)
+                    .padding(isCompact ? AppTheme.Spacing.xSmall : AppTheme.Spacing.compact)
                     .background(Color(.systemGray6))
                     .clipShape(Circle())
             }
@@ -60,7 +60,7 @@ struct DateRangeFilterHeader: View {
                 Text(labelText)
                     .font(isCompact ? .subheadline.weight(.semibold) : .headline)
                     .foregroundStyle(.primary)
-                    .padding(.vertical, isCompact ? 4 : 8)
+                    .padding(.vertical, isCompact ? AppTheme.Spacing.micro : AppTheme.Spacing.compact)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.plain)
@@ -72,7 +72,7 @@ struct DateRangeFilterHeader: View {
                 Image(systemName: "chevron.right")
                     .font(isCompact ? .callout : .body)
                     .foregroundStyle(.primary)
-                    .padding(isCompact ? 6 : 8)
+                    .padding(isCompact ? AppTheme.Spacing.xSmall : AppTheme.Spacing.compact)
                     .background(Color(.systemGray6))
                     .clipShape(Circle())
             }

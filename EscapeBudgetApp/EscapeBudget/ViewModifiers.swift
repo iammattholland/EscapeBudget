@@ -27,7 +27,7 @@ extension View {
 
     func topChromeSegmentedStyle(isCompact: Bool = false) -> some View {
         self
-            .padding(.horizontal, isCompact ? 12 : AppTheme.Spacing.chromePaddingHorizontal)
+            .padding(.horizontal, isCompact ? AppTheme.Spacing.tight : AppTheme.Spacing.chromePaddingHorizontal)
             .padding(.vertical, isCompact ? AppTheme.Spacing.chromePaddingVerticalCompact : AppTheme.Spacing.chromePaddingVertical)
             .background(
                 RoundedRectangle(cornerRadius: isCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)

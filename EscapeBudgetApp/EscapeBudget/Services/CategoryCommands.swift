@@ -3,7 +3,7 @@ import SwiftData
 
 // MARK: - Add Category Command
 
-class AddCategoryCommand: Command {
+final class AddCategoryCommand: Command {
     let description: String
     private let modelContext: ModelContext
     private var category: Category?
@@ -77,7 +77,7 @@ class AddCategoryCommand: Command {
 
 // MARK: - Delete Category Command
 
-class DeleteCategoryCommand: Command {
+final class DeleteCategoryCommand: Command {
     let description: String
     private let modelContext: ModelContext
     private var categoryPersistentID: PersistentIdentifier
@@ -134,7 +134,7 @@ class DeleteCategoryCommand: Command {
 
 // MARK: - Update Category Command
 
-class UpdateCategoryCommand: Command {
+final class UpdateCategoryCommand: Command {
     let description: String
     private let modelContext: ModelContext
     private let categoryPersistentID: PersistentIdentifier

@@ -22,7 +22,7 @@ struct YearEndReviewView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 14) {
+            VStack(spacing: AppTheme.Spacing.cardGap) {
                 if availableYears.isEmpty {
                     EmptyDataCard(
                         systemImage: "sparkles",
@@ -56,7 +56,7 @@ struct YearEndReviewView: View {
                 }
             }
             .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.vertical, 12)
+            .padding(.vertical, AppTheme.Spacing.tight)
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Year End Review")
@@ -90,10 +90,10 @@ private struct YearEndHeaderCard: View {
     let onPick: (Int) -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: AppTheme.Spacing.small) {
             Button(action: onPrevious) {
                 Image(systemName: "chevron.left")
-                    .font(.callout)
+                    .font(AppTheme.Typography.secondaryBody)
                     .foregroundStyle(.primary)
                     .padding(AppTheme.Spacing.compact)
                     .background(Color(.systemGray6))
@@ -116,7 +116,7 @@ private struct YearEndHeaderCard: View {
 
             Button(action: onNext) {
                 Image(systemName: "chevron.right")
-                    .font(.callout)
+                    .font(AppTheme.Typography.secondaryBody)
                     .foregroundStyle(.primary)
                     .padding(AppTheme.Spacing.compact)
                     .background(Color(.systemGray6))
@@ -696,7 +696,7 @@ private struct YearEndReviewContentView: View {
     }
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: AppTheme.Spacing.cardGap) {
             YearEndHeroCard(
                 year: year,
                 currencyCode: currencyCode,
@@ -773,7 +773,7 @@ private struct YearEndReviewContentView: View {
                 }
             }
 
-            HStack(spacing: 12) {
+            HStack(spacing: AppTheme.Spacing.tight) {
                 MetricCard(
                     title: "Top Category",
                     value: topCategory?.name ?? "—",
@@ -790,7 +790,7 @@ private struct YearEndReviewContentView: View {
                 )
             }
 
-            HStack(spacing: 12) {
+            HStack(spacing: AppTheme.Spacing.tight) {
                 MetricCard(
                     title: "Biggest Expense",
                     value: biggestExpense?.payee.trimmingCharacters(in: .whitespacesAndNewlines).nonEmptyOrDash ?? "—",
@@ -894,7 +894,7 @@ private struct YearEndCashflowChartCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             HStack(alignment: .firstTextBaseline) {
                 AppSectionHeader(title: "Monthly Cash Flow", subtitle: "Income vs spending, month by month.")
                 Spacer()
@@ -902,7 +902,7 @@ private struct YearEndCashflowChartCard: View {
                     .foregroundStyle(.secondary)
             }
 
-            HStack(spacing: 10) {
+            HStack(spacing: AppTheme.Spacing.small) {
                 legendDot(color: .green, title: "Income")
                 legendDot(color: .red, title: "Spent")
                 legendDot(color: .blue, title: "Net")
@@ -915,18 +915,18 @@ private struct YearEndCashflowChartCard: View {
                 Text("No income or expense activity recorded for this year.")
                     .appSecondaryBodyText()
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, AppTheme.Spacing.xSmall)
             } else {
                 Chart {
-                    ForEach(barPoints) { point in
-                        BarMark(
-                            x: .value("Month", point.monthStart, unit: .month),
-                            y: .value("Amount", point.value)
-                        )
-                        .cornerRadius(4)
-                        .foregroundStyle(by: .value("Series", point.series.rawValue))
-                        .position(by: .value("Series", point.series.rawValue))
-                    }
+	                    ForEach(barPoints) { point in
+	                        BarMark(
+	                            x: .value("Month", point.monthStart, unit: .month),
+	                            y: .value("Amount", point.value)
+	                        )
+	                        .cornerRadius(AppTheme.Radius.mini)
+	                        .foregroundStyle(by: .value("Series", point.series.rawValue))
+	                        .position(by: .value("Series", point.series.rawValue))
+	                    }
 
                     ForEach(summaries) { summary in
                         LineMark(
@@ -982,7 +982,7 @@ private struct YearEndCashflowChartCard: View {
     }
 
     private func legendDot(color: Color, title: String) -> some View {
-        HStack(spacing: 6) {
+        HStack(spacing: AppTheme.Spacing.xSmall) {
             Circle()
                 .fill(color)
                 .frame(width: 8, height: 8)
@@ -998,7 +998,7 @@ private struct YearEndTopCategoriesChartCard: View {
     let currencyCode: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             HStack(alignment: .firstTextBaseline) {
                 AppSectionHeader(title: "Top Categories (Chart)", subtitle: "Your biggest spending buckets.")
                 Spacer()
@@ -1010,16 +1010,16 @@ private struct YearEndTopCategoriesChartCard: View {
                 Text("No expenses recorded for this year.")
                     .appSecondaryBodyText()
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, AppTheme.Spacing.xSmall)
             } else {
-                Chart(categories) { item in
-                    BarMark(
-                        x: .value("Spent", YearEndChartFormat.toDouble(item.total)),
-                        y: .value("Category", item.name)
-                    )
-                    .cornerRadius(6)
-                    .foregroundStyle(Color.orange.gradient)
-                }
+	                Chart(categories) { item in
+	                    BarMark(
+	                        x: .value("Spent", YearEndChartFormat.toDouble(item.total)),
+	                        y: .value("Category", item.name)
+	                    )
+	                    .cornerRadius(AppTheme.Radius.tag)
+	                    .foregroundStyle(Color.orange.gradient)
+	                }
                 .chartLegend(.hidden)
                 .chartXAxis {
                     AxisMarks(position: .bottom) { value in
@@ -1109,7 +1109,7 @@ private struct YearEndSpendingByMonthChartCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             HStack(alignment: .firstTextBaseline) {
                 AppSectionHeader(title: "Spending By Month", subtitle: "Which categories drove each month.")
                 Spacer()
@@ -1121,18 +1121,18 @@ private struct YearEndSpendingByMonthChartCard: View {
                 Text("No expenses recorded for this year.")
                     .appSecondaryBodyText()
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, AppTheme.Spacing.xSmall)
             } else {
-                Chart(segments) { segment in
-                    BarMark(
-                        x: .value("Month", segment.monthStart, unit: .month),
-                        yStart: .value("Start", segment.y0),
-                        yEnd: .value("End", segment.y1)
-                    )
-                    .foregroundStyle(by: .value("Category", segment.series))
-                    .cornerRadius(3)
-                }
-                .chartLegend(position: .bottom, alignment: .leading, spacing: 10)
+	                Chart(segments) { segment in
+	                    BarMark(
+	                        x: .value("Month", segment.monthStart, unit: .month),
+	                        yStart: .value("Start", segment.y0),
+	                        yEnd: .value("End", segment.y1)
+	                    )
+	                    .foregroundStyle(by: .value("Category", segment.series))
+	                    .cornerRadius(AppTheme.Radius.micro)
+	                }
+                .chartLegend(position: .bottom, alignment: .leading, spacing: AppTheme.Spacing.small)
                 .chartXAxis {
                     AxisMarks(values: .stride(by: .month)) { _ in
                         AxisGridLine().foregroundStyle(Color.primary.opacity(0.06))
@@ -1213,7 +1213,7 @@ private struct YearEndIncomeByMonthChartCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             HStack(alignment: .firstTextBaseline) {
                 AppSectionHeader(title: "Income Sources By Month", subtitle: "Where your income came from.")
                 Spacer()
@@ -1225,18 +1225,18 @@ private struct YearEndIncomeByMonthChartCard: View {
                 Text("No income recorded for this year.")
                     .appSecondaryBodyText()
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, AppTheme.Spacing.xSmall)
             } else {
-                Chart(segments) { segment in
-                    BarMark(
-                        x: .value("Month", segment.monthStart, unit: .month),
-                        yStart: .value("Start", segment.y0),
-                        yEnd: .value("End", segment.y1)
-                    )
-                    .foregroundStyle(by: .value("Source", segment.series))
-                    .cornerRadius(3)
-                }
-                .chartLegend(position: .bottom, alignment: .leading, spacing: 10)
+	                Chart(segments) { segment in
+	                    BarMark(
+	                        x: .value("Month", segment.monthStart, unit: .month),
+	                        yStart: .value("Start", segment.y0),
+	                        yEnd: .value("End", segment.y1)
+	                    )
+	                    .foregroundStyle(by: .value("Source", segment.series))
+	                    .cornerRadius(AppTheme.Radius.micro)
+	                }
+                .chartLegend(position: .bottom, alignment: .leading, spacing: AppTheme.Spacing.small)
                 .chartXAxis {
                     AxisMarks(values: .stride(by: .month)) { _ in
                         AxisGridLine().foregroundStyle(Color.primary.opacity(0.06))
@@ -1286,7 +1286,7 @@ private struct YearEndSpendingHeatmapCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             HStack(alignment: .firstTextBaseline) {
                 AppSectionHeader(title: "Spending Pattern Heatmap", subtitle: "When you tend to spend (weekday × month).")
                 Spacer()
@@ -1298,16 +1298,16 @@ private struct YearEndSpendingHeatmapCard: View {
                 Text("No expenses recorded for this year.")
                     .appSecondaryBodyText()
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, AppTheme.Spacing.xSmall)
             } else {
-                Chart(points) { point in
-                    RectangleMark(
-                        x: .value("Weekday", weekdayLabels[point.weekday]),
-                        y: .value("Month", monthLabels[point.month - 1])
-                    )
-                    .cornerRadius(3)
-                    .foregroundStyle(by: .value("Spent", YearEndChartFormat.toDouble(point.amount)))
-                }
+	                Chart(points) { point in
+	                    RectangleMark(
+	                        x: .value("Weekday", weekdayLabels[point.weekday]),
+	                        y: .value("Month", monthLabels[point.month - 1])
+	                    )
+	                    .cornerRadius(AppTheme.Radius.micro)
+	                    .foregroundStyle(by: .value("Spent", YearEndChartFormat.toDouble(point.amount)))
+	                }
                 .chartForegroundStyleScale(range: Gradient(colors: [Color(.systemGray5), .orange, .red]))
                 .chartLegend(.hidden)
                 .chartXAxis {
@@ -1354,7 +1354,7 @@ private struct YearEndCategoryYoYDeltaChartCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             HStack(alignment: .firstTextBaseline) {
                 AppSectionHeader(title: "Category Changes vs Last Year", subtitle: "Biggest increases and decreases in spending.")
                 Spacer()
@@ -1366,9 +1366,9 @@ private struct YearEndCategoryYoYDeltaChartCard: View {
                 Text("Not enough year-over-year data yet.")
                     .appSecondaryBodyText()
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, AppTheme.Spacing.xSmall)
             } else {
-                HStack(spacing: 12) {
+                HStack(spacing: AppTheme.Spacing.tight) {
                     deltaList(title: "Up", items: increases, tint: .red)
                     deltaList(title: "Down", items: decreases.map { $0.asPositiveDelta }, tint: .green)
                 }
@@ -1378,7 +1378,7 @@ private struct YearEndCategoryYoYDeltaChartCard: View {
     }
 
     private func deltaList(title: String, items: [YearEndDeltaItem], tint: Color) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
             Text(title)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
@@ -1387,16 +1387,16 @@ private struct YearEndCategoryYoYDeltaChartCard: View {
                 Text("—")
                     .appSecondaryBodyText()
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, AppTheme.Spacing.xSmall)
             } else {
-                Chart(items) { item in
-                    BarMark(
-                        x: .value("Delta", YearEndChartFormat.toDouble(item.delta)),
-                        y: .value("Category", item.name)
-                    )
-                    .foregroundStyle(tint.gradient)
-                    .cornerRadius(6)
-                }
+	                Chart(items) { item in
+	                    BarMark(
+	                        x: .value("Delta", YearEndChartFormat.toDouble(item.delta)),
+	                        y: .value("Category", item.name)
+	                    )
+	                    .foregroundStyle(tint.gradient)
+	                    .cornerRadius(AppTheme.Radius.tag)
+	                }
                 .chartLegend(.hidden)
                 .chartXAxis {
                     AxisMarks(position: .bottom) { value in
@@ -1450,14 +1450,14 @@ private struct YearEndMerchantInsightsCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             header
 
             if !hasData {
                 Text("No merchant data recorded for this year.")
                     .appSecondaryBodyText()
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, AppTheme.Spacing.xSmall)
             } else {
                 paretoSection
                 scatterSection
@@ -1478,7 +1478,7 @@ private struct YearEndMerchantInsightsCard: View {
     @ViewBuilder
     private var paretoSection: some View {
         if !pareto.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
                 Text("Pareto Curve")
                     .font(.subheadline.weight(.semibold))
 
@@ -1543,7 +1543,7 @@ private struct YearEndMerchantInsightsCard: View {
     @ViewBuilder
     private var scatterSection: some View {
         if !scatter.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
                 Text("Frequency vs Spend")
                     .font(.subheadline.weight(.semibold))
 
@@ -1596,7 +1596,7 @@ private struct YearEndBehaviorMetricsCard: View {
     let biggestBudgetOverrun: YearEndBudgetOverrun?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             HStack(alignment: .firstTextBaseline) {
                 AppSectionHeader(title: "Your Money Habits", subtitle: "A few fun metrics and quick wins.")
                 Spacer()
@@ -1604,7 +1604,7 @@ private struct YearEndBehaviorMetricsCard: View {
                     .foregroundStyle(.secondary)
             }
 
-            VStack(spacing: 10) {
+            VStack(spacing: AppTheme.Spacing.small) {
                 metricRow(
                     title: "Median monthly spending",
                     value: monthlySpendingMedian.map { YearEndChartFormat.compactCurrency($0, currencyCode: currencyCode) } ?? "—"
@@ -1649,7 +1649,7 @@ private struct YearEndBehaviorMetricsCard: View {
     }
 
     private func metricRow(title: String, value: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
+        HStack(alignment: .firstTextBaseline, spacing: AppTheme.Spacing.small) {
             Text(title)
                 .appSecondaryBodyText()
                 .foregroundStyle(.secondary)
@@ -1677,7 +1677,7 @@ private struct YearEndSavingsGoalsCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             HStack(alignment: .firstTextBaseline) {
                 AppSectionHeader(title: "Savings Goals", subtitle: "Progress snapshot across your goals.")
                 Spacer()
@@ -1697,7 +1697,7 @@ private struct YearEndSavingsGoalsCard: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
                 HStack {
                     Text("Total saved")
                         .appCaptionText()
@@ -1714,14 +1714,14 @@ private struct YearEndSavingsGoalsCard: View {
             }
 
             if !goals.isEmpty {
-                Chart(goals) { goal in
-                    BarMark(
-                        x: .value("Progress", goal.progressPercentage),
-                        y: .value("Goal", goal.name)
-                    )
-                    .foregroundStyle(Color.green.gradient)
-                    .cornerRadius(6)
-                }
+	                Chart(goals) { goal in
+	                    BarMark(
+	                        x: .value("Progress", goal.progressPercentage),
+	                        y: .value("Goal", goal.name)
+	                    )
+	                    .foregroundStyle(Color.green.gradient)
+	                    .cornerRadius(AppTheme.Radius.tag)
+	                }
                 .chartXScale(domain: 0...100)
                 .chartLegend(.hidden)
                 .chartXAxis {
@@ -1754,7 +1754,7 @@ private struct YearEndSavingsGoalsCard: View {
     }
 
     private func stat(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
             Text(title)
                 .appCaptionText()
                 .foregroundStyle(.secondary)
@@ -1777,7 +1777,7 @@ private struct YearEndRetirementCard: View {
     }
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: 12) {
+	        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
 	            HStack(alignment: .firstTextBaseline) {
 	                AppSectionHeader(
 	                    title: "Retirement Snapshot",
@@ -1804,7 +1804,7 @@ private struct YearEndRetirementCard: View {
     }
 
     private func stat(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
             Text(title)
                 .appCaptionText()
                 .foregroundStyle(.secondary)
@@ -1929,7 +1929,7 @@ private struct YearEndHeroCard: View {
     }
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: 12) {
+	        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
 	            HStack(alignment: .firstTextBaseline) {
 	                AppSectionHeader(
 	                    title: "Your \(year) Recap",
@@ -1946,7 +1946,7 @@ private struct YearEndHeroCard: View {
             }
 
             HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                     Text(netLabel)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
@@ -1959,9 +1959,9 @@ private struct YearEndHeroCard: View {
 
                 Spacer()
 
-                VStack(alignment: .trailing, spacing: 6) {
-                    HStack(spacing: 10) {
-                        VStack(alignment: .trailing, spacing: 2) {
+                VStack(alignment: .trailing, spacing: AppTheme.Spacing.xSmall) {
+                    HStack(spacing: AppTheme.Spacing.small) {
+                        VStack(alignment: .trailing, spacing: AppTheme.Spacing.hairline) {
                             Text("Income")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
@@ -1972,7 +1972,7 @@ private struct YearEndHeroCard: View {
                                 .minimumScaleFactor(0.7)
                         }
 
-                        VStack(alignment: .trailing, spacing: 2) {
+                        VStack(alignment: .trailing, spacing: AppTheme.Spacing.hairline) {
                             Text("Spent")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
@@ -1984,7 +1984,7 @@ private struct YearEndHeroCard: View {
                         }
                     }
 
-                    HStack(spacing: 6) {
+                    HStack(spacing: AppTheme.Spacing.xSmall) {
                         Image(systemName: "percent")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
@@ -2017,8 +2017,8 @@ private struct MetricCard: View {
     let tint: Color
 
     var body: some View {
-	        VStack(alignment: .leading, spacing: 10) {
-	            HStack(spacing: 8) {
+	        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+	            HStack(spacing: AppTheme.Spacing.compact) {
 	                Image(systemName: systemImage)
 	                    .foregroundStyle(tint)
                 Text(title)
@@ -2062,11 +2062,11 @@ private struct YearEndMonthHighlightsCard: View {
     }
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: 12) {
+	        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
 	            Text("Month Highlights")
 	                .appSectionTitleText()
 
-            HStack(spacing: 12) {
+            HStack(spacing: AppTheme.Spacing.tight) {
                 highlight(
                     title: "Best Month",
                     month: monthLabel(best.monthStart),
@@ -2090,8 +2090,8 @@ private struct YearEndMonthHighlightsCard: View {
     }
 
 	    private func highlight(title: String, month: String, label: String, value: String, systemImage: String, tint: Color) -> some View {
-	        VStack(alignment: .leading, spacing: 6) {
-	            HStack(spacing: 8) {
+	        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+	            HStack(spacing: AppTheme.Spacing.compact) {
 	                Image(systemName: systemImage)
 	                    .foregroundStyle(tint)
                 Text(title)
@@ -2139,7 +2139,7 @@ private struct YearEndTopListCard: View {
     let emptyMessage: String
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: 12) {
+	        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
 	            HStack(alignment: .firstTextBaseline) {
 	                AppSectionHeader(title: title, subtitle: subtitle)
 	                Spacer()
@@ -2151,11 +2151,11 @@ private struct YearEndTopListCard: View {
 	                Text(emptyMessage)
 	                    .appSecondaryBodyText()
 	                    .foregroundStyle(.secondary)
-	                    .padding(.vertical, 6)
+	                    .padding(.vertical, AppTheme.Spacing.xSmall)
 	            } else {
-                VStack(spacing: 10) {
+                VStack(spacing: AppTheme.Spacing.small) {
                     ForEach(items) { item in
-                        HStack(spacing: 10) {
+                        HStack(spacing: AppTheme.Spacing.small) {
                             Text(item.name)
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.primary)
@@ -2170,7 +2170,7 @@ private struct YearEndTopListCard: View {
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.75)
                         }
-                        .padding(.vertical, 2)
+                        .padding(.vertical, AppTheme.Spacing.hairline)
                     }
                 }
             }
@@ -2186,7 +2186,7 @@ private struct YearEndTransfersCard: View {
     let totalTransferVolume: Decimal
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: 12) {
+	        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
 	            HStack(alignment: .firstTextBaseline) {
 	                AppSectionHeader(
 	                    title: "Transfers",
@@ -2210,7 +2210,7 @@ private struct YearEndTransfersCard: View {
 	    }
 
     private func stat(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
             Text(title)
                 .appCaptionText()
                 .foregroundStyle(.secondary)
@@ -2519,7 +2519,7 @@ private struct YearEndWrappedStoryCard: View {
             LinearGradient(colors: story.gradient, startPoint: .topLeading, endPoint: .bottomTrailing)
                 .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.hero, style: .continuous))
 
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.cardGap) {
                 Text(story.title.uppercased())
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.9))
@@ -2540,7 +2540,7 @@ private struct YearEndWrappedStoryCard: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(22)
+            .padding(AppTheme.Spacing.insetLarge)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 520)

@@ -15,7 +15,7 @@ struct ParsedFile {
 
 // MARK: - Compatibility Adapter
 // Preserved for ImportView.swift or other legacy usages
-class TransactionParser {
+final class TransactionParser {
     typealias ProgressHandler = ([[String]]) async -> Bool
     
     func parse(url: URL, onRowsProgress: ProgressHandler? = nil) async throws -> ParsedFile {

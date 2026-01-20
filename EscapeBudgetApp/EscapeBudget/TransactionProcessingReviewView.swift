@@ -17,8 +17,8 @@ struct TransactionProcessingReviewView: View {
 
                 Section("Updates") {
                     ForEach(events) { event in
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(spacing: 8) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                            HStack(spacing: AppTheme.Spacing.compact) {
                                 Image(systemName: iconName(for: event.kind))
                                     .foregroundStyle(AppColors.tint(for: appColorMode))
                                 Text(event.title)
@@ -29,7 +29,7 @@ struct TransactionProcessingReviewView: View {
                                 Text(detail)
                                     .appCaptionText()
                                     .foregroundStyle(.secondary)
-                                    .padding(.leading, 26)
+                                    .padding(.leading, AppTheme.Spacing.indentSmall)
                             }
                         }
                     }
@@ -37,7 +37,7 @@ struct TransactionProcessingReviewView: View {
 
                 Section {
                     Text("Import behaviors are selected during import (you can also set them as defaults from that screen).")
-                        .font(.footnote)
+                        .appFootnoteText()
                         .foregroundStyle(.secondary)
                 }
             }

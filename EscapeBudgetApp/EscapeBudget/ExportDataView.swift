@@ -117,14 +117,14 @@ struct ExportDataView: View {
 	                            .appSecondaryBodyText()
 	                            .foregroundStyle(.secondary)
 	                    }
-	                    .padding(.vertical, 8)
+	                    .padding(.vertical, AppTheme.Spacing.compact)
 	                }
 
 	                if isDemoMode {
 	                    Section {
 	                        HStack {
 	                            Image(systemName: "exclamationmark.triangle.fill")
-	                                .foregroundColor(AppColors.warning(for: appColorMode))
+	                                .foregroundStyle(AppColors.warning(for: appColorMode))
 	                            Text("Demo mode is active. Demo data will not be exported.")
 	                                .appSecondaryBodyText()
 	                        }
@@ -161,7 +161,7 @@ struct ExportDataView: View {
                 }
 
                 Section("Security") {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         Toggle("Password-protected export", isOn: encryptedExportBinding)
                         Text("Encrypts the export file with your password.")
                             .appCaptionText()
@@ -211,7 +211,7 @@ struct ExportDataView: View {
                 }
 
 	                Section("Escape Budget Backup") {
-	                    VStack(alignment: .leading, spacing: 4) {
+	                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
 	                        Text("Export a full backup of your accounts, budgets, tags, goals, rules, and transactions.")
 	                            .appSecondaryBodyText()
 	                            .foregroundStyle(.secondary)

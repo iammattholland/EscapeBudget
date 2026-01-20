@@ -29,14 +29,14 @@ struct RestoreBackupView: View {
         NavigationStack {
             List {
                 Section {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
                         Text("Restore an Escape Budget backup")
                             .appSectionTitleText()
                         Text("This replaces your current data with what’s in the backup file.")
                             .appSecondaryBodyText()
                             .foregroundStyle(.secondary)
                     }
-                    .padding(.vertical, 6)
+                    .padding(.vertical, AppTheme.Spacing.xSmall)
                 }
 
                 Section("Backup File") {
@@ -60,7 +60,7 @@ struct RestoreBackupView: View {
                     }
 
                     if isReadingFile {
-                        HStack(spacing: 10) {
+                        HStack(spacing: AppTheme.Spacing.small) {
                             ProgressView()
                             Text("Reading backup…")
                                 .foregroundStyle(.secondary)

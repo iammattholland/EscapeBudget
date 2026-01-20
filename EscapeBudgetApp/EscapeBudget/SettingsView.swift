@@ -34,7 +34,7 @@ struct SettingsView: View {
 	@AppStorage("notifications.badges") private var badgeAchievementNotifications = true
     @AppStorage("notifications.showSensitiveContent") private var showSensitiveNotificationContent = false
 
-    @ObservedObject private var notificationService = NotificationService.shared
+    @StateObject private var notificationService = NotificationService.shared
     @StateObject private var userAccountService = UserAccountService.shared
     @StateObject private var premiumStatusService = PremiumStatusService.shared
 
@@ -131,8 +131,8 @@ struct SettingsView: View {
             // Demo Mode Section - Prominent at top
             if isDemoMode {
                 Section {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+                        HStack(spacing: AppTheme.Spacing.compact) {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundStyle(.orange)
                             Text("Demo Mode Active")
@@ -156,7 +156,7 @@ struct SettingsView: View {
                         }
                         .buttonStyle(.borderless)
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, AppTheme.Spacing.micro)
                 } header: {
                     Text("Demo")
                 }
@@ -164,7 +164,7 @@ struct SettingsView: View {
 
             Section("Account") {
                 if userAccountService.isSignedIn {
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
                         HStack {
                             Label("Signed in with Apple", systemImage: "person.crop.circle.fill")
                             Spacer()
@@ -187,7 +187,7 @@ struct SettingsView: View {
                         .buttonStyle(.borderless)
                     }
                 } else {
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
                         Text("Sign in to help protect your access to premium features and make future upgrades like restore + multi-device support possible.")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -200,7 +200,7 @@ struct SettingsView: View {
                         .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
                         .frame(height: 44)
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, AppTheme.Spacing.micro)
                 }
             }
 
@@ -255,7 +255,7 @@ struct SettingsView: View {
                 }
                 
                 Section("Appearance") {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         HStack {
                             Image(systemName: "moon")
                                 .foregroundStyle(.primary)
@@ -277,7 +277,7 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         HStack {
                             Image(systemName: "app")
                                 .foregroundStyle(.primary)
@@ -301,7 +301,7 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         HStack {
                             Image(systemName: "paintpalette")
                                 .foregroundStyle(.primary)
@@ -319,7 +319,7 @@ struct SettingsView: View {
                 }
                 
                 Section("Notifications") {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         HStack {
                             Label {
                                 Text("System Notifications")
@@ -352,8 +352,8 @@ struct SettingsView: View {
                     DisclosureGroup(
                         isExpanded: $showingNotificationOptions,
                         content: {
-                            VStack(alignment: .leading, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                 Toggle("Show details in iOS notifications", isOn: $showSensitiveNotificationContent)
                                 Text("When off, notifications hide amounts, filenames, and other details on your lock screen.")
                                     .appCaptionText()
@@ -370,63 +370,63 @@ struct SettingsView: View {
                                 }
                             }
 
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                 Toggle("Budget Alerts", isOn: $budgetAlerts)
                                 Text("Get notified when approaching budget limits")
                                     .appCaptionText()
                                     .foregroundStyle(.secondary)
                             }
 
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                 Toggle("Bill Reminders", isOn: $billReminders)
                                 Text("Receive reminders for upcoming recurring bills")
                                     .appCaptionText()
                                     .foregroundStyle(.secondary)
                             }
 
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                 Toggle("Transfers Inbox", isOn: $transfersInboxNotifications)
                                 Text("Get notified when transfers need review")
                                     .appCaptionText()
                                     .foregroundStyle(.secondary)
                             }
 
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                 Toggle("Import Complete", isOn: $importCompleteNotifications)
                                 Text("Get notified when data imports finish")
                                     .appCaptionText()
                                     .foregroundStyle(.secondary)
                             }
 
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                 Toggle("Export Status", isOn: $exportStatusNotifications)
                                 Text("Get notified when exports are ready or fail")
                                     .appCaptionText()
                                     .foregroundStyle(.secondary)
                             }
 
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                 Toggle("Backup & Restore", isOn: $backupRestoreNotifications)
                                 Text("Get notified when backups restore successfully or fail")
                                     .appCaptionText()
                                     .foregroundStyle(.secondary)
                             }
 
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                 Toggle("Rule Applied", isOn: $ruleAppliedNotifications)
                                 Text("Get notified when retroactive rules complete")
                                     .appCaptionText()
                                     .foregroundStyle(.secondary)
                             }
 
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                 Toggle("Badge Achievements", isOn: $badgeAchievementNotifications)
                                 Text("Get notified when you earn a badge")
                                     .appCaptionText()
                                     .foregroundStyle(.secondary)
                             }
                         }
-                        .padding(.top, 8)
+                        .padding(.top, AppTheme.Spacing.compact)
                         },
                         label: {
                             Label {
@@ -442,8 +442,8 @@ struct SettingsView: View {
 	                // Demo Mode Toggle when NOT in demo mode
 	                if !isDemoMode {
 	                    Section("Demo") {
-	                        VStack(alignment: .leading, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
+	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                 Text("Try Demo Mode")
                                     .fontWeight(.regular)
                                 Text("Explore with sample data without affecting your real information")
@@ -463,12 +463,12 @@ struct SettingsView: View {
                             }
                             .buttonStyle(.borderless)
                         }
-                        .padding(.vertical, 4)
+                        .padding(.vertical, AppTheme.Spacing.micro)
                     }
                 }
 
                 Section("Privacy & Security") {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         Toggle(isOn: Binding(
                             get: { authService.isBiometricsEnabled },
                             set: { newValue in
@@ -546,7 +546,7 @@ struct SettingsView: View {
                         AutoBackupSettingsView()
                     } label: {
                         HStack {
-                            HStack(spacing: 8) {
+                            HStack(spacing: AppTheme.Spacing.compact) {
                                 Image(systemName: "clock.arrow.circlepath")
                                     .foregroundStyle(.primary)
                                 Text("Auto Backup")
@@ -591,7 +591,7 @@ struct SettingsView: View {
 
                     Button(action: { showingDeleteSheet = true }) {
                         HStack {
-                            HStack(spacing: 8) {
+                            HStack(spacing: AppTheme.Spacing.compact) {
                                 Image(systemName: "trash")
                                     .foregroundStyle(.primary)
                                 Text("Delete All Data")
@@ -675,7 +675,7 @@ struct SettingsView: View {
             Form {
                 Section("Before You Delete") {
                     Text("Export your data first if you may need it later. Deleting cannot be undone.")
-                        .font(.footnote)
+                        .appFootnoteText()
                         .foregroundStyle(.secondary)
                     Button {
                         showingDeleteSheet = false
@@ -689,7 +689,7 @@ struct SettingsView: View {
                 
                 Section("Confirmation") {
                     Text("Type DELETE to confirm.")
-                        .font(.footnote)
+                        .appFootnoteText()
                         .foregroundStyle(.secondary)
                     TextField("Type DELETE", text: $deleteConfirmationText)
                         .textInputAutocapitalization(.characters)
@@ -860,7 +860,7 @@ struct CurrencySelectionView: View {
                     dismiss()
                 } label: {
                     HStack {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                             Text(currency.2)
                                 .foregroundStyle(.primary)
                             Text("\(currency.0) • \(currency.1)")
@@ -870,7 +870,7 @@ struct CurrencySelectionView: View {
                         Spacer()
                         if selectedCurrency == currency.0 {
                             Image(systemName: "checkmark")
-                                .foregroundColor(.accentColor)
+                                .foregroundStyle(Color.accentColor)
                         }
                     }
                 }

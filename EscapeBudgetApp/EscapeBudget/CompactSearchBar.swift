@@ -6,7 +6,7 @@ struct CompactSearchBar: View {
     var showsBackground: Bool = true
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: AppTheme.Spacing.compact) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
 
@@ -23,8 +23,8 @@ struct CompactSearchBar: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, showsBackground ? 12 : 4)
-        .padding(.vertical, showsBackground ? 6 : 4)
+        .padding(.horizontal, showsBackground ? AppTheme.Spacing.tight : AppTheme.Spacing.micro)
+        .padding(.vertical, showsBackground ? AppTheme.Spacing.xSmall : AppTheme.Spacing.micro)
         .background(showsBackground ? Color(.secondarySystemFill) : Color.clear)
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous))
     }

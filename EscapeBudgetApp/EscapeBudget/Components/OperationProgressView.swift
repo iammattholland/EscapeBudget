@@ -51,7 +51,7 @@ struct OperationProgressOverlay: View {
                 .ignoresSafeArea()
 
             VStack(spacing: AppTheme.Spacing.large) {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
                     if let fractionComplete {
                         ProgressView(value: fractionComplete)
                     } else {
@@ -59,7 +59,7 @@ struct OperationProgressOverlay: View {
                     }
 
                     HStack(alignment: .firstTextBaseline) {
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                             Text(progress.title)
                                 .appSectionTitleText()
                             Text(progress.message)

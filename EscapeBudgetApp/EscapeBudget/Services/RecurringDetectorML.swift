@@ -91,12 +91,13 @@ final class RecurringDetectorML {
 
         guard let patterns = try? modelContext.fetch(descriptor) else { return nil }
 
-        let payee = transaction.payee.lowercased()
+        let payee = PayeeNormalizer.normalizeForComparison(transaction.payee)
         let amount = abs(transaction.amount)
 
         for pattern in patterns {
             // Check payee match
-            guard pattern.payeePattern == payee else { continue }
+            let patternPayee = PayeeNormalizer.normalizeForComparison(pattern.payeePattern)
+            guard payee == patternPayee || payee.contains(patternPayee) || patternPayee.contains(payee) else { continue }
 
             // Check amount match
             if let typicalAmount = pattern.typicalAmount {
@@ -106,8 +107,8 @@ final class RecurringDetectorML {
                 guard percentDiff <= config.amountVarianceThreshold else { continue }
             }
 
-            // Check date match
-            if pattern.matchesDate(transaction.date) {
+            // Check date match (allow first match when no lastDetectedDate yet)
+            if pattern.lastDetectedDate == nil || pattern.matchesDate(transaction.date) {
                 // Update pattern
                 pattern.lastDetectedDate = transaction.date
                 pattern.occurrenceCount += 1

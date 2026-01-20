@@ -116,7 +116,7 @@ struct TransfersInboxView: View {
                                     pendingSuggestion = suggestion
                                 }
                             } label: {
-                                HStack(spacing: 12) {
+                                HStack(spacing: AppTheme.Spacing.tight) {
                                     if isSelecting {
                                         Image(systemName: selectedSuggestionIDs.contains(suggestion.id) ? "checkmark.circle.fill" : "circle")
                                             .foregroundStyle(selectedSuggestionIDs.contains(suggestion.id) ? AppColors.tint(for: appColorMode) : .secondary)
@@ -158,7 +158,7 @@ struct TransfersInboxView: View {
                                     Button {
                                         toggleSelection(for: transaction)
                                     } label: {
-                                        HStack(spacing: 12) {
+                                        HStack(spacing: AppTheme.Spacing.tight) {
                                             Image(systemName: selectedUnmatchedIDs.contains(transaction.persistentModelID) ? "checkmark.circle.fill" : "circle")
                                                 .foregroundStyle(selectedUnmatchedIDs.contains(transaction.persistentModelID) ? AppColors.tint(for: appColorMode) : .secondary)
                                             UnmatchedTransferRow(transaction: transaction, currencyCode: currencyCode)
@@ -194,7 +194,7 @@ struct TransfersInboxView: View {
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
                 if isSelecting {
-                    HStack(spacing: 12) {
+                    HStack(spacing: AppTheme.Spacing.tight) {
                         Button(role: .destructive) {
                             dismissSelected()
                         } label: {
@@ -214,8 +214,8 @@ struct TransfersInboxView: View {
                         .disabled(selectedSuggestionIDs.isEmpty)
                     }
                     .padding(.horizontal, AppTheme.Spacing.medium)
-                    .padding(.top, 10)
-                    .padding(.bottom, 12)
+                    .padding(.top, AppTheme.Spacing.small)
+                    .padding(.bottom, AppTheme.Spacing.tight)
                     .background(.ultraThinMaterial)
                 }
             }
@@ -580,11 +580,11 @@ private struct SuggestedTransferRow: View {
 
     var body: some View {
         if let base, let match {
-            HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("\(base.account?.name ?? "From") → \(match.account?.name ?? "To")")
-                            .appSecondaryBodyText()
-                            .fontWeight(.semibold)
+            HStack(spacing: AppTheme.Spacing.tight) {
+	                    VStack(alignment: .leading, spacing: AppTheme.Spacing.nano) {
+	                        Text("\(base.account?.name ?? "From") → \(match.account?.name ?? "To")")
+	                            .appSecondaryBodyText()
+	                            .fontWeight(.semibold)
                             .lineLimit(1)
 
                     Text(base.payee)
@@ -605,7 +605,7 @@ private struct SuggestedTransferRow: View {
 
                 Spacer()
 
-                    VStack(alignment: .trailing, spacing: 2) {
+                    VStack(alignment: .trailing, spacing: AppTheme.Spacing.hairline) {
                         Text(suggestion.amount, format: .currency(code: currencyCode))
                             .appSecondaryBodyText()
                             .fontWeight(.semibold)
@@ -617,7 +617,7 @@ private struct SuggestedTransferRow: View {
                         .monospacedDigit()
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, AppTheme.Spacing.micro)
         } else {
             Text("Transfer")
                 .foregroundStyle(.secondary)
@@ -631,11 +631,11 @@ private struct UnmatchedTransferRow: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(transaction.account?.name ?? "No Account")
-                    .appSecondaryBodyText()
-                    .fontWeight(.semibold)
+        HStack(spacing: AppTheme.Spacing.tight) {
+	            VStack(alignment: .leading, spacing: AppTheme.Spacing.nano) {
+	                Text(transaction.account?.name ?? "No Account")
+	                    .appSecondaryBodyText()
+	                    .fontWeight(.semibold)
                 Text(transaction.date, format: .dateTime.month(.abbreviated).day().year())
                     .appCaptionText()
                     .foregroundStyle(.secondary)
@@ -649,7 +649,7 @@ private struct UnmatchedTransferRow: View {
                 .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
                 .monospacedDigit()
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, AppTheme.Spacing.hairline)
     }
 }
 
@@ -732,11 +732,11 @@ private struct TransferTransactionRow: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(transaction.account?.name ?? "No Account")
-                    .appSecondaryBodyText()
-                    .fontWeight(.semibold)
+        HStack(spacing: AppTheme.Spacing.tight) {
+	            VStack(alignment: .leading, spacing: AppTheme.Spacing.nano) {
+	                Text(transaction.account?.name ?? "No Account")
+	                    .appSecondaryBodyText()
+	                    .fontWeight(.semibold)
                 Text(transaction.date, format: .dateTime.month(.abbreviated).day().year())
                     .appCaptionText()
                     .foregroundStyle(.secondary)
@@ -754,6 +754,6 @@ private struct TransferTransactionRow: View {
                 .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
                 .monospacedDigit()
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, AppTheme.Spacing.hairline)
     }
 }

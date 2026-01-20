@@ -75,7 +75,7 @@ struct DateRangePicker: View {
                 }
             }
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: AppTheme.Spacing.compact) {
                 Image(systemName: selectedRange.icon)
                     .font(AppTheme.Typography.secondaryBody)
                 
@@ -87,7 +87,7 @@ struct DateRangePicker: View {
                     .appCaptionText()
                     .fontWeight(.semibold)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, AppTheme.Spacing.cardPadding)
             .padding(.vertical, AppTheme.Spacing.small)
             .background(
                 RoundedRectangle(cornerRadius: AppTheme.Radius.compact)
@@ -130,7 +130,7 @@ struct MonthYearPicker: View {
         HStack(spacing: AppTheme.Spacing.medium) {
             Button(action: previousMonth) {
                 Image(systemName: "chevron.left")
-                    .font(.body)
+                    .font(AppTheme.Typography.body)
                     .fontWeight(.semibold)
                     .frame(width: 32, height: 32)
                     .background(Circle().fill(Color(.systemGray6)))
@@ -142,14 +142,14 @@ struct MonthYearPicker: View {
             
             Button(action: nextMonth) {
                 Image(systemName: "chevron.right")
-                    .font(.body)
+                    .font(AppTheme.Typography.body)
                     .fontWeight(.semibold)
                     .frame(width: 32, height: 32)
                     .background(Circle().fill(Color(.systemGray6)))
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, AppTheme.Spacing.tight)
+        .padding(.vertical, AppTheme.Spacing.compact)
         .background(
             RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
                 .fill(Color(.systemBackground))
@@ -277,7 +277,7 @@ struct DateRangeSummaryView: View {
     }
     
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: AppTheme.Spacing.micro) {
             Text(formattedRange)
                 .appCaptionText()
                 .foregroundStyle(.secondary)

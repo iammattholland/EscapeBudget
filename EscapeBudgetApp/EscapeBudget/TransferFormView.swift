@@ -91,7 +91,7 @@ struct TransferFormView: View {
                             selectedOtherTransaction = other
                         } label: {
                             HStack {
-                                VStack(alignment: .leading, spacing: 4) {
+                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                     Text(other.account?.name ?? "Unknown Account")
                                         .appSectionTitleText()
                                         .foregroundStyle(.primary)
@@ -101,7 +101,7 @@ struct TransferFormView: View {
                                 }
                                 Spacer()
                                 Text(other.amount, format: .currency(code: currencyCode))
-                                    .foregroundColor(other.amount >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
+                                    .foregroundStyle(other.amount >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
                                 Image(systemName: "chevron.right")
                                     .appCaptionText()
                                     .foregroundStyle(.tertiary)

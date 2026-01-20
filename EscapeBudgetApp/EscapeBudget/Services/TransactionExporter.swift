@@ -8,7 +8,7 @@ enum ExportFormat_Internal: String {
     case mint
 }
 
-class TransactionExporter {
+final class TransactionExporter {
 
     func exportTransactions(_ transactions: [Transaction], to url: URL, format: ExportFormat) throws {
         let data = exportCSVData(transactions, format: format)

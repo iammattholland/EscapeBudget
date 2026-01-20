@@ -28,14 +28,14 @@ struct AutoBackupSettingsView: View {
     var body: some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
                     Text("Auto Backup")
                         .appSectionTitleText()
                     Text("Automatically save a periodic full backup to a folder you choose (iCloud Drive or On My iPhone). This helps protect your data even if the app is deleted or you switch devices.")
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 6)
+                .padding(.vertical, AppTheme.Spacing.xSmall)
             }
 
             Section("Destination") {

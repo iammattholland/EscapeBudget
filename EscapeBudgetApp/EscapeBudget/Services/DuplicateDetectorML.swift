@@ -152,13 +152,20 @@ final class DuplicateDetectorML {
         _ tx2: Transaction
     ) -> (similarity: Double, reasons: [String], matchType: DuplicateCandidate.MatchType) {
 
+        let amount1 = abs(tx1.amount)
+        let amount2 = abs(tx2.amount)
+        let timeDiff = abs(tx1.date.timeIntervalSince(tx2.date))
+        let payee1Key = PayeeNormalizer.normalizeForComparison(tx1.payee)
+        let payee2Key = PayeeNormalizer.normalizeForComparison(tx2.payee)
+
+        if amount1 == amount2 && payee1Key == payee2Key && timeDiff <= config.exactMatchWindow {
+            return (1.0, ["exact match"], .exact)
+        }
+
         var score = 0.0
         var reasons: [String] = []
 
         // 1. Amount matching (40 points max)
-        let amount1 = abs(tx1.amount)
-        let amount2 = abs(tx2.amount)
-
         if amount1 == amount2 {
             score += 40.0
             reasons.append("identical amount")
@@ -176,8 +183,8 @@ final class DuplicateDetectorML {
         }
 
         // 2. Payee matching (30 points max)
-        let payee1 = tx1.payee.lowercased()
-        let payee2 = tx2.payee.lowercased()
+        let payee1 = payee1Key
+        let payee2 = payee2Key
 
         if payee1 == payee2 {
             score += 30.0
@@ -197,7 +204,6 @@ final class DuplicateDetectorML {
         }
 
         // 3. Date proximity (20 points max)
-        let timeDiff = abs(tx1.date.timeIntervalSince(tx2.date))
         let hoursDiff = timeDiff / 3600.0
 
         if hoursDiff <= 1 {

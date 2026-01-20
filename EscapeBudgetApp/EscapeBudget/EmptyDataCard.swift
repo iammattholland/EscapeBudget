@@ -4,7 +4,7 @@ struct EmptyDataCard: View {
     let systemImage: String
     let title: String
     let message: String
-    let actionTitle: String
+    var actionTitle: String = ""
     var action: (() -> Void)?
 
     @Environment(\.colorScheme) private var colorScheme
@@ -12,7 +12,7 @@ struct EmptyDataCard: View {
     var body: some View {
         VStack(spacing: AppTheme.Spacing.medium) {
             Image(systemName: systemImage)
-                .font(.system(size: 36, weight: .semibold))
+                .font(.system(size: AppTheme.IconSize.large, weight: .semibold))
                 .foregroundStyle(.secondary)
 
             Text(title)
@@ -24,7 +24,7 @@ struct EmptyDataCard: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
-            if let action {
+            if let action, !actionTitle.isEmpty {
                 Button(actionTitle) {
                     action()
                 }
@@ -47,7 +47,7 @@ private struct EmptyDataCardActionButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .padding(.horizontal, 14)
+            .padding(.horizontal, AppTheme.Spacing.cardPadding)
             .padding(.vertical, AppTheme.Spacing.small)
             .frame(minHeight: 36)
             .foregroundStyle(foregroundColor(configuration: configuration))

@@ -32,7 +32,7 @@ struct WidgetEditorView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "wand.and.stars")
-                                    .foregroundColor(AppColors.tint(for: appColorMode))
+                                    .foregroundStyle(AppColors.tint(for: appColorMode))
                                 Text("Browse Suggested Widgets")
                                     .foregroundStyle(.primary)
                                 Spacer()
@@ -218,10 +218,10 @@ struct SuggestedWidgetsView: View {
                             Button {
                                 onSelect(template)
                             } label: {
-                                VStack(alignment: .leading, spacing: 4) {
+                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                     HStack {
                                         Image(systemName: iconFor(dataType: template.dataType))
-                                            .foregroundColor(AppColors.tint(for: appColorMode))
+                                            .foregroundStyle(AppColors.tint(for: appColorMode))
                                             .frame(width: 24)
 
                                         Text(template.title)
@@ -240,7 +240,7 @@ struct SuggestedWidgetsView: View {
                                         .foregroundStyle(.secondary)
                                         .padding(.leading, AppTheme.Spacing.xxLarge)
                                 }
-                                .padding(.vertical, 4)
+                                .padding(.vertical, AppTheme.Spacing.micro)
                             }
                         }
                     }

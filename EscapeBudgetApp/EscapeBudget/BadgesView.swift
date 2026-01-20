@@ -30,7 +30,7 @@ struct BadgesView: View {
                     .appSectionTitleText()
                     .padding(.horizontal, AppTheme.Spacing.medium)
 
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppTheme.Spacing.tight) {
                     ForEach(orderedBadges) { badge in
                         BadgeCardView(
                             title: badge.title,
@@ -44,7 +44,7 @@ struct BadgesView: View {
                 .padding(.horizontal, AppTheme.Spacing.medium)
                 .padding(.bottom, AppTheme.Spacing.medium)
             }
-            .padding(.top, 12)
+            .padding(.top, AppTheme.Spacing.tight)
         }
         .background(Color(.systemGroupedBackground))
         .coordinateSpace(name: "BadgesView.scroll")
@@ -64,7 +64,7 @@ struct BadgesView: View {
     }
 
     private var streaksCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             HStack {
                 Text("Week Streaks")
                     .appSectionTitleText()
@@ -75,7 +75,7 @@ struct BadgesView: View {
                     .monospacedDigit()
             }
 
-            HStack(spacing: 12) {
+            HStack(spacing: AppTheme.Spacing.tight) {
                 StreakMetricView(
                     title: "Current",
                     value: badgeService.weeklyOpenStreak,
@@ -108,8 +108,8 @@ private struct StreakMetricView: View {
     let systemImage: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+            HStack(spacing: AppTheme.Spacing.xSmall) {
                 Image(systemName: systemImage)
                     .appCaptionText()
                     .foregroundStyle(tint)
@@ -124,7 +124,7 @@ private struct StreakMetricView: View {
             }
 
             Text("\(value)")
-                .font(.title3)
+                .appTitleText()
                 .fontWeight(.semibold)
                 .foregroundStyle(.primary)
                 .monospacedDigit()
@@ -146,7 +146,7 @@ private struct BadgeCardView: View {
     let isEarned: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
             HStack {
                 ZStack {
                     Circle()

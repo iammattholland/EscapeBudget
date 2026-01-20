@@ -32,7 +32,7 @@ struct AccountDetailView: View {
                     }
                     Spacer()
                     Text(transaction.amount, format: .currency(code: currencyCode))
-                        .foregroundColor(transaction.isTransfer ? .primary : (transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary))
+                        .foregroundStyle(transaction.isTransfer ? .primary : (transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary))
                 }
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -188,7 +188,7 @@ private struct AccountEditSheet: View {
     var body: some View {
         Form {
             Section("Details") {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                     Text("Name")
                         .appCaptionText()
                         .foregroundStyle(.secondary)

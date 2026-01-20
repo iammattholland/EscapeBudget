@@ -6,6 +6,8 @@
 
 # Xcode
 DerivedData/
+EscapeBudgetApp/DerivedData*/
+EscapeBudgetApp/DerivedDataVerify*/
 build/
 *.pbxuser
 *.mode1v3
@@ -45,6 +47,8 @@ EscapeBudgetApp/querytest
 # Internal assistant/process docs
 CLAUDE.md
 AGENTS.md
+.claude/
+EscapeBudgetApp/.claude/
 
 # Editor/IDE
 .idea/

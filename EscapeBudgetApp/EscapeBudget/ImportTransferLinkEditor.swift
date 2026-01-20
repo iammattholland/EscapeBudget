@@ -17,11 +17,11 @@ struct ImportTransferLinkEditor: View {
             if legs.count >= 2 {
                 Section("Linked Transfer") {
                     ForEach(legs) { tx in
-                            HStack(spacing: 12) {
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(accountNameFor(tx))
-                                        .appSecondaryBodyText()
-                                        .fontWeight(.semibold)
+	                        HStack(spacing: AppTheme.Spacing.tight) {
+	                            VStack(alignment: .leading, spacing: AppTheme.Spacing.nano) {
+	                                Text(accountNameFor(tx))
+	                                    .appSecondaryBodyText()
+	                                    .fontWeight(.semibold)
                                     Text(tx.date, format: .dateTime.month(.abbreviated).day().year())
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
@@ -38,7 +38,7 @@ struct ImportTransferLinkEditor: View {
                                 .fontWeight(.semibold)
                                 .monospacedDigit()
                         }
-                        .padding(.vertical, 2)
+                        .padding(.vertical, AppTheme.Spacing.hairline)
                     }
                 }
 

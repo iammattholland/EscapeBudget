@@ -4,7 +4,7 @@ import Combine
 
 /// Central navigation coordinator for the entire app
 /// Views observe these @Published properties and present their own sheet content
-class AppNavigator: ObservableObject {
+final class AppNavigator: ObservableObject {
     let manageNavigator = ManageNavigator()
 
     // MARK: - Sheet State
@@ -27,6 +27,24 @@ class AppNavigator: ObservableObject {
 
     /// Root tab selection (iPhone TabView / iPad sidebar)
     @Published var selectedTab: AppTab = .home
+
+    // MARK: - Deep Links
+
+    enum ReviewSection: String, Equatable {
+        case budget
+        case income
+        case expenses
+    }
+
+    struct ReviewDeepLink: Equatable {
+        let section: ReviewSection
+        let date: Date
+        let filterMode: DateRangeFilterHeader.FilterMode
+        let customStartDate: Date
+        let customEndDate: Date
+    }
+
+    @Published var reviewDeepLink: ReviewDeepLink?
 
     // MARK: - Actions
 
@@ -54,6 +72,23 @@ class AppNavigator: ObservableObject {
     /// Present uncategorized transactions
     func showUncategorized() {
         showingUncategorizedTransactions = true
+    }
+
+    func openReview(
+        section: ReviewSection,
+        date: Date = Date(),
+        filterMode: DateRangeFilterHeader.FilterMode = .month,
+        customStartDate: Date = Date(),
+        customEndDate: Date = Date()
+    ) {
+        reviewDeepLink = ReviewDeepLink(
+            section: section,
+            date: date,
+            filterMode: filterMode,
+            customStartDate: customStartDate,
+            customEndDate: customEndDate
+        )
+        selectedTab = .review
     }
 
     /// Dismiss all sheets

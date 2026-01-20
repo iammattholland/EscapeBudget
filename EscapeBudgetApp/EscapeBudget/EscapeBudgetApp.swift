@@ -26,7 +26,7 @@ struct EscapeBudgetApp: App {
     @State private var undoRedoManager = UndoRedoManager()
     @StateObject private var errorCenter = AppErrorCenter.shared
     @StateObject private var navigator = AppNavigator()
-    @ObservedObject private var authService = AuthenticationService.shared
+    @StateObject private var authService = AuthenticationService.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var statsUpdateTask: Task<Void, Never>?
     @State private var demoSeedTask: Task<Void, Never>?

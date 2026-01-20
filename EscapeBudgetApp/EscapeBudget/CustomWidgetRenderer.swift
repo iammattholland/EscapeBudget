@@ -266,10 +266,10 @@ struct CustomWidgetRenderer: View {
     @ViewBuilder
     private func renderSavingsRateChart() -> some View {
         let rate = calculateSavingsRate()
-        VStack(spacing: 12) {
+        VStack(spacing: AppTheme.Spacing.tight) {
             Text("\(Int(rate))%")
                 .font(.system(size: 48, weight: .bold))
-                .foregroundColor(rate >= 20 ? AppColors.success(for: appColorMode) : (rate >= 10 ? AppColors.warning(for: appColorMode) : AppColors.danger(for: appColorMode)))
+                .foregroundStyle(rate >= 20 ? AppColors.success(for: appColorMode) : (rate >= 10 ? AppColors.warning(for: appColorMode) : AppColors.danger(for: appColorMode)))
             Text("Savings Rate")
                 .appCaptionText()
                 .foregroundStyle(.secondary)
@@ -308,7 +308,7 @@ struct CustomWidgetRenderer: View {
     @ViewBuilder
     private func renderAverageTransactionChart() -> some View {
         let avg = calculateAverageTransaction()
-        VStack(spacing: 12) {
+        VStack(spacing: AppTheme.Spacing.tight) {
             Text(avg, format: .currency(code: currencyCode))
                 .font(.system(size: 36, weight: .bold))
                 .foregroundStyle(.primary)
@@ -365,9 +365,9 @@ struct CustomWidgetRenderer: View {
                         Spacer()
                         Text(transaction.amount, format: .currency(code: currencyCode))
                             .appSecondaryBodyText()
-                            .foregroundColor(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                            .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, AppTheme.Spacing.compact)
                     Divider()
                 }
                 if filteredTransactions.isEmpty {
@@ -386,7 +386,7 @@ struct CustomWidgetRenderer: View {
                         Spacer()
                         Text(item.amount, format: .currency(code: currencyCode))
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, AppTheme.Spacing.compact)
                     Divider()
                 }
             }
@@ -759,12 +759,12 @@ struct CustomWidgetRenderer: View {
         if upcomingBills.isEmpty {
             WidgetEmptyStateView(message: "No upcoming bills")
         } else {
-            VStack(spacing: 8) {
+            VStack(spacing: AppTheme.Spacing.compact) {
                 ForEach(Array(upcomingBills), id: \.id) { bill in
                     UpcomingBillRow(bill: bill, currencyCode: currencyCode, appColorMode: appColorMode)
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, AppTheme.Spacing.micro)
         }
     }
 }
@@ -807,13 +807,13 @@ struct UpcomingBillRow: View {
         }
     }
 
-    var body: some View {
-        HStack(spacing: 8) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(urgencyColor)
-                .frame(width: 3)
+	    var body: some View {
+	        HStack(spacing: AppTheme.Spacing.compact) {
+	            RoundedRectangle(cornerRadius: AppTheme.Radius.hairline)
+	                .fill(urgencyColor)
+	                .frame(width: 3)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
                 Text(bill.name)
                     .appCaptionText()
                     .fontWeight(.medium)
@@ -826,31 +826,31 @@ struct UpcomingBillRow: View {
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 2) {
+            VStack(alignment: .trailing, spacing: AppTheme.Spacing.hairline) {
                 Text(bill.amount, format: .currency(code: currencyCode))
                     .appCaptionText()
                     .fontWeight(.semibold)
 
                 Text(daysText)
                     .font(.caption2)
-                    .foregroundColor(urgencyColor)
+                    .foregroundStyle(urgencyColor)
             }
         }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(6)
-    }
+	        .padding(.vertical, AppTheme.Spacing.micro)
+	        .padding(.horizontal, AppTheme.Spacing.compact)
+	        .background(Color(.secondarySystemBackground))
+	        .cornerRadius(AppTheme.Radius.tag)
+	    }
 }
 
 struct WidgetEmptyStateView: View {
     let message: String
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: AppTheme.Spacing.compact) {
             Image(systemName: "chart.bar.xaxis")
                 .font(.largeTitle)
-                .foregroundColor(.secondary.opacity(0.3))
+                .foregroundStyle(.secondary.opacity(0.3))
             Text(message)
                 .appCaptionText()
                 .foregroundStyle(.secondary)

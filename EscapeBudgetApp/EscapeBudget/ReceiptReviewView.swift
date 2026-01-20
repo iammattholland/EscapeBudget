@@ -48,7 +48,7 @@ struct ReceiptReviewView: View {
 
                 // Receipt Details
                 Section("Receipt Details") {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         Text("Merchant")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -58,7 +58,7 @@ struct ReceiptReviewView: View {
 
                     DatePicker("Date", selection: $date, displayedComponents: .date)
 
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         Text("Total Amount")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -81,11 +81,11 @@ struct ReceiptReviewView: View {
                                     toggleSelection(for: item.id)
                                 } label: {
                                     Image(systemName: selectedItems.contains(item.id) ? "checkmark.circle.fill" : "circle")
-                                        .foregroundColor(selectedItems.contains(item.id) ? .blue : .secondary)
+                                        .foregroundStyle(selectedItems.contains(item.id) ? .blue : .secondary)
                                 }
                                 .buttonStyle(.plain)
 
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
                                     Text(item.name)
                                         .appSecondaryBodyText()
                                     Text("\(item.quantity) × \(item.price.formatted(.currency(code: currencyCode)))")

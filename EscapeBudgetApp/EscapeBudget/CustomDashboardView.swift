@@ -31,9 +31,9 @@ struct CustomDashboardView: View {
                     selectedWidget = nil
                     showingAddWidget = true
                 }) {
-                    VStack(spacing: 8) {
+                    VStack(spacing: AppTheme.Spacing.compact) {
                         Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 40))
+                            .appIconLarge()
                             .foregroundStyle(AppColors.tint(for: appColorMode).gradient)
                         Text("Add Widget")
                             .font(AppTheme.Typography.sectionTitle)
@@ -76,7 +76,7 @@ struct CustomWidgetContainer: View {
     @State private var showingDeleteAlert = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             HStack {
                 Text(widget.title)
                     .font(AppTheme.Typography.sectionTitle)

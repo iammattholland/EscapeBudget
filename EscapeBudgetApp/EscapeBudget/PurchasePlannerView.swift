@@ -63,30 +63,29 @@ struct PurchasePlannerView: View {
 
                     // Summary Card
                     Section {
-                        VStack(spacing: 12) {
+                        VStack(spacing: AppTheme.Spacing.tight) {
                             HStack {
-                                VStack(alignment: .leading, spacing: 4) {
+                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                     Text("Total Planned")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
                                     Text(totalPlanned, format: .currency(code: currencyCode))
-                                        .font(.title2)
+                                        .appTitleText()
                                         .fontWeight(.bold)
                                 }
-                                
+
                                 Spacer()
-                                
-                                VStack(alignment: .trailing, spacing: 4) {
+
+                                VStack(alignment: .trailing, spacing: AppTheme.Spacing.micro) {
                                     Text("Items")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
                                     Text("\(filteredPurchases.count)")
-                                        .font(.title3)
-                                        .fontWeight(.semibold)
+                                        .appTitleText()
                                 }
                             }
                         }
-                        .padding(.vertical, 8)
+                        .padding(.vertical, AppTheme.Spacing.compact)
                     }
                     
                     // Filter Picker
@@ -297,8 +296,8 @@ struct PurchasePlanRow: View {
                         .frame(width: 56, height: 56)
 
                     Image(systemName: categoryIcon)
-                        .font(.title2)
-                        .foregroundColor(categoryColor)
+                        .appTitleText()
+                        .foregroundStyle(categoryColor)
 
                     if purchase.isPurchased {
                         VStack {
@@ -307,7 +306,7 @@ struct PurchasePlanRow: View {
                                 Spacer()
                                 Image(systemName: "checkmark.circle.fill")
                                     .appCaptionText()
-                                    .foregroundColor(.white)
+                                    .foregroundStyle(.white)
                                     .background(
                                         Circle()
                                             .fill(AppColors.success(for: appColorMode))
@@ -321,7 +320,7 @@ struct PurchasePlanRow: View {
                 }
 
                 // Content
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
                     HStack {
                         Text(purchase.itemName)
                             .appSectionTitleText()
@@ -331,20 +330,20 @@ struct PurchasePlanRow: View {
 
                         // Priority stars
                         if purchase.priority > 3 {
-                            HStack(spacing: 2) {
+                            HStack(spacing: AppTheme.Spacing.hairline) {
                                 ForEach(0..<min(purchase.priority - 2, 3), id: \.self) { _ in
                                     Image(systemName: "star.fill")
                                         .font(.caption2)
                                 }
                             }
-                            .foregroundColor(priorityColor)
+                            .foregroundStyle(priorityColor)
                         }
                     }
 
                     Text(purchase.expectedPrice, format: .currency(code: currencyCode))
                         .appSecondaryBodyText()
                         .fontWeight(.semibold)
-                        .foregroundColor(categoryColor)
+                        .foregroundStyle(categoryColor)
 
                     if let insight = affordabilityInsight {
                         Text(insight)
@@ -362,7 +361,7 @@ struct PurchasePlanRow: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(.vertical, 8)
+            .padding(.vertical, AppTheme.Spacing.compact)
         }
     }
 }
@@ -399,7 +398,7 @@ struct AddPurchasePlanView: View {
                         }
                     }
                     
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
                         Text("Priority: \(priority)")
                             .appSecondaryBodyText()
                         Slider(value: Binding(
@@ -493,13 +492,13 @@ struct PurchasePlanDetailView: View {
                 HStack {
                     Text("Priority")
                     Spacer()
-                    HStack(spacing: 2) {
+                    HStack(spacing: AppTheme.Spacing.hairline) {
                         ForEach(0..<purchase.priority, id: \.self) { _ in
                             Image(systemName: "star.fill")
                                 .appCaptionText()
                         }
                     }
-                    .foregroundColor(AppColors.warning(for: appColorMode))
+                    .foregroundStyle(AppColors.warning(for: appColorMode))
                 }
             }
             
@@ -529,7 +528,7 @@ struct PurchasePlanDetailView: View {
             if let notes = purchase.notes {
                 Section("Notes") {
                     Text(notes)
-                        .font(.body)
+                        .font(AppTheme.Typography.body)
                 }
             }
             
@@ -550,7 +549,7 @@ struct PurchasePlanDetailView: View {
                             Text("Mark as Purchased")
                         }
                         .frame(maxWidth: .infinity)
-                        .foregroundColor(AppColors.success(for: appColorMode))
+                        .foregroundStyle(AppColors.success(for: appColorMode))
                     }
                 }
             }

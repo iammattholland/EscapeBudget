@@ -8,7 +8,7 @@ struct CategoryScoringModel {
         // Payee matching weights
         var exactPayeeMatch: Double = 100.0
         var payeeWordOverlap: Double = 30.0
-        var payeeSubstring: Double = 20.0
+        var payeeSubstring: Double = 50.0
 
         // Pattern confidence bonus
         var learnedPatternBonus: Double = 40.0

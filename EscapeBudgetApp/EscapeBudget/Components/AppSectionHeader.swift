@@ -5,7 +5,7 @@ struct AppSectionHeader: View {
     var subtitle: String? = nil
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
             Text(title)
                 .appSectionTitleText()
             if let subtitle, !subtitle.isEmpty {

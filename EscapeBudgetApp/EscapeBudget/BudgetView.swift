@@ -9,7 +9,7 @@ struct BudgetView: View {
     @Query(sort: \CategoryGroup.order) private var categoryGroups: [CategoryGroup]
     @Query(
         filter: #Predicate<Transaction> { tx in
-            tx.kindRawValue == "standard"
+            tx.kindRawValue == "Standard"
         },
         sort: [SortDescriptor(\Transaction.date, order: .reverse)]
     ) private var allStandardTransactions: [Transaction]
@@ -136,8 +136,8 @@ struct BudgetView: View {
 
     private var monthChromeView: some View {
         MonthNavigationHeader(selectedDate: $selectedDate, isCompact: isMonthHeaderCompact)
-            .padding(.horizontal, 12)
-            .padding(.vertical, isMonthHeaderCompact ? 8 : 12)
+            .padding(.horizontal, AppTheme.Spacing.tight)
+            .padding(.vertical, isMonthHeaderCompact ? AppTheme.Spacing.compact : AppTheme.Spacing.tight)
             .background(
                 RoundedRectangle(cornerRadius: monthChromeCornerRadius, style: .continuous)
                     .fill(.ultraThinMaterial)
@@ -147,8 +147,8 @@ struct BudgetView: View {
                     .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
             )
             .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.top, 6)
-            .padding(.bottom, 6)
+            .padding(.top, AppTheme.Spacing.xSmall)
+            .padding(.bottom, AppTheme.Spacing.xSmall)
     }
     
     var body: some View {
@@ -174,7 +174,7 @@ struct BudgetView: View {
                 monthChromeView
             }
             .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
-                let shouldCompact = offset < -12
+                let shouldCompact = offset < -AppTheme.Layout.scrollCompactThreshold
                 if shouldCompact != isMonthHeaderCompact {
                     withAnimation(.easeInOut(duration: 0.15)) {
                         isMonthHeaderCompact = shouldCompact
@@ -365,7 +365,7 @@ struct BudgetView: View {
                         }
 
                         // Swipe left (next month)
-                        if value.translation.width < -50 {
+                        if value.translation.width < -AppTheme.Layout.swipeActionThreshold {
                             if let nextMonth = calendar.date(byAdding: .month, value: 1, to: selectedDate) {
                                 withAnimation {
                                     selectedDate = nextMonth
@@ -373,7 +373,7 @@ struct BudgetView: View {
                             }
                         }
                         // Swipe right (previous month)
-                        else if value.translation.width > 50 {
+                        else if value.translation.width > AppTheme.Layout.swipeActionThreshold {
                             if let previousMonth = calendar.date(byAdding: .month, value: -1, to: selectedDate) {
                                 withAnimation {
                                     selectedDate = previousMonth
@@ -580,7 +580,7 @@ struct BudgetView: View {
                     isCollapsed: isSearching ? false : isGroupCollapsed(incomeGroup),
                     onToggleCollapse: { toggleGroupCollapse(incomeGroup) }
                 )
-                .foregroundColor(AppColors.success(for: appColorMode))
+                .foregroundStyle(AppColors.success(for: appColorMode))
             ) {
                 if isSearching || !isGroupCollapsed(incomeGroup) {
                     ForEach(filteredCategories(in: incomeGroup)) { category in
@@ -592,12 +592,12 @@ struct BudgetView: View {
                         showingAddCategory = true
                     } label: {
                         Label("Add Income Source", systemImage: "plus.circle.fill")
-                            .foregroundColor(AppColors.success(for: appColorMode))
-                            .font(.callout)
+                            .foregroundStyle(AppColors.success(for: appColorMode))
+                            .font(AppTheme.Typography.secondaryBody)
                             .fontWeight(.medium)
                     }
                     .buttonStyle(.plain)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, AppTheme.Spacing.compact)
                 }
             }
         }
@@ -625,12 +625,12 @@ struct BudgetView: View {
                     showingAddCategory = true
                 } label: {
                     Label("Add Budget Category", systemImage: "plus.circle.fill")
-                        .foregroundColor(AppColors.tint(for: appColorMode))
-                        .font(.callout)
+                        .foregroundStyle(AppColors.tint(for: appColorMode))
+                        .font(AppTheme.Typography.secondaryBody)
                         .fontWeight(.medium)
                 }
                 .buttonStyle(.plain)
-                .padding(.vertical, 8)
+                .padding(.vertical, AppTheme.Spacing.compact)
             }
         }
     }
@@ -690,7 +690,7 @@ struct BudgetView: View {
     private var bulkSelectionBar: some View {
         VStack(spacing: 0) {
             Divider()
-            HStack(spacing: 12) {
+            HStack(spacing: AppTheme.Spacing.tight) {
                 Button(selectedCategoryIDs.isEmpty ? "Select All" : "Clear") {
                     withAnimation {
                         if selectedCategoryIDs.isEmpty {
@@ -711,7 +711,7 @@ struct BudgetView: View {
                 .disabled(selectedCategoryIDs.isEmpty || bulkSelectionType == nil)
             }
             .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.vertical, 12)
+            .padding(.vertical, AppTheme.Spacing.tight)
             .background(.thinMaterial)
         }
     }
@@ -908,7 +908,7 @@ struct GroupHeaderView: View {
     var body: some View {
         let totalAssigned = (group.categories ?? []).reduce(0) { $0 + $1.assigned }
         
-        HStack(spacing: 8) {
+        HStack(spacing: AppTheme.Spacing.compact) {
             Button(action: onToggleCollapse) {
                 Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
                     .appCaptionText()
@@ -919,7 +919,7 @@ struct GroupHeaderView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(isCollapsed ? "Expand \(group.name)" : "Collapse \(group.name)")
             
-	        HStack(spacing: 6) {
+	        HStack(spacing: AppTheme.Spacing.xSmall) {
 	                Text(group.name)
 	                    .appSectionTitleText()
 	                    .foregroundStyle(.primary)
@@ -952,7 +952,7 @@ struct GroupHeaderView: View {
                     .clipShape(Circle())
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, AppTheme.Spacing.micro)
         .alert("Rename Group", isPresented: $showingRenameAlert) {
             TextField("Group Name", text: $newName)
             Button("Cancel", role: .cancel) { }
@@ -1015,7 +1015,7 @@ struct BudgetCategoryRowView: View {
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 12) {
+            HStack(spacing: AppTheme.Spacing.tight) {
                 // Category icon
                 Circle()
                     .fill(AppColors.tint(for: appColorMode).opacity(0.1))
@@ -1023,12 +1023,12 @@ struct BudgetCategoryRowView: View {
                     .overlay(
                         Text(category.icon ?? String(category.name.prefix(1)).uppercased())
                             .font(.system(size: category.icon != nil ? 20 : 16, weight: .semibold))
-                            .foregroundColor(AppColors.tint(for: appColorMode))
+                            .foregroundStyle(AppColors.tint(for: appColorMode))
                     )
                 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
                     Text(category.name)
-                        .font(.body)
+                        .font(AppTheme.Typography.body)
                         .fontWeight(.medium)
                         .foregroundStyle(.primary)
                     
@@ -1036,13 +1036,13 @@ struct BudgetCategoryRowView: View {
                         Text("Needs Budget")
                             .font(.caption2)
                             .fontWeight(.medium)
-                            .foregroundColor(AppColors.warning(for: appColorMode))
+                            .foregroundStyle(AppColors.warning(for: appColorMode))
                     }
                 }
                 
                 Spacer()
                 
-	                VStack(alignment: .trailing, spacing: 2) {
+	                VStack(alignment: .trailing, spacing: AppTheme.Spacing.hairline) {
 	                    Text(category.assigned, format: .currency(code: currencyCode))
 	                        .appSecondaryBodyText()
 	                        .foregroundStyle(.primary)
@@ -1053,25 +1053,25 @@ struct BudgetCategoryRowView: View {
                         if monthlyData.spent > 0 {
                             Text("Received: \(monthlyData.spent.formatted(.currency(code: currencyCode)))")
                                 .font(.caption2)
-                                .foregroundColor(AppColors.success(for: appColorMode))
+                                .foregroundStyle(AppColors.success(for: appColorMode))
                         }
                     } else {
                         if category.assigned > 0 {
                             let remaining = monthlyData.remaining
                             Text("\(remaining >= 0 ? "Left" : "Over"): \(abs(remaining).formatted(.currency(code: currencyCode)))")
                                 .font(.caption2)
-                            .foregroundColor(remaining >= 0 ? .secondary : AppColors.danger(for: appColorMode))
+                            .foregroundStyle(remaining >= 0 ? .secondary : AppColors.danger(for: appColorMode))
                         } else if monthlyData.spent > 0 {
                             Text("Spent: \(monthlyData.spent.formatted(.currency(code: currencyCode)))")
                                 .font(.caption2)
-                                .foregroundColor(AppColors.danger(for: appColorMode))
+                                .foregroundStyle(AppColors.danger(for: appColorMode))
                         }
                     }
                 }
                 
                 if showsSelection {
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                        .font(.title3)
+                        .appTitleText()
                         .foregroundStyle(isSelected ? AppColors.tint(for: appColorMode) : Color.secondary.opacity(0.35))
                 } else {
                     Image(systemName: "chevron.right")
@@ -1079,7 +1079,7 @@ struct BudgetCategoryRowView: View {
                         .foregroundStyle(.tertiary)
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, AppTheme.Spacing.micro)
         }
     }
 }
@@ -1136,43 +1136,40 @@ struct CategoryTransactionsSheet: View {
                 // Summary header
                 VStack(spacing: AppTheme.Spacing.medium) {
                     HStack(spacing: AppTheme.Spacing.large) {
-                        VStack(spacing: 4) {
+                        VStack(spacing: AppTheme.Spacing.micro) {
                             Text("Budget")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                             Text(category.assigned, format: .currency(code: currencyCode))
-                                .font(.title3)
-                                .fontWeight(.semibold)
+                                .appTitleText()
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.5)
                         }
-                        
+
                         Divider()
                             .frame(height: 40)
-                        
-                        VStack(spacing: 4) {
+
+                        VStack(spacing: AppTheme.Spacing.micro) {
                             Text("Spent")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                             Text(totalSpent, format: .currency(code: currencyCode))
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                                .foregroundColor(AppColors.danger(for: appColorMode))
+                                .appTitleText()
+                                .foregroundStyle(AppColors.danger(for: appColorMode))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.5)
                         }
-                        
+
                         Divider()
                             .frame(height: 40)
-                        
-                        VStack(spacing: 4) {
+
+                        VStack(spacing: AppTheme.Spacing.micro) {
                             Text("Remaining")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                             Text(category.assigned - totalSpent, format: .currency(code: currencyCode))
-                                .font(.title3)
-                                .fontWeight(.semibold)
-                                .foregroundColor((category.assigned - totalSpent) >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
+                                .appTitleText()
+                                .foregroundStyle((category.assigned - totalSpent) >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.5)
                         }
@@ -1188,33 +1185,25 @@ struct CategoryTransactionsSheet: View {
                 .padding()
                 .background(Color(.systemGroupedBackground))
                 
-	                if transactions.isEmpty {
-	                    VStack(spacing: AppTheme.Spacing.medium) {
-	                        Spacer()
-	                        Image(systemName: "tray")
-	                            .font(.system(size: 50))
-	                            .foregroundColor(.secondary.opacity(0.5))
-	                        Text("No transactions")
-	                            .appSectionTitleText()
-	                            .foregroundStyle(.secondary)
-	                        Text("Transactions in this category will appear here")
-	                            .appSecondaryBodyText()
-	                            .foregroundColor(.secondary.opacity(0.7))
-	                        Spacer()
-	                    }
-	                } else {
+                if transactions.isEmpty {
+                    EmptyDataCard(
+                        systemImage: "tray",
+                        title: "No transactions",
+                        message: "Transactions in this category will appear here"
+                    )
+                } else {
                     List {
                         ForEach(sortedTransactions) { transaction in
                             Button {
                                 selectedTransaction = transaction
                             } label: {
                                 HStack {
-                                    VStack(alignment: .leading, spacing: 4) {
+                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                                         Text(transaction.payee)
-                                            .font(.body)
+                                            .font(AppTheme.Typography.body)
                                             .fontWeight(.medium)
 
-                                        HStack(spacing: 8) {
+                                        HStack(spacing: AppTheme.Spacing.compact) {
                                             Text(transaction.date, format: .dateTime.month(.abbreviated).day())
                                                 .appCaptionText()
                                                 .foregroundStyle(.secondary)
@@ -1232,7 +1221,7 @@ struct CategoryTransactionsSheet: View {
 	                                    Text(transaction.amount, format: .currency(code: currencyCode))
 	                                        .appSecondaryBodyText()
 	                                        .fontWeight(.semibold)
-	                                        .foregroundColor(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+	                                        .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
 	                                        .lineLimit(1)
 	                                        .minimumScaleFactor(0.5)
 
@@ -1243,7 +1232,7 @@ struct CategoryTransactionsSheet: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-                            .padding(.vertical, 4)
+                            .padding(.vertical, AppTheme.Spacing.micro)
                         }
                     }
                     .sheet(item: $selectedTransaction) { transaction in
@@ -1307,7 +1296,7 @@ struct CategoryEditSheet: View {
                             .appCaptionText()
                             .foregroundStyle(.secondary)
                         TextField("Name", text: $name)
-                            .font(.body)
+                            .font(AppTheme.Typography.body)
                     }
                     
                     VStack(alignment: .leading) {
@@ -1360,13 +1349,13 @@ struct CategoryEditSheet: View {
                         if let icon {
                             Button(action: { showingEmojiPicker = true }) {
                                 Text(icon)
-                                    .font(.title2)
+                                    .appTitleText()
                             }
                         } else {
                             Button(action: { showingEmojiPicker = true }) {
                                 Image(systemName: "plus.circle.fill")
-                                    .font(.title2)
-                                    .foregroundColor(AppColors.tint(for: appColorMode))
+                                    .appTitleText()
+                                    .foregroundStyle(AppColors.tint(for: appColorMode))
                             }
                         }
                     }
@@ -1579,19 +1568,19 @@ struct EmojiPickerSheet: View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
-                    VStack(alignment: .leading, spacing: 10) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
                         TextField("Search (e.g., groceries, rent, travel)", text: $searchText)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .textFieldStyle(.roundedBorder)
                             .padding(.horizontal)
 
-	                        VStack(alignment: .leading, spacing: 6) {
+	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
 	                            Text("Any emoji")
 	                                .appSectionTitleText()
 	                                .padding(.horizontal)
 
-                            HStack(spacing: 10) {
+                            HStack(spacing: AppTheme.Spacing.small) {
                                 TextField("Type or paste an emoji", text: $customEmojiText)
                                     .textFieldStyle(.roundedBorder)
                                     .focused($customEmojiFocused)
@@ -1620,7 +1609,7 @@ struct EmojiPickerSheet: View {
                                         customEmojiFocused = true
                                     } label: {
                                         Image(systemName: "face.smiling")
-                                            .font(.title3)
+                                            .appTitleText()
                                             .foregroundStyle(.secondary)
                                             .frame(width: 44, height: 44)
                                     }
@@ -1633,12 +1622,12 @@ struct EmojiPickerSheet: View {
                     }
 
                     if !suggestedEmojis.isEmpty {
-	                        VStack(alignment: .leading, spacing: 10) {
+	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
 	                            Text("Suggested")
 	                                .appSectionTitleText()
 	                                .padding(.horizontal)
 
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 45))], spacing: 10) {
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 45))], spacing: AppTheme.Spacing.small) {
                                 ForEach(suggestedEmojis, id: \.self) { emoji in
                                     Button {
                                         selectedEmoji = emoji
@@ -1658,12 +1647,12 @@ struct EmojiPickerSheet: View {
                     }
 
 	                    ForEach(filteredCategories, id: \.0) { category in
-	                        VStack(alignment: .leading, spacing: 10) {
+	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
 	                            Text(category.0)
 	                                .appSectionTitleText()
 	                                .padding(.horizontal)
                             
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 45))], spacing: 10) {
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 45))], spacing: AppTheme.Spacing.small) {
                                 ForEach(category.1, id: \.self) { emoji in
                                     Button(action: {
                                         selectedEmoji = emoji
@@ -1688,7 +1677,7 @@ struct EmojiPickerSheet: View {
                         dismiss()
                     }) {
                         Label("Remove Icon", systemImage: "trash")
-                            .foregroundColor(AppColors.danger(for: appColorMode))
+                            .foregroundStyle(AppColors.danger(for: appColorMode))
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(Color(.systemGray6))

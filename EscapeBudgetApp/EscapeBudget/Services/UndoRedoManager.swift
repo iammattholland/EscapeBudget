@@ -23,7 +23,7 @@ protocol Command {
 
 /// Manages undo/redo operations throughout the app
 @Observable
-class UndoRedoManager {
+final class UndoRedoManager {
     private var undoStack: [Command] = []
     private var redoStack: [Command] = []
 

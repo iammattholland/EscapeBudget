@@ -302,9 +302,9 @@ private struct AccountsSummaryCard: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                     Text("Overview")
                         .appSectionTitleText()
                     Text("\(count) account\(count == 1 ? "" : "s")")
@@ -317,7 +317,7 @@ private struct AccountsSummaryCard: View {
                     .foregroundStyle(netWorth >= 0 ? .primary : AppColors.danger(for: appColorMode))
             }
 
-            HStack(spacing: 12) {
+            HStack(spacing: AppTheme.Spacing.tight) {
                 SummaryPill(title: "Assets", value: totalAssets, currencyCode: currencyCode, tint: AppColors.success(for: appColorMode))
                 SummaryPill(title: "Debt", value: totalDebt, currencyCode: currencyCode, tint: AppColors.warning(for: appColorMode))
             }
@@ -336,7 +336,7 @@ private struct SummaryPill: View {
     let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
             Text(title)
                 .appCaptionText()
                 .foregroundStyle(.secondary)
@@ -345,7 +345,7 @@ private struct SummaryPill: View {
                 .foregroundStyle(.primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
+        .padding(.horizontal, AppTheme.Spacing.tight)
         .padding(.vertical, AppTheme.Spacing.small)
         .background(tint.opacity(0.12))
         .overlay(
@@ -362,7 +362,7 @@ private struct AccountRow: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AppTheme.Spacing.tight) {
             ZStack {
                 Circle()
                     .fill(account.type.color.opacity(0.18))
@@ -372,12 +372,12 @@ private struct AccountRow: View {
             }
             .frame(width: 36, height: 36)
 
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
                 Text(account.name)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
 
-                HStack(spacing: 6) {
+                HStack(spacing: AppTheme.Spacing.xSmall) {
                     Text(account.type.rawValue)
                         .appCaptionText()
                         .foregroundStyle(.secondary)
@@ -385,8 +385,8 @@ private struct AccountRow: View {
                     if account.isTrackingOnly {
                         Text("External")
                             .font(.caption2.weight(.semibold))
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, AppTheme.Spacing.xSmall)
+                            .padding(.vertical, AppTheme.Spacing.hairline)
                             .background(Capsule().fill(AppColors.warning(for: appColorMode).opacity(0.12)))
                             .foregroundStyle(AppColors.warning(for: appColorMode))
                             .lineLimit(1)
@@ -408,9 +408,9 @@ private struct AccountRow: View {
 
             Text(account.balance, format: .currency(code: currencyCode))
                 .font(.subheadline.weight(.semibold))
-                .foregroundColor(account.balance >= 0 ? .primary : AppColors.danger(for: appColorMode))
+                .foregroundStyle(account.balance >= 0 ? .primary : AppColors.danger(for: appColorMode))
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, AppTheme.Spacing.hairline)
     }
 }
 
@@ -442,7 +442,7 @@ private struct AccountEditorSheet: View {
     var body: some View {
         Form {
             Section("Details") {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
 	                    Text("Name")
 	                        .appCaptionText()
 	                        .foregroundStyle(.secondary)
@@ -456,13 +456,13 @@ private struct AccountEditorSheet: View {
 	                    }
 	                }
 
-	                VStack(alignment: .leading, spacing: 4) {
+	                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
 	                    Text("Current Balance")
 	                        .appCaptionText()
 	                        .foregroundStyle(.secondary)
-	                    HStack(spacing: 8) {
+	                    HStack(spacing: AppTheme.Spacing.compact) {
 	                        Text(currencySymbol(for: currencyCode))
-	                            .font(.title3)
+	                            .appTitleText()
 	                            .fontWeight(.semibold)
 	                            .foregroundStyle(.secondary)
 	                        TextField("", value: $balance, format: .number)

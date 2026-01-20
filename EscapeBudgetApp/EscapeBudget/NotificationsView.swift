@@ -49,7 +49,7 @@ struct NotificationsView: View {
                                         Image(systemName: "ellipsis.circle")
                                             .imageScale(.large)
                                     }
-                                    .foregroundColor(AppColors.tint(for: appColorMode))
+                                    .foregroundStyle(AppColors.tint(for: appColorMode))
                                     .confirmationDialog("Delete all notifications?", isPresented: $showingDeleteAllConfirmFromMenu, titleVisibility: .visible) {
                                         Button("Delete All", role: .destructive) {
                                             clearAllNotifications()
@@ -105,7 +105,7 @@ struct NotificationsView: View {
         .coordinateSpace(name: "NotificationsView.scroll")
         .safeAreaInset(edge: .bottom) {
             if !notifications.isEmpty {
-                HStack(spacing: 12) {
+                HStack(spacing: AppTheme.Spacing.tight) {
                     Button(role: .destructive) {
                         showingDeleteAllConfirmFromBottom = true
                     } label: {
@@ -135,8 +135,8 @@ struct NotificationsView: View {
                     .appPrimaryCTA()
                 }
                 .padding(.horizontal, AppTheme.Spacing.medium)
-                .padding(.top, 10)
-                .padding(.bottom, 12)
+                .padding(.top, AppTheme.Spacing.small)
+                .padding(.bottom, AppTheme.Spacing.tight)
                 .background(.ultraThinMaterial)
             }
         }
@@ -204,13 +204,13 @@ struct NotificationRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: AppTheme.Spacing.medium) {
             Image(systemName: notification.type.icon)
-                .font(.title2)
-                .foregroundColor(iconColor)
+                .appTitleText()
+                .foregroundStyle(iconColor)
                 .frame(width: 40, height: 40)
                 .background(iconColor.opacity(0.1))
                 .clipShape(Circle())
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                 HStack {
                     Text(notification.title)
                         .appSectionTitleText()
@@ -233,10 +233,10 @@ struct NotificationRow: View {
                 Text(notification.date.formatted(.relative(presentation: .named)))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                    .padding(.top, 2)
+                    .padding(.top, AppTheme.Spacing.hairline)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, AppTheme.Spacing.micro)
         .opacity(notification.isRead ? 0.6 : 1.0)
     }
 }

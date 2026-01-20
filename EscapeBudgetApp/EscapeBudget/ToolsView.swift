@@ -12,7 +12,7 @@ struct ToolsView: View {
                     .listRowBackground(Color.clear)
 
                 Section {
-                    HStack(spacing: 12) {
+                    HStack(spacing: AppTheme.Spacing.tight) {
                         Image(systemName: "hammer")
                             .font(.system(size: 24, weight: .semibold))
                             .foregroundStyle(.secondary)
@@ -21,7 +21,7 @@ struct ToolsView: View {
                             subtitle: "Your toolbox for deeper insights and planning."
                         )
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, AppTheme.Spacing.micro)
                 }
 
                 Section("Available Now") {
@@ -78,14 +78,14 @@ private struct ToolComingItem: View {
     let subtitle: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
             Text(title)
                 .appSectionTitleText()
             Text(subtitle)
                 .appSecondaryBodyText()
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, AppTheme.Spacing.micro)
     }
 }
 
@@ -101,5 +101,4 @@ private struct ToolComingItem: View {
 #Preview("Tools • iPad") {
     ToolsView()
         .preferredColorScheme(.dark)
-        .previewDevice("iPad Pro (12.9-inch) (6th generation)")
 }

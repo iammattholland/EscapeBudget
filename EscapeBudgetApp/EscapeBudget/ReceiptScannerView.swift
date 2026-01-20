@@ -19,10 +19,10 @@ struct ReceiptScannerView: View {
                 Spacer()
 
                 Image(systemName: "doc.text.image")
-                    .font(.system(size: 72))
+                    .appIconHero()
                     .foregroundStyle(.secondary)
 
-                VStack(spacing: 8) {
+                VStack(spacing: AppTheme.Spacing.compact) {
                     Text("Scan Receipt")
                         .font(.title2.bold())
 
@@ -33,7 +33,7 @@ struct ReceiptScannerView: View {
                         .padding(.horizontal)
                 }
 
-                VStack(spacing: 12) {
+                VStack(spacing: AppTheme.Spacing.tight) {
                     Button {
                         checkCameraAndPresent()
                     } label: {

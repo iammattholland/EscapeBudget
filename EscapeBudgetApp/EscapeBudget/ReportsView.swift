@@ -166,7 +166,7 @@ struct ReportsView: View {
                     }
                 }
             }
-            .padding(.horizontal, 4)
+            .padding(.horizontal, AppTheme.Spacing.micro)
         }
     }
     
@@ -297,7 +297,7 @@ struct ReportsView: View {
         VStack(spacing: AppTheme.Spacing.large) {
             // Total Spending Header
             GlassCard {
-                VStack(spacing: 8) {
+                VStack(spacing: AppTheme.Spacing.compact) {
                     Text("Total Spending")
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
@@ -326,13 +326,13 @@ struct ReportsView: View {
                                 innerRadius: .ratio(0.5),
                                 angularInset: 1.5
                             )
-                            .foregroundStyle(item.color.gradient)
-                            .cornerRadius(6)
-                        }
+	                        .foregroundStyle(item.color.gradient)
+	                        .cornerRadius(AppTheme.Radius.tag)
+	                    }
                         .frame(height: 220)
                         
                         // Category breakdown
-                        VStack(spacing: 12) {
+                        VStack(spacing: AppTheme.Spacing.tight) {
                             ForEach(categoryData.sorted { $0.amount > $1.amount }) { category in
                                 CategoryRow(
                                     name: category.name,
@@ -380,7 +380,7 @@ struct ReportsView: View {
         VStack(spacing: AppTheme.Spacing.large) {
             // Total Income Header
             GlassCard {
-                VStack(spacing: 8) {
+                VStack(spacing: AppTheme.Spacing.compact) {
                     Text("Total Income")
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
@@ -408,9 +408,9 @@ struct ReportsView: View {
                                 x: .value("Amount", animateCharts ? Double(truncating: item.amount as NSNumber) : 0),
                                 y: .value("Source", item.name)
                             )
-                            .foregroundStyle(AppColors.success(for: appColorMode).gradient)
-                            .cornerRadius(6)
-                        }
+	                        .foregroundStyle(AppColors.success(for: appColorMode).gradient)
+	                        .cornerRadius(AppTheme.Radius.tag)
+	                    }
                         .frame(height: CGFloat(incomeSources.count * 50 + 20))
                         .chartXAxis {
                             AxisMarks(values: .automatic(desiredCount: 4)) { value in
@@ -502,11 +502,11 @@ struct ReportsView: View {
                         }
                         
                         HStack(spacing: AppTheme.Spacing.xLarge) {
-                            HStack(spacing: 6) {
+                            HStack(spacing: AppTheme.Spacing.xSmall) {
                                 Circle().fill(AppColors.success(for: appColorMode)).frame(width: 8, height: 8)
                                 Text("Income").appCaptionText().foregroundStyle(.secondary)
                             }
-                            HStack(spacing: 6) {
+                            HStack(spacing: AppTheme.Spacing.xSmall) {
                                 Circle().fill(AppColors.danger(for: appColorMode)).frame(width: 8, height: 8)
                                 Text("Spending").appCaptionText().foregroundStyle(.secondary)
                             }
@@ -529,13 +529,13 @@ struct ReportsView: View {
                     } else {
                         Chart(dailyData) { day in
                             let netFlow = day.income - day.spending
-                            BarMark(
-                                x: .value("Date", day.date),
-                                y: .value("Net", animateCharts ? Double(truncating: netFlow as NSNumber) : 0)
-                            )
-                            .foregroundStyle(netFlow >= 0 ? AppColors.success(for: appColorMode).gradient : AppColors.danger(for: appColorMode).gradient)
-                            .cornerRadius(4)
-                        }
+	                            BarMark(
+	                                x: .value("Date", day.date),
+	                                y: .value("Net", animateCharts ? Double(truncating: netFlow as NSNumber) : 0)
+	                            )
+	                            .foregroundStyle(netFlow >= 0 ? AppColors.success(for: appColorMode).gradient : AppColors.danger(for: appColorMode).gradient)
+	                            .cornerRadius(AppTheme.Radius.mini)
+	                        }
                         .frame(height: 180)
                     }
                 }
@@ -567,7 +567,7 @@ struct ReportsView: View {
         VStack(spacing: AppTheme.Spacing.large) {
             // Total Balance
             GlassCard {
-                VStack(spacing: 8) {
+                VStack(spacing: AppTheme.Spacing.compact) {
                     Text("Total Balance")
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
@@ -715,7 +715,7 @@ struct ReportTypeCard: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            VStack(spacing: AppTheme.Spacing.compact) {
                 Image(systemName: type.icon)
                     .font(.system(size: 24))
                     .foregroundStyle(isSelected ? .white : type.color(for: appColorMode))
@@ -723,7 +723,7 @@ struct ReportTypeCard: View {
                 Text(type.rawValue)
                     .appCaptionText()
                     .fontWeight(.medium)
-                    .foregroundColor(isSelected ? .white : .primary)
+                    .foregroundStyle(isSelected ? .white : .primary)
             }
             .frame(width: 80, height: 80)
             .background(
@@ -764,15 +764,15 @@ private struct SummaryCard: View {
     @AppStorage("currencyCode") private var currencyCode = "USD"
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             HStack {
                 Image(systemName: icon)
-                    .font(.title2)
+                    .appTitleText()
                     .foregroundStyle(color.gradient)
                 Spacer()
             }
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                 Text(title)
                     .appCaptionText()
                     .foregroundStyle(.secondary)
@@ -803,12 +803,12 @@ struct LegendItem: View {
     @AppStorage("currencyCode") private var currencyCode = "USD"
     
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: AppTheme.Spacing.compact) {
             Circle()
                 .fill(color)
                 .frame(width: 10, height: 10)
             
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
                 Text(label)
                     .appCaptionText()
                     .foregroundStyle(.secondary)
@@ -827,22 +827,22 @@ struct TransactionRowView: View {
     @Environment(\.appColorMode) private var appColorMode
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AppTheme.Spacing.tight) {
             if let rank = showRank {
                 Text("\(rank)")
                     .appCaptionText()
                     .fontWeight(.bold)
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .frame(width: 24, height: 24)
                     .background(Circle().fill(AppColors.tint(for: appColorMode)))
             }
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                 Text(transaction.payee)
                     .appSecondaryBodyText()
                     .fontWeight(.medium)
                 
-                HStack(spacing: 8) {
+                HStack(spacing: AppTheme.Spacing.compact) {
                     Text(transaction.date, format: .dateTime.month(.abbreviated).day())
                         .appCaptionText()
                         .foregroundStyle(.secondary)
@@ -850,10 +850,10 @@ struct TransactionRowView: View {
                     if let category = transaction.category {
                         Text(category.name)
                             .font(.caption2)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
+                            .padding(.horizontal, AppTheme.Spacing.xSmall)
+                            .padding(.vertical, AppTheme.Spacing.hairline)
                             .background(Capsule().fill(AppColors.tint(for: appColorMode).opacity(0.1)))
-                            .foregroundColor(AppColors.tint(for: appColorMode))
+                            .foregroundStyle(AppColors.tint(for: appColorMode))
                     }
                 }
             }
@@ -863,7 +863,7 @@ struct TransactionRowView: View {
             Text(transaction.amount, format: .currency(code: currencyCode))
                 .appSecondaryBodyText()
                 .fontWeight(.semibold)
-                .foregroundColor(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
         }
     }
 }
@@ -882,9 +882,9 @@ struct CategoryRow: View {
     }
     
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: AppTheme.Spacing.compact) {
             HStack {
-                HStack(spacing: 8) {
+                HStack(spacing: AppTheme.Spacing.compact) {
                     Circle()
                         .fill(color)
                         .frame(width: 10, height: 10)
@@ -899,17 +899,17 @@ struct CategoryRow: View {
                     .fontWeight(.medium)
             }
             
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color(.systemGray5))
-                    
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(color.gradient)
-                        .frame(width: animate ? geometry.size.width * percentage : 0)
-                        .animation(.easeOut(duration: 0.8).delay(0.2), value: animate)
-                }
-            }
+	            GeometryReader { geometry in
+	                ZStack(alignment: .leading) {
+	                    RoundedRectangle(cornerRadius: AppTheme.Radius.mini)
+	                        .fill(Color(.systemGray5))
+	                    
+	                    RoundedRectangle(cornerRadius: AppTheme.Radius.mini)
+	                        .fill(color.gradient)
+	                        .frame(width: animate ? geometry.size.width * percentage : 0)
+	                        .animation(.easeOut(duration: 0.8).delay(0.2), value: animate)
+	                }
+	            }
             .frame(height: 8)
         }
     }
@@ -922,7 +922,7 @@ struct StatRow: View {
     @AppStorage("currencyCode") private var currencyCode = "USD"
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
             Text(label)
                 .appCaptionText()
                 .foregroundStyle(.secondary)
@@ -955,9 +955,9 @@ struct AccountRowView: View {
     @Environment(\.appColorMode) private var appColorMode
     
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: AppTheme.Spacing.cardGap) {
             Image(systemName: account.type.icon)
-                .font(.title2)
+                .appTitleText()
                 .foregroundStyle(color.gradient)
                 .frame(width: 44, height: 44)
                 .background(
@@ -965,7 +965,7 @@ struct AccountRowView: View {
                         .fill(color.opacity(0.1))
                 )
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                 Text(account.name)
                     .appSecondaryBodyText()
                     .fontWeight(.medium)
@@ -980,7 +980,7 @@ struct AccountRowView: View {
             Text(account.balance, format: .currency(code: currencyCode))
                 .appSecondaryBodyText()
                 .fontWeight(.semibold)
-                .foregroundColor(account.balance >= 0 ? .primary : AppColors.danger(for: appColorMode))
+                .foregroundStyle(account.balance >= 0 ? .primary : AppColors.danger(for: appColorMode))
         }
         .opacity(animate ? 1 : 0)
         .offset(x: animate ? 0 : 20)
@@ -994,17 +994,17 @@ struct EmptyStateView: View {
     let message: String
     
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: AppTheme.Spacing.tight) {
             Image(systemName: "chart.bar.doc.horizontal")
                 .font(.system(size: 40))
-                .foregroundColor(.secondary.opacity(0.5))
+                .foregroundStyle(.secondary.opacity(0.5))
             
             Text(message)
                 .appSecondaryBodyText()
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 30)
+        .padding(.vertical, AppTheme.Spacing.sectionVertical)
     }
 }
 
@@ -1025,5 +1025,4 @@ struct EmptyStateView: View {
     ReportsView()
         .modelContainer(for: [Transaction.self, TransactionHistoryEntry.self, Account.self, Category.self, CategoryGroup.self, TransactionTag.self], inMemory: true)
         .preferredColorScheme(.dark)
-        .previewDevice("iPad Pro (12.9-inch) (6th generation)")
 }

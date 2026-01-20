@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 import os.log
 
-class DataSeeder {
+final class DataSeeder {
     private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "EscapeBudget", category: "DataSeeder")
 
     static func ensureSystemGroups(context: ModelContext, persistChanges: Bool = true) {

@@ -32,14 +32,14 @@ struct TopChromeTabs<Selection: Hashable>: View {
                         .font(AppTheme.Typography.tabLabel)
                         .foregroundStyle(selection == tab.id ? .primary : .secondary)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, AppTheme.Spacing.compact)
                         .contentShape(Rectangle())
                         .background {
                             if selection == tab.id {
                                 RoundedRectangle(cornerRadius: AppTheme.Radius.tabsSelection, style: .continuous)
                                     .fill(Color(.tertiarySystemFill))
                                     .matchedGeometryEffect(id: "TopChromeTabs.selection", in: namespace)
-                                    .padding(2)
+                                    .padding(AppTheme.Spacing.hairline)
                             }
                         }
                 }
@@ -47,7 +47,7 @@ struct TopChromeTabs<Selection: Hashable>: View {
                 .accessibilityAddTraits(selection == tab.id ? [.isSelected] : [])
             }
         }
-        .padding(2)
+        .padding(AppTheme.Spacing.hairline)
         .background(
             RoundedRectangle(cornerRadius: AppTheme.Radius.tabsOuter, style: .continuous)
                 .fill(Color(.secondarySystemFill))

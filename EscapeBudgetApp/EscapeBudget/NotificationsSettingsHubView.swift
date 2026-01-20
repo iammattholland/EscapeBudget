@@ -24,8 +24,8 @@ struct NotificationsSettingsHubView: View {
                             tabs: Tab.allCases.map { .init(id: $0, title: $0.rawValue) }
                         )
                             .padding(.horizontal, AppTheme.Spacing.medium)
-                            .padding(.top, 6)
-                            .padding(.bottom, 6)
+                            .padding(.top, AppTheme.Spacing.xSmall)
+                            .padding(.bottom, AppTheme.Spacing.xSmall)
                             .frame(maxWidth: maxContentWidth)
                             .frame(maxWidth: .infinity)
                     }

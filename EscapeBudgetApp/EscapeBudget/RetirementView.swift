@@ -132,7 +132,7 @@ struct RetirementView: View {
 	                ScrollView {
                         ScrollOffsetReader(coordinateSpace: "RetirementView.scroll", id: "RetirementView.scroll")
 
-	                    LazyVStack(spacing: 14) {
+	                    LazyVStack(spacing: AppTheme.Spacing.cardGap) {
 	                        headerCard
                         snapshotCard
                         projectionCard
@@ -141,7 +141,7 @@ struct RetirementView: View {
                         dataSourcesCard
                     }
                     .padding(.horizontal, AppTheme.Spacing.medium)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, AppTheme.Spacing.tight)
                 }
                 .background(Color(.systemGroupedBackground))
                 .coordinateSpace(name: "RetirementView.scroll")
@@ -499,17 +499,17 @@ struct RetirementView: View {
 
     private var headerCard: some View {
         RetirementCard {
-	            HStack(alignment: .top, spacing: 12) {
+	            HStack(alignment: .top, spacing: AppTheme.Spacing.tight) {
 	                ZStack {
 	                    RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
 	                        .fill(statusTint.opacity(0.12))
                     Image(systemName: "sparkles")
-                        .font(.title3)
+                        .appTitleText()
                         .foregroundStyle(statusTint)
                 }
 	                .frame(width: 44, height: 44)
 
-	                VStack(alignment: .leading, spacing: 4) {
+	                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
 	                    Text("Retirement")
 	                        .appSectionTitleText()
 	                    Text("Turn your real spending into a clear number, a projection, and one next best action.")
@@ -524,7 +524,7 @@ struct RetirementView: View {
                     showingAssumptionsHelp = true
                 } label: {
                     Image(systemName: "info.circle")
-                        .font(.title3)
+                        .appTitleText()
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
@@ -557,15 +557,15 @@ struct RetirementView: View {
 
     private var snapshotCard: some View {
         RetirementCard {
-            HStack(alignment: .top, spacing: 14) {
+            HStack(alignment: .top, spacing: AppTheme.Spacing.cardGap) {
                 RetirementRingProgress(
                     progress: progressFraction,
                     tint: statusTint
                 )
 
-	                VStack(alignment: .leading, spacing: 10) {
+	                VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
 	                    HStack(alignment: .firstTextBaseline) {
-	                        VStack(alignment: .leading, spacing: 4) {
+	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
 	                            Text("Your Number")
 	                                .appSectionTitleText()
 	                            Text(requiredPortfolio, format: .currency(code: currencyCode))
@@ -581,14 +581,14 @@ struct RetirementView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(statusTint)
                             .padding(.horizontal, AppTheme.Spacing.small)
-                            .padding(.vertical, 6)
+                            .padding(.vertical, AppTheme.Spacing.xSmall)
                             .background(
                                 Capsule()
                                     .fill(statusTint.opacity(0.12))
                             )
                     }
 
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppTheme.Spacing.small) {
                         RetirementMetricTile(
                             title: "Today",
                             value: compactCurrency(currentPortfolio),
@@ -623,7 +623,7 @@ struct RetirementView: View {
                             externalAssets: externalAssets
                         )
                     } label: {
-                        HStack(spacing: 8) {
+                        HStack(spacing: AppTheme.Spacing.compact) {
                             Text("What’s included")
                                 .font(.subheadline.weight(.semibold))
                             Spacer()
@@ -631,7 +631,7 @@ struct RetirementView: View {
                                 .font(.caption.weight(.semibold))
                                 .foregroundStyle(.secondary)
                         }
-                        .padding(.top, 2)
+                        .padding(.top, AppTheme.Spacing.hairline)
                     }
                     .buttonStyle(.plain)
                 }
@@ -641,7 +641,7 @@ struct RetirementView: View {
 
     private var projectionCard: some View {
 	        RetirementCard {
-	            VStack(alignment: .leading, spacing: 12) {
+	            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
 	                HStack {
 	                    Text("Projection")
 	                        .appSectionTitleText()
@@ -651,7 +651,7 @@ struct RetirementView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
                     Picker("Scenario", selection: $scenarioRawValue) {
                         ForEach(RetirementScenario.allCases) { item in
                             Text(item.rawValue).tag(item.rawValue)
@@ -660,7 +660,7 @@ struct RetirementView: View {
                     .pickerStyle(.segmented)
 
                     if isPreviewingScenarioPreset {
-                        HStack(spacing: 10) {
+                        HStack(spacing: AppTheme.Spacing.small) {
                             Text("Previewing \(scenario.rawValue) preset.")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
@@ -747,7 +747,7 @@ struct RetirementView: View {
                     }
                 }
 
-                HStack(spacing: 10) {
+                HStack(spacing: AppTheme.Spacing.small) {
                     RetirementPill(
                         icon: "arrow.up.right.circle.fill",
                         title: "Return",
@@ -767,7 +767,7 @@ struct RetirementView: View {
 
 	    private var actionPlanCard: some View {
 	        RetirementCard {
-	            VStack(alignment: .leading, spacing: 12) {
+	            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
 	                Text("Next Best Action")
 	                    .appSectionTitleText()
 
@@ -783,7 +783,7 @@ struct RetirementView: View {
     }
 
     private var actionPlanContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             if status == .behind, let recommendedMonthlyContribution {
                 let delta = max(0, recommendedMonthlyContribution - monthlyContribution)
 
@@ -839,7 +839,7 @@ struct RetirementView: View {
 
 	    private var settingsCard: some View {
 	        RetirementCard {
-	            VStack(alignment: .leading, spacing: 12) {
+	            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
 	                HStack {
 	                    Text("Plan Settings")
 	                        .appSectionTitleText()
@@ -874,7 +874,7 @@ struct RetirementView: View {
 
 	    private var dataSourcesCard: some View {
 	        RetirementCard {
-	            VStack(alignment: .leading, spacing: 10) {
+	            VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
 	                Text("Data")
 	                    .appSectionTitleText()
 
@@ -899,7 +899,7 @@ struct RetirementView: View {
     }
 
 	    private var agePickers: some View {
-	        VStack(spacing: 10) {
+	        VStack(spacing: AppTheme.Spacing.small) {
 	            Stepper {
 	                HStack {
                     Text("Current age")
@@ -932,7 +932,7 @@ struct RetirementView: View {
 	    }
 
 	    private var accountInclusionToggles: some View {
-	        VStack(alignment: .leading, spacing: 8) {
+	        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
 	            Text("Include accounts")
 	                .appSecondaryBodyText()
 	                .fontWeight(.semibold)
@@ -945,7 +945,7 @@ struct RetirementView: View {
 	    }
 
 	    private var spendGoalControls: some View {
-	        VStack(alignment: .leading, spacing: 8) {
+	        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
 	            Text("Retirement spending goal")
 	                .appSecondaryBodyText()
 	                .fontWeight(.semibold)
@@ -964,7 +964,7 @@ struct RetirementView: View {
 	                    .appCaptionText()
 	                    .foregroundStyle(.secondary)
 	            } else {
-                HStack(spacing: 10) {
+                HStack(spacing: AppTheme.Spacing.small) {
                     TextField("Monthly spend", text: $spendingMonthlyOverrideText)
                         .keyboardType(.decimalPad)
                     Text("/mo")
@@ -977,7 +977,7 @@ struct RetirementView: View {
 	    }
 
 	    private var contributionControls: some View {
-	        VStack(alignment: .leading, spacing: 8) {
+	        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
 	            Text("Monthly contributions")
 	                .appSecondaryBodyText()
 	                .fontWeight(.semibold)
@@ -996,7 +996,7 @@ struct RetirementView: View {
 	                    .appCaptionText()
 	                    .foregroundStyle(.secondary)
 	            } else {
-                HStack(spacing: 10) {
+                HStack(spacing: AppTheme.Spacing.small) {
                     TextField("Monthly contribution", text: $monthlyContributionOverrideText)
                         .keyboardType(.decimalPad)
                     Text("/mo")
@@ -1009,12 +1009,12 @@ struct RetirementView: View {
 	    }
 
 	    private var advancedControls: some View {
-	        VStack(alignment: .leading, spacing: 10) {
+	        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
 	            Text("Advanced assumptions")
 	                .appSecondaryBodyText()
 	                .fontWeight(.semibold)
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
 	                HStack {
 	                    Text("Safe withdrawal rate")
 	                    Spacer()
@@ -1026,7 +1026,7 @@ struct RetirementView: View {
                     .tint(AppColors.warning(for: appColorMode))
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
 	                HStack {
 	                    Text("Real return (after inflation)")
 	                    Spacer()
@@ -1038,7 +1038,7 @@ struct RetirementView: View {
                     .tint(AppColors.tint(for: appColorMode))
             }
 
-	            VStack(alignment: .leading, spacing: 6) {
+	            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
 	                Toggle("Set my own target", isOn: $useManualTarget)
 	                    .font(AppTheme.Typography.secondaryBody)
 
@@ -1053,11 +1053,11 @@ struct RetirementView: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
                 Text("Other income at retirement (optional)")
                     .appCaptionText()
                     .foregroundStyle(.secondary)
-	                HStack(spacing: 10) {
+	                HStack(spacing: AppTheme.Spacing.small) {
 	                    TextField("Monthly pension/SS", text: $otherIncomeMonthlyText)
 	                        .keyboardType(.decimalPad)
 	                    Text("/mo")
@@ -1067,7 +1067,7 @@ struct RetirementView: View {
 	                .font(AppTheme.Typography.secondaryBody)
 	            }
 
-	            VStack(alignment: .leading, spacing: 6) {
+	            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
 	                Text("External retirement assets (optional)")
 	                    .appCaptionText()
 	                    .foregroundStyle(.secondary)
@@ -1598,7 +1598,7 @@ private struct RetirementMetricTile: View {
     let tint: Color
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: 6) {
+	        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
 	            Text(title)
 	                .appCaptionText()
 	                .foregroundStyle(.secondary)
@@ -1634,11 +1634,11 @@ private struct RetirementInlineMessage: View {
     let text: String
 
 	    var body: some View {
-	        HStack(alignment: .top, spacing: 10) {
+	        HStack(alignment: .top, spacing: AppTheme.Spacing.small) {
 	            Image(systemName: icon)
 	                .foregroundStyle(tint)
 	                .appCaptionText()
-	                .padding(.top, 1)
+	                .padding(.top, AppTheme.Spacing.pixel)
 
 	            Text(text)
 	                .appSecondaryBodyText()
@@ -1665,12 +1665,12 @@ private struct RetirementPill: View {
     let tint: Color
 
 	    var body: some View {
-	        HStack(spacing: 10) {
+	        HStack(spacing: AppTheme.Spacing.small) {
 	            Image(systemName: icon)
 	                .foregroundStyle(tint)
 	                .appSectionTitleText()
 
-	            VStack(alignment: .leading, spacing: 2) {
+	            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
 	                Text(title)
 	                    .appCaptionText()
 	                    .foregroundStyle(.secondary)
@@ -1704,8 +1704,8 @@ private struct RetirementActionCard: View {
     let primaryAction: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-		            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+		            HStack(spacing: AppTheme.Spacing.small) {
 		                ZStack {
 		                    RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
 		                        .fill(tint.opacity(0.12))
@@ -1715,7 +1715,7 @@ private struct RetirementActionCard: View {
 	                }
 	                .frame(width: 36, height: 36)
 
-	                VStack(alignment: .leading, spacing: 2) {
+	                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
 	                    Text(title)
 	                        .appSecondaryBodyText()
 	                        .fontWeight(.semibold)
@@ -1799,7 +1799,7 @@ private struct RetirementAccountsDetailView: View {
     var body: some View {
         List {
 	            Section {
-	                VStack(alignment: .leading, spacing: 6) {
+	                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
 	                    Text("Included Assets")
 	                        .appSectionTitleText()
 	                    Text(total, format: .currency(code: currencyCode))
@@ -1810,7 +1810,7 @@ private struct RetirementAccountsDetailView: View {
                         .appCaptionText()
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, AppTheme.Spacing.micro)
             }
 
             Section("Accounts") {
@@ -1823,7 +1823,7 @@ private struct RetirementAccountsDetailView: View {
                     .listRowSeparator(.hidden)
                 } else {
 	                    ForEach(includedAccounts) { account in
-	                        HStack(spacing: 12) {
+	                        HStack(spacing: AppTheme.Spacing.tight) {
                             ZStack {
                                 Circle()
                                     .fill(account.type.color(for: appColorMode).opacity(0.18))
@@ -1833,7 +1833,7 @@ private struct RetirementAccountsDetailView: View {
                             }
                             .frame(width: 30, height: 30)
 
-	                            VStack(alignment: .leading, spacing: 2) {
+	                            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
 	                                Text(account.name)
 	                                    .appSecondaryBodyText()
 	                                    .fontWeight(.semibold)
@@ -1879,7 +1879,7 @@ private struct RetirementAssumptionsHelpView: View {
         NavigationStack {
             List {
 	                Section("What these mean") {
-	                    VStack(alignment: .leading, spacing: 10) {
+	                    VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
 	                        Text("Safe withdrawal rate (SWR)")
 	                            .appSectionTitleText()
 	                        Text("A common guideline is 4%, meaning a $1,000,000 portfolio could support about $40,000 per year (in today’s dollars), before taxes. Lower SWR is more conservative.")
@@ -1888,12 +1888,12 @@ private struct RetirementAssumptionsHelpView: View {
 
 	                        Text("Real return")
 	                            .appSectionTitleText()
-	                            .padding(.top, 6)
+	                            .padding(.top, AppTheme.Spacing.xSmall)
 	                        Text("This is your expected investment return after inflation. Using a real return keeps everything in today’s dollars, making it easier to reason about your goal.")
 	                            .appSecondaryBodyText()
 	                            .foregroundStyle(.secondary)
 	                    }
-	                    .padding(.vertical, 4)
+	                    .padding(.vertical, AppTheme.Spacing.micro)
 	                }
 
                 Section("Current settings") {

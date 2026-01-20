@@ -25,7 +25,7 @@ struct ManageView: View {
         NavigationStack {
             manageBody
                 .safeAreaInset(edge: .top, spacing: 0) {
-                    VStack(spacing: 8) {
+                    VStack(spacing: AppTheme.Spacing.compact) {
                         Picker("Section", selection: $manageNavigator.selectedSection) {
                             ForEach(ManageSection.allCases, id: \.self) { section in
                                 Text(section.rawValue).tag(section)
@@ -47,10 +47,10 @@ struct ManageView: View {
                         CompactSearchBar(text: activeSearchText, placeholder: "Search", showsBackground: false)
                             .topChromeSegmentedStyle(isCompact: true)
                     }
-                    .padding(.top, 34)
+                    .padding(.top, AppTheme.Spacing.topChromeOffset)
                     .appAdaptiveScreenHorizontalPadding()
-                    .padding(.top, 6)
-                    .padding(.bottom, 6)
+                    .padding(.top, AppTheme.Spacing.xSmall)
+                    .padding(.bottom, AppTheme.Spacing.xSmall)
                 }
                 .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
                     let key: String
@@ -150,7 +150,7 @@ private struct ManageBudgetHeroCard: View {
         VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
             MonthNavigationHeader(selectedDate: $selectedDate)
 
-            HStack(spacing: 12) {
+            HStack(spacing: AppTheme.Spacing.tight) {
                 ManageBudgetMetric(title: "Budgeted", value: totalAssigned, currencyCode: currencyCode, tint: .primary)
                 ManageBudgetMetric(title: "Spent", value: totalSpent, currencyCode: currencyCode, tint: .secondary)
                 ManageBudgetMetric(title: "Left", value: totalRemaining, currencyCode: currencyCode, tint: totalRemaining >= 0 ? .secondary : AppColors.danger(for: appColorMode))
@@ -179,7 +179,7 @@ private struct ManageBudgetMetric: View {
     let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
             Text(title.uppercased())
                 .font(.caption2)
                 .fontWeight(.semibold)
@@ -206,11 +206,11 @@ private struct ManageBudgetInsightsCard: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             Text("Budget Health")
                 .font(AppTheme.Typography.sectionTitle)
 
-            HStack(spacing: 12) {
+            HStack(spacing: AppTheme.Spacing.tight) {
                 InsightPill(
                     title: "Needs Budget",
                     detail: needsBudgetCount == 0 ? "All set" : "\(needsBudgetCount) categories",
@@ -249,7 +249,7 @@ private struct InsightPill: View {
     let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
             Label(title, systemImage: icon)
                 .font(AppTheme.Typography.captionStrong)
                 .foregroundStyle(tint)
@@ -275,16 +275,16 @@ private struct BudgetQuickActionsRow: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
             Text("Quick Actions")
                 .font(AppTheme.Typography.sectionTitle)
 
-            HStack(spacing: 12) {
+            HStack(spacing: AppTheme.Spacing.tight) {
                 QuickActionButton(title: "Add Group", icon: "folder.badge.plus", tint: AppColors.tint(for: appColorMode), action: onAddGroup)
                 QuickActionButton(title: "Add Category", icon: "plus.square.dashed", tint: .purple, action: onAddCategory)
             }
 
-            HStack(spacing: 12) {
+            HStack(spacing: AppTheme.Spacing.tight) {
                 QuickActionButton(title: "Guided Setup", icon: "wand.and.sparkles", tint: AppColors.warning(for: appColorMode), action: onGuidedSetup)
                 QuickActionButton(title: "Advanced Editor", icon: "square.and.pencil", tint: .gray, action: onAdvancedManager)
             }
@@ -340,9 +340,9 @@ private struct BudgetGroupCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                     Text(group.name)
                         .font(AppTheme.Typography.sectionTitle)
                     Text(summaryText)
@@ -360,7 +360,7 @@ private struct BudgetGroupCard: View {
             }
 
             if !isCollapsed {
-                VStack(spacing: 10) {
+                VStack(spacing: AppTheme.Spacing.small) {
                     ForEach(categories) { category in
                         BudgetCategoryRowView(
                             category: category,
@@ -373,11 +373,11 @@ private struct BudgetGroupCard: View {
 
                     Button(action: onAddCategory) {
                         Label("Add category", systemImage: "plus.circle.fill")
-                            .font(.callout)
+                            .font(AppTheme.Typography.secondaryBody)
                             .fontWeight(.medium)
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(accentColor)
+                    .foregroundStyle(accentColor)
                 }
             }
         }
@@ -413,15 +413,15 @@ private struct BudgetEmptyStateCard: View {
     var body: some View {
         VStack(spacing: AppTheme.Spacing.medium) {
             Image(systemName: "chart.pie.fill")
-                .font(.system(size: 48))
-                .foregroundColor(AppColors.tint(for: appColorMode))
+                .appIconXLarge()
+                .foregroundStyle(AppColors.tint(for: appColorMode))
 
             Text("Craft Your Budget")
-                .font(.title2)
+                .appTitleText()
                 .fontWeight(.bold)
 
             Text("Design groups, set targets, and keep spending aligned with your goals. Guided setup walks you through everything.")
-                .font(.body)
+                .font(AppTheme.Typography.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
@@ -429,7 +429,7 @@ private struct BudgetEmptyStateCard: View {
                 Text("Set Up Budget")
                     .fontWeight(.semibold)
                     .padding(.horizontal, AppTheme.Spacing.xLarge)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, AppTheme.Spacing.tight)
                     .frame(maxWidth: .infinity)
             }
             .appPrimaryCTA()
@@ -455,12 +455,12 @@ private struct ManageBudgetHighlightsView: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.relaxed) {
             Text("What to expect")
                 .appSectionTitleText()
 
             ForEach(highlights, id: \.0) { highlight in
-                HStack(spacing: 12) {
+                HStack(spacing: AppTheme.Spacing.tight) {
                     Circle()
                         .fill(AppColors.tint(for: appColorMode).opacity(0.12))
                         .frame(width: 44, height: 44)
@@ -469,18 +469,18 @@ private struct ManageBudgetHighlightsView: View {
                                 .foregroundStyle(AppColors.tint(for: appColorMode))
                         )
 
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                         Text(highlight.1)
                             .appSecondaryBodyText()
                             .fontWeight(.semibold)
                         Text(highlight.2)
-                            .font(.footnote)
+                            .appFootnoteText()
                             .foregroundStyle(.secondary)
                     }
                 }
             }
         }
-        .padding(22)
+        .padding(AppTheme.Spacing.insetLarge)
         .background(
             RoundedRectangle(cornerRadius: AppTheme.Radius.pill, style: .continuous)
                 .fill(Color(.systemBackground))
@@ -587,7 +587,7 @@ struct BudgetSetupWizardView: View {
 
                 if step == .review, hasExistingExpenseBudget {
                     Toggle(isOn: $replaceExistingBudget) {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
                             Text("Replace existing budget")
                                 .appSecondaryBodyText()
                                 .fontWeight(.semibold)
@@ -863,16 +863,15 @@ private struct BudgetIncomeSourcesView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
             Text("Income sources")
-                .font(.title3)
-                .fontWeight(.semibold)
+                .appTitleText()
 
-            Text("Add your income categories (optional). They’ll appear under Manage Budget once created.")
-                .font(.body)
+            Text("Add your income categories (optional). They'll appear under Manage Budget once created.")
+                .font(AppTheme.Typography.body)
                 .foregroundStyle(.secondary)
 
-            VStack(spacing: 12) {
+            VStack(spacing: AppTheme.Spacing.tight) {
                 ForEach(incomeSources.indices, id: \.self) { index in
-                    HStack(spacing: 10) {
+                    HStack(spacing: AppTheme.Spacing.small) {
                         Image(systemName: "arrow.down.left.circle.fill")
                             .foregroundStyle(AppColors.success(for: appColorMode))
 
@@ -922,15 +921,15 @@ private struct BudgetSetupIntro: View {
                 .fontWeight(.bold)
 
             Text("We'll suggest popular groups, let you fine-tune categories, and capture the numbers that matter most.")
-                .font(.body)
+                .font(AppTheme.Typography.body)
                 .foregroundStyle(.secondary)
 
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
                 Label("Curated templates with smart defaults", systemImage: "wand.and.stars")
                 Label("Enter your amounts once", systemImage: "rectangle.and.pencil.and.ellipsis")
                 Label("Edit or add custom groups anytime", systemImage: "slider.horizontal.3")
             }
-            .font(.callout)
+            .font(AppTheme.Typography.secondaryBody)
         }
     }
 }
@@ -946,11 +945,10 @@ private struct BudgetTemplateSelectionView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
             Text("Choose budget groups")
-                .font(.title3)
-                .fontWeight(.semibold)
+                .appTitleText()
 
             ScrollView {
-                VStack(spacing: 12) {
+                VStack(spacing: AppTheme.Spacing.tight) {
                     ForEach(templates) { template in
                         BudgetTemplateCard(
                             template: template,
@@ -981,7 +979,7 @@ private struct BudgetTemplateSelectionView: View {
                     }
 
                     if !customTemplates.isEmpty {
-                        Divider().padding(.vertical, 8)
+                        Divider().padding(.vertical, AppTheme.Spacing.compact)
                         ForEach(customTemplates) { template in
                             BudgetTemplateCard(
                                 template: template,
@@ -1026,7 +1024,7 @@ private struct BudgetTemplateCard: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
             HStack {
                 Text(template.name)
                     .appSectionTitleText()
@@ -1041,14 +1039,14 @@ private struct BudgetTemplateCard: View {
                         isSelected.toggle()
                     } label: {
                         Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                            .font(.title3)
+                            .appTitleText()
                             .foregroundStyle(isSelected ? AppColors.tint(for: appColorMode) : .secondary)
                     }
                     .buttonStyle(.plain)
                 }
             }
 
-            HStack(spacing: 10) {
+            HStack(spacing: AppTheme.Spacing.small) {
                 Text("\(selectedCount) of \(template.categories.count) categories")
                     .appCaptionText()
                     .foregroundStyle(.secondary)
@@ -1069,7 +1067,7 @@ private struct BudgetTemplateCard: View {
             }
 
             if isExpanded && !isCustom {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
                     ForEach(template.categories) { category in
                         Toggle(isOn: Binding(
                             get: { selectedCategoryIDs.contains(category.id) },
@@ -1093,7 +1091,7 @@ private struct BudgetTemplateCard: View {
                         .tint(AppColors.tint(for: appColorMode))
                     }
                 }
-                .padding(.top, 4)
+                .padding(.top, AppTheme.Spacing.micro)
             }
         }
         .padding()
@@ -1132,8 +1130,7 @@ private struct BudgetAssignmentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
             Text("Assign monthly amounts")
-                .font(.title3)
-                .fontWeight(.semibold)
+                .appTitleText()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
@@ -1146,7 +1143,7 @@ private struct BudgetAssignmentView: View {
                             .foregroundStyle(.secondary)
 
                         ForEach(groups) { group in
-                            VStack(alignment: .leading, spacing: 12) {
+                            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
                                 HStack {
                                     Text(group.name)
                                         .appSecondaryBodyText()
@@ -1161,17 +1158,17 @@ private struct BudgetAssignmentView: View {
                                 }
 
                                 ForEach(group.categories) { category in
-                                    HStack(spacing: 12) {
+                                    HStack(spacing: AppTheme.Spacing.tight) {
                                         Text(category.name)
                                             .appSecondaryBodyText()
 
                                         Spacer()
 
-                                        HStack(spacing: 4) {
+                                        HStack(spacing: AppTheme.Spacing.micro) {
                                             Text(currencySymbol)
                                                 .appCaptionText()
                                                 .foregroundStyle(.secondary)
-                                                .padding(.leading, 8)
+                                                .padding(.leading, AppTheme.Spacing.compact)
 
                                             TextField(
                                                 "0",
@@ -1185,8 +1182,8 @@ private struct BudgetAssignmentView: View {
                                             .multilineTextAlignment(.trailing)
                                         }
                                         .frame(width: 100)
-                                        .padding(.vertical, 8)
-                                        .padding(.trailing, 8)
+                                        .padding(.vertical, AppTheme.Spacing.compact)
+                                        .padding(.trailing, AppTheme.Spacing.compact)
                                         .background(Color(.systemGray6))
                                         .cornerRadius(AppTheme.Radius.xSmall)
                                     }
@@ -1293,7 +1290,7 @@ private struct BudgetSuggestionView: View {
 			ScrollView {
 				VStack(alignment: .leading, spacing: AppTheme.Spacing.xLarge) {
                     // Income Input Section
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
                         Text("Monthly Net Income")
                             .appSectionTitleText()
 
@@ -1301,21 +1298,21 @@ private struct BudgetSuggestionView: View {
                             .appCaptionText()
                             .foregroundStyle(.secondary)
 
-                        HStack(spacing: 8) {
+                        HStack(spacing: AppTheme.Spacing.compact) {
                             Text(currencySymbol)
-                                .font(.body)
+                                .font(AppTheme.Typography.body)
                                 .foregroundStyle(.secondary)
-                                .padding(.leading, 12)
+                                .padding(.leading, AppTheme.Spacing.tight)
 
                             TextField("0", text: $monthlyIncomeInput)
                                 .keyboardType(.decimalPad)
-                                .font(.body)
+                                .font(AppTheme.Typography.body)
                                 .onChange(of: monthlyIncomeInput) { _, _ in
                                     calculateSuggestions()
                                 }
                         }
-                        .padding(.vertical, 14)
-                        .padding(.trailing, 12)
+                        .padding(.vertical, AppTheme.Spacing.cardPadding)
+                        .padding(.trailing, AppTheme.Spacing.tight)
                         .background(Color(.systemGray6))
                         .cornerRadius(AppTheme.Radius.compact)
                     }
@@ -1335,7 +1332,7 @@ private struct BudgetSuggestionView: View {
                             Text("Budget Summary")
                                 .appSectionTitleText()
 
-                            HStack(spacing: 12) {
+                            HStack(spacing: AppTheme.Spacing.tight) {
                                 SummaryMetric(
                                     title: "Total Budget",
                                     value: totalBudgeted,
@@ -1351,14 +1348,14 @@ private struct BudgetSuggestionView: View {
                                 )
                             }
 
-	                            VStack(alignment: .leading, spacing: 10) {
+	                            VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
 	                                HStack {
 	                                    Text("Savings Rate")
 	                                        .appSecondaryBodyText()
 	                                        .fontWeight(.semibold)
 	                                    Spacer()
 	                                    Text("\(Int(targetSavingsRate))%")
-	                                        .font(.title3)
+	                                        .appTitleText()
 	                                        .fontWeight(.bold)
 	                                        .foregroundStyle(savingsRateColor)
 	                                }
@@ -1384,7 +1381,7 @@ private struct BudgetSuggestionView: View {
 	                                    .appCaptionText()
 	                                    .foregroundStyle(.secondary)
 	                            }
-	                            .padding(.top, 4)
+	                            .padding(.top, AppTheme.Spacing.micro)
 	                        }
 	                        .padding()
 	                        .background(
@@ -1408,7 +1405,7 @@ private struct BudgetSuggestionView: View {
                                 .foregroundStyle(.secondary)
 
                             ForEach(groups) { group in
-                                VStack(alignment: .leading, spacing: 12) {
+                                VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
                                     HStack {
                                         Text(group.name)
                                             .appSecondaryBodyText()
@@ -1423,17 +1420,17 @@ private struct BudgetSuggestionView: View {
                                     }
 
                                     ForEach(group.categories) { category in
-                                        HStack(spacing: 12) {
+                                        HStack(spacing: AppTheme.Spacing.tight) {
                                             Text(category.name)
                                                 .appSecondaryBodyText()
 
                                             Spacer()
 
-                                            HStack(spacing: 4) {
+                                            HStack(spacing: AppTheme.Spacing.micro) {
                                                 Text(currencySymbol)
                                                     .appCaptionText()
                                                     .foregroundStyle(.secondary)
-                                                    .padding(.leading, 8)
+                                                    .padding(.leading, AppTheme.Spacing.compact)
 
                                                 TextField(
                                                     "0",
@@ -1463,8 +1460,8 @@ private struct BudgetSuggestionView: View {
                                                 .multilineTextAlignment(.trailing)
                                             }
                                             .frame(width: 100)
-                                            .padding(.vertical, 8)
-                                            .padding(.trailing, 8)
+                                            .padding(.vertical, AppTheme.Spacing.compact)
+                                            .padding(.trailing, AppTheme.Spacing.compact)
                                             .background(Color(.systemGray6))
                                             .cornerRadius(AppTheme.Radius.xSmall)
                                         }
@@ -1710,13 +1707,13 @@ private struct SummaryMetric: View {
     let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
             Text(title.uppercased())
-                .font(.caption2)
+                .font(AppTheme.Typography.caption)
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
             Text(value, format: .currency(code: currencyCode))
-                .font(.title3)
+                .appTitleText()
                 .fontWeight(.bold)
                 .foregroundStyle(tint)
                 .lineLimit(1)
@@ -1744,15 +1741,14 @@ private struct BudgetSetupReview: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             Text("Review plan")
-                .font(.title3)
-                .fontWeight(.semibold)
+                .appTitleText()
 
             ScrollView {
-                VStack(spacing: 12) {
+                VStack(spacing: AppTheme.Spacing.tight) {
                     ForEach(groups) { group in
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
                             Text(group.name)
                                 .appSectionTitleText()
 

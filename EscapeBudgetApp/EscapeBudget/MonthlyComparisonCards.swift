@@ -210,7 +210,7 @@ struct MonthlySpendComparisonCard: View {
                                     Spacer()
                                     if pendingMonthSelection.contains(normalized) {
                                         Image(systemName: "checkmark.circle.fill")
-                                            .foregroundColor(.accentColor)
+                                            .foregroundStyle(Color.accentColor)
                                     }
                                 }
                             }
@@ -501,7 +501,7 @@ struct MonthlyIncomeComparisonCard: View {
                                     Spacer()
                                     if pendingMonthSelection.contains(normalized) {
                                         Image(systemName: "checkmark.circle.fill")
-                                            .foregroundColor(.accentColor)
+                                            .foregroundStyle(Color.accentColor)
                                     }
                                 }
                             }

@@ -51,7 +51,7 @@ struct ReceiptRow: View {
     let currencyCode: String
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AppTheme.Spacing.tight) {
             // Receipt thumbnail
             if let imageData = receipt.imageData,
                let uiImage = UIImage(data: imageData) {
@@ -71,7 +71,7 @@ struct ReceiptRow: View {
                     )
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                 Text(receipt.merchant ?? "Receipt")
                     .appSectionTitleText()
 
@@ -100,7 +100,7 @@ struct ReceiptRow: View {
                 .appCaptionText()
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, AppTheme.Spacing.micro)
     }
 }
 
@@ -126,7 +126,7 @@ struct ReceiptDetailView: View {
                     }
 
                     // Receipt Details
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
                         if let merchant = receipt.merchant {
                             DetailRow(label: "Merchant", value: merchant)
                         }
@@ -145,7 +145,7 @@ struct ReceiptDetailView: View {
 
                     // Line Items
                     if !receipt.items.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
                             Text("Items")
                                 .appSectionTitleText()
                                 .padding(.horizontal)
@@ -153,7 +153,7 @@ struct ReceiptDetailView: View {
                             VStack(spacing: 0) {
                                 ForEach(receipt.items) { item in
                                     HStack {
-                                        VStack(alignment: .leading, spacing: 2) {
+                                        VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
                                             Text(item.name)
                                                 .appSecondaryBodyText()
                                             if item.quantity > 1 {
@@ -183,7 +183,7 @@ struct ReceiptDetailView: View {
 
                     // Extracted Text (for debugging)
                     if let extractedText = receipt.extractedText, !extractedText.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
                             Text("Extracted Text")
                                 .appSectionTitleText()
                                 .padding(.horizontal)

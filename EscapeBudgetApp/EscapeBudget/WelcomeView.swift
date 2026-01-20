@@ -10,7 +10,7 @@ struct WelcomeView: View {
             VStack(spacing: AppTheme.Spacing.xxLarge) {
                 Spacer()
 
-                VStack(spacing: 12) {
+                VStack(spacing: AppTheme.Spacing.tight) {
                     Image("RocketLogo")
                         .resizable()
                         .scaledToFill()
@@ -25,10 +25,10 @@ struct WelcomeView: View {
                         .minimumScaleFactor(0.75)
                         .allowsTightening(true)
                         .foregroundStyle(.primary)
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, AppTheme.Spacing.tight)
 
                     Text("Your personal finance companion for tracking spending, managing budgets, and achieving your goals.")
-                        .font(.body)
+                        .font(AppTheme.Typography.body)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
@@ -47,7 +47,7 @@ struct WelcomeView: View {
 
                 Spacer()
 
-                VStack(spacing: 12) {
+                VStack(spacing: AppTheme.Spacing.tight) {
                     // Primary action: Start Fresh
                     Button(action: onContinue) {
                         Text("Start Fresh")
@@ -62,14 +62,14 @@ struct WelcomeView: View {
                     .appSecondaryCTA(controlSize: .large)
 
                     Button(action: onTryDemo) {
-                        VStack(spacing: 4) {
+                        VStack(spacing: AppTheme.Spacing.micro) {
                             Text("Guided Introduction")
                                 .appSecondaryButtonLabel()
                             Text("Explore the app with sample data")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
-                        .padding(.vertical, 4)
+                        .padding(.vertical, AppTheme.Spacing.micro)
                     }
                     .appSecondaryCTA(controlSize: .large)
                 }
@@ -90,14 +90,14 @@ struct WelcomeView: View {
         let detail: String
 
         var body: some View {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .top, spacing: AppTheme.Spacing.tight) {
                 Image(systemName: icon)
-                    .font(.title3)
+                    .appTitleText()
                     .frame(width: 32, height: 32)
-                    .foregroundColor(.accentColor)
+                    .foregroundStyle(Color.accentColor)
                     .background(Circle().fill(Color(.tertiarySystemFill)))
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
                     Text(title)
                         .appSectionTitleText()
                     Text(detail)
@@ -122,5 +122,4 @@ struct WelcomeView: View {
 #Preview("Welcome • iPad (Dark)") {
     WelcomeView(onContinue: {}, onImport: {}, onTryDemo: {})
         .preferredColorScheme(.dark)
-        .previewInterfaceOrientation(.portrait)
 }

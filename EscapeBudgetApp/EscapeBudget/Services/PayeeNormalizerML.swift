@@ -32,6 +32,20 @@ final class PayeeNormalizerML {
         self.config = config
     }
 
+    private func comparisonKey(_ string: String) -> String {
+        let normalized = PayeeNormalizer.normalizeForComparison(string)
+        let withoutNumbers = normalized
+            .replacingOccurrences(of: "\\b\\d+\\b", with: " ", options: .regularExpression)
+            .replacingOccurrences(of: "\\s{2,}", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return withoutNumbers.isEmpty ? normalized : withoutNumbers
+    }
+
+    private func adjustedConfidence(base: Double, patternConfidence: Double) -> Double {
+        // Blend string similarity with learned confidence so newer patterns can still suggest.
+        (base * 0.75) + (patternConfidence * 0.25)
+    }
+
     /// Normalize a payee name using learned patterns
     func normalize(_ payee: String) -> Suggestion? {
         guard config.useMLNormalization else { return nil }
@@ -185,7 +199,7 @@ final class PayeeNormalizerML {
     }
 
     private func findFuzzyMatches(_ payee: String, limit: Int) -> [Suggestion] {
-        let normalized = payee.lowercased()
+        let normalized = comparisonKey(payee)
 
         let descriptor = FetchDescriptor<PayeePattern>(
             sortBy: [SortDescriptor(\.confidence, order: .reverse)]
@@ -196,16 +210,17 @@ final class PayeeNormalizerML {
 
         for pattern in allPatterns {
             // Check Levenshtein distance against canonical name and variants
-            let canonicalDistance = levenshteinDistance(normalized, pattern.canonicalName.lowercased())
+            let canonicalKey = comparisonKey(pattern.canonicalName)
+            let canonicalDistance = levenshteinDistance(normalized, canonicalKey)
 
             if canonicalDistance <= config.levenshteinThreshold {
-                let confidence = 1.0 - (Double(canonicalDistance) / Double(max(normalized.count, pattern.canonicalName.count)))
-                let adjustedConfidence = confidence * pattern.confidence
+                let base = 1.0 - (Double(canonicalDistance) / Double(max(max(normalized.count, canonicalKey.count), 1)))
+                let adjusted = adjustedConfidence(base: base, patternConfidence: pattern.confidence)
 
-                if adjustedConfidence >= config.minConfidenceThreshold {
+                if adjusted >= config.minConfidenceThreshold {
                     suggestions.append(Suggestion(
                         canonicalName: pattern.canonicalName,
-                        confidence: adjustedConfidence,
+                        confidence: adjusted,
                         pattern: pattern,
                         reason: "similar name (distance: \(canonicalDistance))"
                     ))
@@ -214,17 +229,18 @@ final class PayeeNormalizerML {
 
             // Also check variants
             for variant in pattern.variants {
-                let variantDistance = levenshteinDistance(normalized, variant)
+                let variantKey = comparisonKey(variant)
+                let variantDistance = levenshteinDistance(normalized, variantKey)
                 if variantDistance <= config.levenshteinThreshold {
-                    let confidence = 1.0 - (Double(variantDistance) / Double(max(normalized.count, variant.count)))
-                    let adjustedConfidence = confidence * pattern.confidence
+                    let base = 1.0 - (Double(variantDistance) / Double(max(max(normalized.count, variantKey.count), 1)))
+                    let adjusted = adjustedConfidence(base: base, patternConfidence: pattern.confidence)
 
-                    if adjustedConfidence >= config.minConfidenceThreshold {
+                    if adjusted >= config.minConfidenceThreshold {
                         // Don't add duplicate suggestions
                         if !suggestions.contains(where: { $0.pattern.canonicalName == pattern.canonicalName }) {
                             suggestions.append(Suggestion(
                                 canonicalName: pattern.canonicalName,
-                                confidence: adjustedConfidence,
+                                confidence: adjusted,
                                 pattern: pattern,
                                 reason: "similar to known variant (distance: \(variantDistance))"
                             ))

@@ -61,7 +61,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
     }
 
     var body: some View {
-        let content = VStack(alignment: .leading, spacing: 12) {
+        let content = VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             HStack {
                 VStack(alignment: .leading) {
                     Text(title)
@@ -84,7 +84,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
 
             if series.allSatisfy({ $0.data.isEmpty }) {
                 Text("Not enough data yet. Add transactions to see trends.")
-                    .font(.footnote)
+                    .appFootnoteText()
                     .foregroundStyle(.secondary)
                     .padding(.vertical, AppTheme.Spacing.xLarge)
             } else {
@@ -155,7 +155,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
                                     .position(x: x, y: y)
                                     .zIndex(2)
 
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
                                     Text(selectedPoint.series.title)
                                         .font(.caption2)
                                         .foregroundStyle(.secondary)
@@ -167,8 +167,8 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
                                         .fontWeight(.semibold)
                                         .monospacedDigit()
                                 }
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 6)
+                                .padding(.horizontal, AppTheme.Spacing.compact)
+                                .padding(.vertical, AppTheme.Spacing.xSmall)
                                 .background(
                                     RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
                                         .fill(Color(.systemBackground))
@@ -209,7 +209,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
 
             if !orderedSeries.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
+                    HStack(spacing: AppTheme.Spacing.tight) {
                         ForEach(orderedSeries) { monthSeries in
                             SpendingLegendItem(color: monthSeries.color, label: monthSeries.title)
                         }
@@ -289,7 +289,7 @@ struct MonthlyIncomeBarChart: View {
     }
 
     var body: some View {
-        let content = VStack(alignment: .leading, spacing: 12) {
+        let content = VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
             HStack {
                 VStack(alignment: .leading) {
                     Text(title)
@@ -319,7 +319,7 @@ struct MonthlyIncomeBarChart: View {
 
             if monthlyTotals.isEmpty || monthlyTotals.allSatisfy({ $0.total == 0 }) {
                 Text("Not enough income data yet. Add transactions to see trends.")
-                    .font(.footnote)
+                    .appFootnoteText()
                     .foregroundStyle(.secondary)
                     .padding(.vertical, AppTheme.Spacing.xLarge)
             } else {
@@ -359,7 +359,7 @@ struct MonthlyIncomeBarChart: View {
 
             if !orderedSeries.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
+                    HStack(spacing: AppTheme.Spacing.tight) {
                         ForEach(orderedSeries) { monthSeries in
                             SpendingLegendItem(color: monthSeries.color, label: monthSeries.title)
                         }
@@ -385,7 +385,7 @@ private struct SpendingLegendItem: View {
     let label: String
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: AppTheme.Spacing.xSmall) {
             Circle()
                 .fill(color)
                 .frame(width: 8, height: 8)

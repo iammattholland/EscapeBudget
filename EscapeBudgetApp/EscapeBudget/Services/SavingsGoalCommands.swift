@@ -3,7 +3,7 @@ import SwiftData
 
 // MARK: - Add SavingsGoal Command
 
-class AddSavingsGoalCommand: Command {
+final class AddSavingsGoalCommand: Command {
     let description: String
     private let modelContext: ModelContext
     private var savingsGoal: SavingsGoal?
@@ -84,7 +84,7 @@ class AddSavingsGoalCommand: Command {
 
 // MARK: - Delete SavingsGoal Command
 
-class DeleteSavingsGoalCommand: Command {
+final class DeleteSavingsGoalCommand: Command {
     let description: String
     private let modelContext: ModelContext
     private var savingsGoalPersistentID: PersistentIdentifier
@@ -140,7 +140,7 @@ class DeleteSavingsGoalCommand: Command {
 
 // MARK: - Update SavingsGoal Command
 
-class UpdateSavingsGoalCommand: Command {
+final class UpdateSavingsGoalCommand: Command {
     let description: String
     private let modelContext: ModelContext
     private let savingsGoalPersistentID: PersistentIdentifier

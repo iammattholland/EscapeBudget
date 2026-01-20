@@ -28,7 +28,7 @@ struct TransactionTagsPickerView: View {
                     Button {
                         toggle(tag)
                     } label: {
-                        HStack(spacing: 12) {
+                        HStack(spacing: AppTheme.Spacing.tight) {
                             Circle()
                                 .fill(Color(hex: tag.colorHex) ?? AppColors.tint(for: appColorMode))
                                 .frame(width: 14, height: 14)
@@ -194,7 +194,7 @@ private struct CreateTransactionTagView: View {
     @State private var selectedColorHex: String = TagColorPalette.defaultHex
     @State private var customColor: Color = .blue
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 5)
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: AppTheme.Spacing.tight), count: 5)
 
     var body: some View {
         Form {
@@ -204,7 +204,7 @@ private struct CreateTransactionTagView: View {
             }
 
             Section("Color") {
-                LazyVGrid(columns: columns, spacing: 12) {
+                LazyVGrid(columns: columns, spacing: AppTheme.Spacing.tight) {
                     ForEach(TagColorPalette.options(for: appColorMode), id: \.hex) { option in
                         Circle()
                             .fill(Color(hex: option.hex) ?? AppColors.tint(for: appColorMode))
@@ -219,7 +219,7 @@ private struct CreateTransactionTagView: View {
                             .accessibilityLabel(Text(option.name))
                     }
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, AppTheme.Spacing.micro)
 
                 ColorPicker("Color Wheel", selection: $customColor, supportsOpacity: false)
                     .onChange(of: customColor) { _, newValue in
@@ -293,7 +293,7 @@ private struct EditTransactionTagView: View {
     @State private var selectedColorHex: String = TagColorPalette.defaultHex
     @State private var customColor: Color = .blue
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 5)
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: AppTheme.Spacing.tight), count: 5)
 
     var body: some View {
         Form {
@@ -303,7 +303,7 @@ private struct EditTransactionTagView: View {
             }
 
             Section("Color") {
-                LazyVGrid(columns: columns, spacing: 12) {
+                LazyVGrid(columns: columns, spacing: AppTheme.Spacing.tight) {
                     ForEach(TagColorPalette.options(for: appColorMode), id: \.hex) { option in
                         Circle()
                             .fill(Color(hex: option.hex) ?? AppColors.tint(for: appColorMode))
@@ -321,7 +321,7 @@ private struct EditTransactionTagView: View {
                             .accessibilityLabel(Text(option.name))
                     }
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, AppTheme.Spacing.micro)
 
                 ColorPicker("Color Wheel", selection: $customColor, supportsOpacity: false)
                     .onChange(of: customColor) { _, newValue in
@@ -385,7 +385,7 @@ struct TransactionTagChip: View {
             .font(.caption.weight(.semibold))
             .foregroundStyle(.primary)
             .padding(.horizontal, AppTheme.Spacing.small)
-            .padding(.vertical, 4)
+            .padding(.vertical, AppTheme.Spacing.micro)
             .background(
                 Capsule().fill((Color(hex: tag.colorHex) ?? fallback).opacity(0.18))
             )

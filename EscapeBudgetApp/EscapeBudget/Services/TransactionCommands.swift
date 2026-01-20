@@ -3,7 +3,7 @@ import SwiftData
 
 // MARK: - Add Transaction Command
 
-class AddTransactionCommand: Command {
+final class AddTransactionCommand: Command {
     let description: String
     private let modelContext: ModelContext
     private var transaction: Transaction?
@@ -94,7 +94,7 @@ class AddTransactionCommand: Command {
 
 // MARK: - Delete Transaction Command
 
-class DeleteTransactionCommand: Command {
+final class DeleteTransactionCommand: Command {
     let description: String
     private let modelContext: ModelContext
     private var transactionPersistentID: PersistentIdentifier
@@ -165,7 +165,7 @@ class DeleteTransactionCommand: Command {
 
 // MARK: - Update Transaction Command
 
-class UpdateTransactionCommand: Command {
+final class UpdateTransactionCommand: Command {
     let description: String
     private let modelContext: ModelContext
     private let transactionPersistentID: PersistentIdentifier

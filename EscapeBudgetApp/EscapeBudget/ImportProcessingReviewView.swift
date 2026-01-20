@@ -116,7 +116,7 @@ struct ImportProcessingReviewView: View {
                 Section("This Import") {
                     summaryRow(title: "File", value: fileName ?? "—")
 
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
                         Text("Options")
                             .font(.subheadline.weight(.semibold))
                         optionsRow(title: "Payee cleanup", enabled: options.normalizePayee)
@@ -125,7 +125,7 @@ struct ImportProcessingReviewView: View {
                         optionsRow(title: "Transfer suggestions", enabled: options.suggestTransfers)
                         optionsRow(title: "Processing history", enabled: options.saveProcessingHistory)
                     }
-                    .padding(.vertical, 2)
+                    .padding(.vertical, AppTheme.Spacing.hairline)
                 }
 
                 Section("Summary") {
@@ -146,7 +146,7 @@ struct ImportProcessingReviewView: View {
 
                     if result.summary.changedCount > result.changedTransactions.count, result.changedTransactions.count > 0 {
                         Text("Showing the first \(result.changedTransactions.count) changed transactions for performance.")
-                            .font(.footnote)
+                            .appFootnoteText()
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -154,7 +154,7 @@ struct ImportProcessingReviewView: View {
                 if result.summary.processedCount > 250 && result.eventsByTransactionID.count >= 250 {
                     Section("Note") {
                         Text("For performance, detailed per-transaction event history is shown for the first \(result.eventsByTransactionID.count) transactions. The Highlights section still reflects overall counts.")
-                            .font(.footnote)
+                            .appFootnoteText()
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -201,13 +201,13 @@ struct ImportProcessingReviewView: View {
                                     }
                                     if result.transferSuggestions.count > 10 {
                                         Text("Showing the top 10 suggestions.")
-                                            .font(.footnote)
+                                            .appFootnoteText()
                                             .foregroundStyle(.secondary)
                                     }
                                 }
 
                                 Text("Review and link these in Transfers Inbox.")
-                                    .font(.footnote)
+                                    .appFootnoteText()
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -229,29 +229,29 @@ struct ImportProcessingReviewView: View {
                                         transaction: transaction
                                     )
                                 } label: {
-                                    VStack(alignment: .leading, spacing: 8) {
+                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
                                         TransactionRowView(transaction: transaction)
 
                                         if let events = result.eventsByTransactionID[transaction.persistentModelID], !events.isEmpty {
-                                            VStack(alignment: .leading, spacing: 6) {
+                                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
                                                 ForEach(events) { event in
-                                                    VStack(alignment: .leading, spacing: 2) {
-                                                        HStack(spacing: 8) {
+                                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                                                        HStack(spacing: AppTheme.Spacing.compact) {
                                                             Image(systemName: iconName(for: event.kind))
                                                                 .foregroundStyle(AppColors.tint(for: appColorMode))
                                                             Text(event.title)
-                                                                .font(.footnote)
+                                                                .appFootnoteText()
                                                                 .foregroundStyle(.secondary)
                                                         }
 
                                                         if let detail = event.detail, !detail.isEmpty {
-                                                            Text(detail)
-                                                                .appCaptionText()
-                                                                .foregroundStyle(.secondary)
-                                                                .padding(.leading, 26)
+                                                                Text(detail)
+                                                                    .appCaptionText()
+                                                                    .foregroundStyle(.secondary)
+                                                                    .padding(.leading, AppTheme.Spacing.indentSmall)
+                                                            }
                                                         }
                                                     }
-                                                }
                                             }
                                         }
                                     }
@@ -261,7 +261,7 @@ struct ImportProcessingReviewView: View {
                             }
                         }
                         Text("Tip: start with Highlights to review the impact at a glance. Open transaction details only if something looks off.")
-                            .font(.footnote)
+                            .appFootnoteText()
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -312,7 +312,7 @@ struct ImportProcessingReviewView: View {
     }
 
     private func optionsRow(title: String, enabled: Bool) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: AppTheme.Spacing.small) {
             Image(systemName: enabled ? "checkmark.circle.fill" : "circle")
                 .foregroundStyle(enabled ? AppColors.success(for: appColorMode) : .secondary)
             Text(title)
@@ -327,12 +327,12 @@ struct ImportProcessingReviewView: View {
         let base = modelContext.model(for: suggestion.baseID) as? Transaction
         let match = modelContext.model(for: suggestion.matchID) as? Transaction
 
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
             Text("\(base?.payee ?? "Unknown") ↔︎ \(match?.payee ?? "Unknown")")
                 .appSecondaryBodyText()
                 .fontWeight(.medium)
 
-            HStack(spacing: 8) {
+            HStack(spacing: AppTheme.Spacing.compact) {
                 Text(suggestion.amount, format: .currency(code: currencyCode))
                     .appCaptionText()
                     .foregroundStyle(.secondary)
@@ -355,6 +355,6 @@ struct ImportProcessingReviewView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, AppTheme.Spacing.hairline)
     }
 }
