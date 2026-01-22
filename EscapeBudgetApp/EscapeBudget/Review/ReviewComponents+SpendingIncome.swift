@@ -15,24 +15,11 @@ struct ReportsSpendingView: View {
     @State private var drilldown: ReviewTransactionDrilldown? = nil
     @State private var transactionToEdit: Transaction? = nil
     @State private var showingUncategorizedFix = false
+    @State private var rangedTransactions: [Transaction] = []
+    @State private var metrics: SpendingMetrics = .empty
 
-    // Use @Query to fetch all standard transactions, then filter in computed property
-    @Query(
-        filter: #Predicate<Transaction> { tx in
-            tx.kindRawValue == "Standard"
-        },
-        sort: [SortDescriptor(\Transaction.date, order: .reverse)]
-    ) private var allStandardTransactions: [Transaction]
-
-    // Computed property replaces manual caching - filters by date range and expense type
     private var filteredTransactions: [Transaction] {
-        let (start, end) = dateRangeDates
-        return allStandardTransactions.filter { tx in
-            tx.date >= start &&
-            tx.date <= end &&
-            tx.amount < 0 &&
-            tx.account?.isTrackingOnly != true
-        }
+        metrics.filteredTransactions
     }
     
     private var dateRangeDates: (Date, Date) {
@@ -57,23 +44,22 @@ struct ReportsSpendingView: View {
             return (start, end)
         }
     }
+
+    private var spendingMetricsTaskID: SpendingMetricsTaskID {
+        SpendingMetricsTaskID(
+            transactionsCount: rangedTransactions.count,
+            dataChangeToken: DataChangeTracker.token,
+            start: dateRangeDates.0,
+            end: dateRangeDates.1
+        )
+    }
     
     private var spendingByCategory: [(String, Decimal)] {
-        var categoryTotals: [String: Decimal] = [:]
-        filteredTransactions.forEach { transaction in
-            let categoryName = transaction.category?.name ?? "Uncategorized"
-            categoryTotals[categoryName, default: 0] += abs(transaction.amount)
-        }
-        return categoryTotals.sorted { $0.value > $1.value }
+        metrics.spendingByCategory
     }
     
     private var spendingByMerchant: [(String, Decimal)] {
-        var merchantTotals: [String: Decimal] = [:]
-        filteredTransactions.forEach { transaction in
-            let merchant = transaction.payee.trimmingCharacters(in: .whitespacesAndNewlines)
-            merchantTotals[merchant.isEmpty ? "Unknown" : merchant, default: 0] += abs(transaction.amount)
-        }
-        return merchantTotals.sorted { $0.value > $1.value }
+        metrics.spendingByMerchant
     }
 
     private var daysInRange: Int {
@@ -89,18 +75,18 @@ struct ReportsSpendingView: View {
         guard totalSpending > 0 else { return 0 }
         return totalSpending / Decimal(daysInRange)
     }
-
+    
     private var averageExpense: Decimal {
         guard !filteredTransactions.isEmpty else { return 0 }
         return totalSpending / Decimal(filteredTransactions.count)
     }
-
+    
     private var largestExpense: Transaction? {
-        filteredTransactions.min(by: { $0.amount < $1.amount })
+        metrics.largestExpense
     }
-
+    
     private var uncategorizedAmount: Decimal {
-        abs(filteredTransactions.filter { $0.category == nil }.reduce(0) { $0 + $1.amount })
+        metrics.uncategorizedAmount
     }
 
     private var spendingTrend: ReviewTrendSeries {
@@ -113,7 +99,7 @@ struct ReportsSpendingView: View {
     }
 
     private var totalSpending: Decimal {
-        filteredTransactions.reduce(0) { $0 + abs($1.amount) }
+        metrics.totalSpending
     }
 
     private var spendingCallouts: [ReviewCalloutBar.Item] {
@@ -249,6 +235,12 @@ struct ReportsSpendingView: View {
             .padding(.horizontal, AppTheme.Spacing.medium)
             .padding(.vertical, AppTheme.Spacing.tight)
         }
+        .background(SpendingTransactionsQuery(start: dateRangeDates.0, end: dateRangeDates.1) { fetched in
+            rangedTransactions = fetched
+        })
+        .task(id: spendingMetricsTaskID) {
+            recomputeMetrics()
+        }
         .background(Color(.systemGroupedBackground))
         .coordinateSpace(name: "ReportsSpendingView.scroll")
         .sheet(item: $drilldown) { drilldown in
@@ -268,7 +260,109 @@ struct ReportsSpendingView: View {
                 onDismiss: { }
             )
         }
-        // No manual refresh needed - @Query automatically updates when data changes
+    }
+
+    private func recomputeMetrics() {
+        let filtered = rangedTransactions.filter { $0.account?.isTrackingOnly != true }
+        var categoryTotals: [String: Decimal] = [:]
+        var merchantTotals: [String: Decimal] = [:]
+        var total: Decimal = 0
+        var uncategorized: Decimal = 0
+        var largest: Transaction?
+
+        for transaction in filtered {
+            let amount = abs(transaction.amount)
+            total += amount
+
+            let categoryName = transaction.category?.name ?? "Uncategorized"
+            categoryTotals[categoryName, default: 0] += amount
+
+            let merchant = transaction.payee.trimmingCharacters(in: .whitespacesAndNewlines)
+            let merchantName = merchant.isEmpty ? "Unknown" : merchant
+            merchantTotals[merchantName, default: 0] += amount
+
+            if transaction.category == nil {
+                uncategorized += amount
+            }
+
+            if let currentLargest = largest {
+                if transaction.amount < currentLargest.amount {
+                    largest = transaction
+                }
+            } else {
+                largest = transaction
+            }
+        }
+
+        metrics = SpendingMetrics(
+            filteredTransactions: filtered,
+            spendingByCategory: categoryTotals.sorted { $0.value > $1.value },
+            spendingByMerchant: merchantTotals.sorted { $0.value > $1.value },
+            totalSpending: total,
+            uncategorizedAmount: uncategorized,
+            largestExpense: largest
+        )
+    }
+}
+
+private struct SpendingMetrics {
+    var filteredTransactions: [Transaction] = []
+    var spendingByCategory: [(String, Decimal)] = []
+    var spendingByMerchant: [(String, Decimal)] = []
+    var totalSpending: Decimal = 0
+    var uncategorizedAmount: Decimal = 0
+    var largestExpense: Transaction? = nil
+
+    static let empty = SpendingMetrics()
+}
+
+private struct SpendingMetricsTaskID: Equatable {
+    var transactionsCount: Int
+    var dataChangeToken: Int
+    var start: Date
+    var end: Date
+}
+
+private struct SpendingQueryTaskID: Equatable {
+    var transactionsCount: Int
+    var dataChangeToken: Int
+    var start: Date
+    var end: Date
+}
+
+private struct SpendingTransactionsQuery: View {
+    @Query private var transactions: [Transaction]
+    private let onUpdate: ([Transaction]) -> Void
+    private let start: Date
+    private let end: Date
+
+    init(start: Date, end: Date, onUpdate: @escaping ([Transaction]) -> Void) {
+        self.start = start
+        self.end = end
+        self.onUpdate = onUpdate
+        let kind = TransactionKind.standard.rawValue
+        _transactions = Query(
+            filter: #Predicate<Transaction> { tx in
+                tx.date >= start &&
+                tx.date <= end &&
+                tx.kindRawValue == kind &&
+                tx.amount < 0
+            },
+            sort: \Transaction.date,
+            order: .reverse
+        )
+    }
+
+    var body: some View {
+        Color.clear
+            .task(id: SpendingQueryTaskID(
+                transactionsCount: transactions.count,
+                dataChangeToken: DataChangeTracker.token,
+                start: start,
+                end: end
+            )) {
+                onUpdate(transactions)
+            }
     }
 }
 

@@ -68,10 +68,7 @@ struct AllTransactionsView: View {
 
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "EscapeBudget", category: "Transactions")
 
-    // SwiftData @Query - automatically updates when data changes
-    @Query(
-        sort: [SortDescriptor(\Transaction.date, order: .reverse)]
-    ) private var allTransactions: [Transaction]
+    @State private var allTransactions: [Transaction] = []
 
     @Query(sort: \Account.name) private var accounts: [Account]
     @Query(sort: \CategoryGroup.name) private var categoryGroups: [CategoryGroup]
@@ -90,7 +87,6 @@ struct AllTransactionsView: View {
     // MARK: - Computed Filtered Data (replaces manual caching)
 
     /// Filtered transactions based on search text and filter
-    /// This is efficient as it's computed only when accessed and SwiftUI will cache appropriately
     private var filteredTransactions: [Transaction] {
         var result = allTransactions
 
@@ -110,6 +106,18 @@ struct AllTransactionsView: View {
         }
 
         return result
+    }
+
+    private var queryConfig: TransactionsQueryConfig {
+        TransactionsQueryConfig(
+            useDateRange: filter.useDateRange,
+            startDate: filter.startDate,
+            endDate: filter.endDate,
+            payeeName: filter.payeeName,
+            minAmount: Decimal(string: filter.minAmount),
+            maxAmount: Decimal(string: filter.maxAmount),
+            accountID: filter.account?.persistentModelID
+        )
     }
 
     /// Month sections grouped from filtered transactions
@@ -139,6 +147,9 @@ struct AllTransactionsView: View {
 	    
     var body: some View {
         mainContent
+            .background(TransactionsQueryView(config: queryConfig) { fetched in
+                allTransactions = fetched
+            })
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle("All Transactions")
             .scrollContentBackground(.hidden)
@@ -872,6 +883,66 @@ struct AllTransactionsView: View {
         }
     }
 
+}
+
+private struct TransactionsQueryConfig: Equatable {
+    var useDateRange: Bool
+    var startDate: Date
+    var endDate: Date
+    var payeeName: String
+    var minAmount: Decimal?
+    var maxAmount: Decimal?
+    var accountID: PersistentIdentifier?
+}
+
+private struct TransactionsQueryTaskID: Equatable {
+    var transactionsCount: Int
+    var dataChangeToken: Int
+    var config: TransactionsQueryConfig
+}
+
+private struct TransactionsQueryView: View {
+    @Query private var transactions: [Transaction]
+    private let onUpdate: ([Transaction]) -> Void
+    private let config: TransactionsQueryConfig
+
+    init(config: TransactionsQueryConfig, onUpdate: @escaping ([Transaction]) -> Void) {
+        self.config = config
+        self.onUpdate = onUpdate
+
+        let useDateRange = config.useDateRange
+        let startDate = config.startDate
+        let endDate = config.endDate
+        let payeeName = config.payeeName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasMinAmount = config.minAmount != nil
+        let minAmount = config.minAmount ?? 0
+        let hasMaxAmount = config.maxAmount != nil
+        let maxAmount = config.maxAmount ?? 0
+        let accountID = config.accountID
+
+        _transactions = Query(
+            filter: #Predicate<Transaction> { tx in
+                (!useDateRange || (tx.date >= startDate && tx.date <= endDate)) &&
+                (payeeName.isEmpty || tx.payee.localizedCaseInsensitiveContains(payeeName)) &&
+                (accountID == nil || tx.account?.persistentModelID == accountID) &&
+                (!hasMinAmount || tx.amount >= minAmount || tx.amount <= -minAmount) &&
+                (!hasMaxAmount || (tx.amount <= maxAmount && tx.amount >= -maxAmount))
+            },
+            sort: \Transaction.date,
+            order: .reverse
+        )
+    }
+
+    var body: some View {
+        Color.clear
+            .task(id: TransactionsQueryTaskID(
+                transactionsCount: transactions.count,
+                dataChangeToken: DataChangeTracker.token,
+                config: config
+            )) {
+                onUpdate(transactions)
+            }
+    }
 }
 
 

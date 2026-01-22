@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Xcode
+DerivedData/
+DerivedData*/
+build/
+*.xcuserstate
+*.xcuserdata/
+*.moved-aside
+*.xcscmblueprint
+*.xccheckout
+
+# Swift Package Manager
+.swiftpm/
+
+# SwiftPM/Xcode build artifacts
+*.build/
+
+# Logs
+*.log

@@ -14,23 +14,17 @@ struct BudgetPerformanceView: View {
 	@Binding var customEndDate: Date
 	@State private var selectedCategory: Category?
     @State private var categoryToFix: Category?
+    @State private var standardTransactions: [Transaction] = []
+    @State private var netByCategoryID: [PersistentIdentifier: Decimal] = [:]
+    @State private var transactionsByCategoryID: [PersistentIdentifier: [Transaction]] = [:]
 
-    // Use @Query to fetch all standard transactions, then filter in computed property
-    @Query(
-        filter: #Predicate<Transaction> { tx in
-            tx.kindRawValue == "Standard"
-        },
-        sort: [SortDescriptor(\Transaction.date, order: .reverse)]
-    ) private var allStandardTransactions: [Transaction]
-
-    // Computed property replaces manual caching - filters by date range
-    private var transactionsInRange: [Transaction] {
-        let (start, end) = dateRangeDates
-        return allStandardTransactions.filter { tx in
-            tx.date >= start &&
-            tx.date <= end &&
-            tx.account?.isTrackingOnly != true
-        }
+    private var cacheTaskID: BudgetPerformanceCacheTaskID {
+        BudgetPerformanceCacheTaskID(
+            transactionsCount: standardTransactions.count,
+            dataChangeToken: DataChangeTracker.token,
+            start: dateRangeDates.0,
+            end: dateRangeDates.1
+        )
     }
 
     private var expenseGroups: [CategoryGroup] {
@@ -59,13 +53,29 @@ struct BudgetPerformanceView: View {
         }
     }
     
-    private func transactionsFor(category: Category) -> [Transaction] {
-        transactionsInRange.filter { $0.category?.id == category.id }
-    }
-    
     private func activityFor(category: Category) -> Decimal {
-        let net = transactionsFor(category: category).reduce(Decimal.zero) { $0 + $1.amount }
+        let net = netByCategoryID[category.persistentModelID] ?? 0
         return max(Decimal.zero, -net)
+    }
+
+    private func transactionsFor(category: Category) -> [Transaction] {
+        transactionsByCategoryID[category.persistentModelID] ?? []
+    }
+
+    private func recomputeCategoryCaches() {
+        var netTotals: [PersistentIdentifier: Decimal] = [:]
+        var transactionsByCategory: [PersistentIdentifier: [Transaction]] = [:]
+
+        for transaction in standardTransactions {
+            guard transaction.account?.isTrackingOnly != true else { continue }
+            guard let category = transaction.category else { continue }
+            let categoryID = category.persistentModelID
+            netTotals[categoryID, default: 0] += transaction.amount
+            transactionsByCategory[categoryID, default: []].append(transaction)
+        }
+
+        netByCategoryID = netTotals
+        transactionsByCategoryID = transactionsByCategory
     }
     
     private func groupActivity(_ group: CategoryGroup) -> Decimal {
@@ -296,6 +306,12 @@ struct BudgetPerformanceView: View {
             .padding(.vertical, AppTheme.Spacing.tight)
         }
         .coordinateSpace(name: "BudgetPerformanceView.scroll")
+        .background(BudgetPerformanceTransactionsQuery(start: dateRangeDates.0, end: dateRangeDates.1) { fetched in
+            standardTransactions = fetched
+        })
+        .task(id: cacheTaskID) {
+            recomputeCategoryCaches()
+        }
         .sheet(item: $selectedCategory) { category in
             CategoryTransactionsSheet(
                 category: category,
@@ -313,7 +329,55 @@ struct BudgetPerformanceView: View {
             )
         }
         .background(Color(.systemGroupedBackground))
-        // No manual refresh needed - @Query automatically updates when data changes
+    }
+}
+
+private struct BudgetPerformanceCacheTaskID: Equatable {
+    var transactionsCount: Int
+    var dataChangeToken: Int
+    var start: Date
+    var end: Date
+}
+
+private struct BudgetPerformanceQueryTaskID: Equatable {
+    var transactionsCount: Int
+    var dataChangeToken: Int
+    var start: Date
+    var end: Date
+}
+
+private struct BudgetPerformanceTransactionsQuery: View {
+    @Query private var transactions: [Transaction]
+    private let onUpdate: ([Transaction]) -> Void
+    private let start: Date
+    private let end: Date
+
+    init(start: Date, end: Date, onUpdate: @escaping ([Transaction]) -> Void) {
+        self.start = start
+        self.end = end
+        self.onUpdate = onUpdate
+        let kind = TransactionKind.standard.rawValue
+        _transactions = Query(
+            filter: #Predicate<Transaction> { tx in
+                tx.date >= start &&
+                tx.date <= end &&
+                tx.kindRawValue == kind
+            },
+            sort: \Transaction.date,
+            order: .reverse
+        )
+    }
+
+    var body: some View {
+        Color.clear
+            .task(id: BudgetPerformanceQueryTaskID(
+                transactionsCount: transactions.count,
+                dataChangeToken: DataChangeTracker.token,
+                start: start,
+                end: end
+            )) {
+                onUpdate(transactions)
+            }
     }
 }
 
