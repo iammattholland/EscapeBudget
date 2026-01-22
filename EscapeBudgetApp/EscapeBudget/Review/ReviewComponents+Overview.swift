@@ -25,6 +25,8 @@ private struct MonthlyNetWorthPoint: Identifiable {
         @State private var showingUncategorizedFix = false
         @State private var categoryToFixBudget: Category?
         @State private var categoryToReview: Category?
+        @State private var payeeToReview: PayeeReviewSheetItem?
+        @State private var newRulePrefill: NewRulePrefillSheetItem?
     @State private var filterMode: DateRangeFilterHeader.FilterMode = .month
     @State private var customStartDate = Date()
     @State private var customEndDate = Date()
@@ -387,32 +389,49 @@ private struct MonthlyNetWorthPoint: Identifiable {
 	            savingsRate: savingsRate,
 	            currencyCode: currencyCode
 	        )
+            let predictiveInsightsForDisplay = predictiveInsights.filter { insight in
+                // We already show a dedicated uncategorized row; avoid duplicating it via "unusual spending".
+                if insight.type == .unusualSpending, uncategorizedCount > 0 {
+                    return !(insight.relatedCategoryID == nil || insight.relatedCategoryName == "Uncategorized")
+                }
+                return true
+            }
 
             func action(for insight: PredictiveInsightsEngine.Insight) -> OverviewInsightAction? {
                 switch insight.type {
                 case .budgetProjection:
                     guard let id = insight.relatedCategoryID else { return nil }
+                    guard expenseCategories.contains(where: { $0.persistentModelID == id }) else { return nil }
                     return .fixBudgetCategory(id)
                 case .unusualSpending:
                     if insight.relatedCategoryID == nil || insight.relatedCategoryName == "Uncategorized" {
                         return uncategorizedCount > 0 ? .openUncategorized : nil
                     }
                     guard let id = insight.relatedCategoryID else { return nil }
+                    guard expenseCategories.contains(where: { $0.persistentModelID == id }) else { return nil }
                     return .showCategoryTransactions(id)
-                case .spendingTrend, .recurringExpenseDetected, .savingsOpportunity:
-                    return .openReview(.expenses)
+                case .recurringExpenseDetected:
+                    guard let payee = insight.relatedPayee, !payee.isEmpty else { return nil }
+                    return .reviewPayee(payee)
+                case .spendingTrend, .savingsOpportunity:
+                    return insight.actionable ? .showIncomeExpenseDetail(.expenses) : nil
                 case .incomeVariation:
-                    return .openReview(.income)
+                    return insight.actionable ? .showIncomeExpenseDetail(.income) : nil
                 case .upcomingBill:
-                    return nil
+                    guard let payee = insight.relatedPayee, !payee.isEmpty else { return nil }
+                    return .reviewPayee(payee)
                 }
             }
 
-            func actionTitle(for action: OverviewInsightAction?) -> String? {
+            func actionTitle(for action: OverviewInsightAction?, insightType: PredictiveInsightsEngine.Insight.InsightType? = nil) -> String? {
                 switch action {
                 case .openUncategorized, .fixBudgetCategory:
                     return "Fix"
-                case .showCategoryTransactions, .openReview:
+                case .showCategoryTransactions, .reviewPayee:
+                    // "Upcoming bill" is actionable but typically a review flow (not a fix).
+                    if insightType == .upcomingBill { return "Review" }
+                    return "Fix"
+                case .showIncomeExpenseDetail, .openReview:
                     return "Review"
                 case .importData:
                     return "Import"
@@ -426,6 +445,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
             if uncategorizedCount > 0 {
                 rows.append(
                     OverviewInsightRowModel(
+                        stableID: "uncategorized",
                         icon: "tag.slash.fill",
                         title: "Categorize uncategorized spending",
                         detail: "\(uncategorizedCount) transaction\(uncategorizedCount == 1 ? "" : "s") totaling \(uncategorizedAmount.formatted(.currency(code: currencyCode)))",
@@ -437,15 +457,17 @@ private struct MonthlyNetWorthPoint: Identifiable {
                 )
             }
 
-            rows.append(contentsOf: predictiveInsights.prefix(4).map { insight in
+            let maxPredictiveInsights = uncategorizedCount > 0 ? 3 : 4
+            rows.append(contentsOf: predictiveInsightsForDisplay.prefix(maxPredictiveInsights).map { insight in
                 let insightAction = action(for: insight)
                 return OverviewInsightRowModel(
+                    stableID: OverviewInsightRowModel.stableID(for: insight),
                     icon: insight.severity.icon,
                     title: insight.title,
                     detail: insight.description,
                     why: insight.why,
                     severity: insight.severity,
-                    actionTitle: actionTitle(for: insightAction),
+                    actionTitle: actionTitle(for: insightAction, insightType: insight.type),
                     action: insightAction
                 )
             })
@@ -455,6 +477,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                     if savingsRate < 0 {
                         rows.append(
                             OverviewInsightRowModel(
+                                stableID: "over_income",
                                 icon: PredictiveInsightsEngine.Insight.Severity.alert.icon,
                                 title: "Spending over income",
                                 detail: "\(periodExpenses.formatted(.currency(code: currencyCode))) expenses vs \(periodIncome.formatted(.currency(code: currencyCode))) income",
@@ -467,6 +490,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                     } else if savingsRate < 0.10 {
                         rows.append(
                             OverviewInsightRowModel(
+                                stableID: "save_more",
                                 icon: PredictiveInsightsEngine.Insight.Severity.info.icon,
                                 title: "Try saving a bit more",
                                 detail: "A small cut can move your savings rate over 10%.",
@@ -479,6 +503,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                     } else {
                         rows.append(
                             OverviewInsightRowModel(
+                                stableID: "savings_strong",
                                 icon: PredictiveInsightsEngine.Insight.Severity.info.icon,
                                 title: "Savings rate looks strong",
                                 detail: "Keep the momentum going.",
@@ -492,6 +517,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                 } else {
                     rows.append(
                         OverviewInsightRowModel(
+                            stableID: "no_income",
                             icon: PredictiveInsightsEngine.Insight.Severity.info.icon,
                             title: "No income detected",
                             detail: "Import or add income to unlock more insights.",
@@ -506,6 +532,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                 if let topOver = overBudgetCategories.first {
                     rows.append(
                         OverviewInsightRowModel(
+                            stableID: "over_budget_top",
                             icon: PredictiveInsightsEngine.Insight.Severity.warning.icon,
                             title: "\(topOver.category.name) is over budget",
                             detail: "Over by \(topOver.overBy.formatted(.currency(code: currencyCode))).",
@@ -518,6 +545,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                 } else if budgetAssigned > 0 {
                     rows.append(
                         OverviewInsightRowModel(
+                            stableID: "budget_on_track",
                             icon: PredictiveInsightsEngine.Insight.Severity.info.icon,
                             title: "Budget looks on track",
                             detail: "No categories are currently over budget.",
@@ -719,6 +747,27 @@ private struct MonthlyNetWorthPoint: Identifiable {
                 onDismiss: {}
             )
         }
+        .sheet(item: $payeeToReview) { item in
+            PayeeTransactionsSheet(
+                payee: item.payee,
+                transactions: item.transactions,
+                dateRange: item.dateRange,
+                onCreateRule: {
+                    newRulePrefill = NewRulePrefillSheetItem(
+                        prefill: AutoRuleEditorView.Prefill(
+                            name: "Rule for \(item.payee)",
+                            matchPayeeCondition: .contains,
+                            matchPayeeValue: item.payee.lowercased()
+                        )
+                    )
+                }
+            )
+        }
+        .sheet(item: $newRulePrefill) { item in
+            NavigationStack {
+                AutoRuleEditorView(rule: nil, prefill: item.prefill)
+            }
+        }
         .sheet(item: $categoryToFixBudget) { category in
             BudgetCategoryFixSheet(
                 category: category,
@@ -745,12 +794,59 @@ private struct MonthlyNetWorthPoint: Identifiable {
             categoryToFixBudget = expenseCategories.first { $0.persistentModelID == categoryID }
         case .showCategoryTransactions(let categoryID):
             categoryToReview = expenseCategories.first { $0.persistentModelID == categoryID }
+        case .reviewPayee(let payee):
+            let key = PayeeNormalizer.normalizeForComparison(payee)
+            let calendar = Calendar.current
+            let end = dateRangeDates.1
+            let start = calendar.date(byAdding: .month, value: -12, to: end) ?? dateRangeDates.0
+            let transactions = fetchPayeeTransactions(key: key, start: start, end: end)
+            payeeToReview = PayeeReviewSheetItem(payee: payee, key: key, transactions: transactions, dateRange: (start, end))
+        case .showIncomeExpenseDetail(let detail):
+            showingIncomeExpenseDetail = detail
         case .openReview(let section):
             navigator.openReview(section: section, date: selectedDate, filterMode: filterMode, customStartDate: customStartDate, customEndDate: customEndDate)
         case .importData:
             navigator.importData()
         }
     }
+
+    private func fetchPayeeTransactions(key: String, start: Date, end: Date) -> [Transaction] {
+        let standard = TransactionKind.standard.rawValue
+        let descriptor = FetchDescriptor<Transaction>(
+            predicate: #Predicate<Transaction> { tx in
+                tx.kindRawValue == standard &&
+                tx.date >= start &&
+                tx.date <= end
+            },
+            sortBy: [SortDescriptor(\Transaction.date, order: .reverse)]
+        )
+
+        let fetched = (try? modelContext.fetch(descriptor)) ?? []
+        return fetched.filter { tx in
+            tx.account?.isTrackingOnly != true &&
+            PayeeNormalizer.normalizeForComparison(tx.payee) == key
+        }
+    }
+}
+
+private struct PayeeReviewSheetItem: Identifiable {
+    let id = UUID()
+    let payee: String
+    let key: String
+    let transactions: [Transaction]
+    let dateRange: (start: Date, end: Date)
+
+    init(payee: String, key: String? = nil, transactions: [Transaction], dateRange: (start: Date, end: Date)) {
+        self.payee = payee
+        self.key = key ?? PayeeNormalizer.normalizeForComparison(payee)
+        self.transactions = transactions
+        self.dateRange = dateRange
+    }
+}
+
+private struct NewRulePrefillSheetItem: Identifiable {
+    let id = UUID()
+    let prefill: AutoRuleEditorView.Prefill
 }
 
 private struct ReportsRangeTransactionsQuery: View {
@@ -929,12 +1025,14 @@ private enum OverviewInsightAction: Hashable {
     case openUncategorized
     case fixBudgetCategory(PersistentIdentifier)
     case showCategoryTransactions(PersistentIdentifier)
+    case reviewPayee(String)
+    case showIncomeExpenseDetail(IncomeExpenseDetail)
     case openReview(AppNavigator.ReviewSection)
     case importData
 }
 
 private struct OverviewInsightRowModel: Identifiable, Hashable {
-    let id = UUID()
+    let id: String
     let icon: String
     let title: String
     let detail: String
@@ -942,6 +1040,50 @@ private struct OverviewInsightRowModel: Identifiable, Hashable {
     let severity: PredictiveInsightsEngine.Insight.Severity
     let actionTitle: String?
     let action: OverviewInsightAction?
+
+    init(
+        stableID: String,
+        icon: String,
+        title: String,
+        detail: String,
+        why: String?,
+        severity: PredictiveInsightsEngine.Insight.Severity,
+        actionTitle: String?,
+        action: OverviewInsightAction?
+    ) {
+        self.id = stableID
+        self.icon = icon
+        self.title = title
+        self.detail = detail
+        self.why = why
+        self.severity = severity
+        self.actionTitle = actionTitle
+        self.action = action
+    }
+
+    static func stableID(for insight: PredictiveInsightsEngine.Insight) -> String {
+        var components: [String] = []
+        components.append(String(describing: insight.type))
+
+        if let relatedCategoryName = insight.relatedCategoryName, !relatedCategoryName.isEmpty {
+            components.append("cat_\(relatedCategoryName)")
+        } else if let relatedCategoryID = insight.relatedCategoryID {
+            components.append("catid_\(String(describing: relatedCategoryID))")
+        }
+
+        if let relatedPayee = insight.relatedPayee, !relatedPayee.isEmpty {
+            components.append("payee_\(PayeeNormalizer.normalizeForComparison(relatedPayee))")
+        }
+
+        return sanitizeIdentifierComponent(components.joined(separator: "__"))
+    }
+
+    private static func sanitizeIdentifierComponent(_ value: String) -> String {
+        let replaced = value
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "[^a-zA-Z0-9_]", with: "", options: .regularExpression)
+        return replaced.isEmpty ? "unknown" : replaced
+    }
 }
 
 private struct IncomeExpenseDetailSheet: View {
@@ -2099,6 +2241,7 @@ private struct OverviewInsightRow: View {
                     .font(.subheadline.weight(.semibold))
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+                    .accessibilityIdentifier("overviewInsight.action.\(model.id)")
                 }
         }
         .padding(AppTheme.Spacing.small)
@@ -2110,6 +2253,8 @@ private struct OverviewInsightRow: View {
             RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
         )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("overviewInsight.row.\(model.id)")
     }
 
     private var iconTint: Color {

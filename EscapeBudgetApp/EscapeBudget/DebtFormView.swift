@@ -7,6 +7,18 @@ struct DebtFormView: View {
     @Environment(\.appColorMode) private var appColorMode
     @AppStorage("currencyCode") private var currencyCode = "USD"
 
+    // Query all accounts - we'll filter debt types in the view
+    @Query(sort: \Account.name) private var allAccounts: [Account]
+
+    private var debtAccounts: [Account] {
+        allAccounts.filter { account in
+            account.type == .creditCard ||
+            account.type == .loans ||
+            account.type == .mortgage ||
+            account.type == .lineOfCredit
+        }
+    }
+
     var existingDebt: DebtAccount?
 
     @State private var name = ""
@@ -17,6 +29,8 @@ struct DebtFormView: View {
     @State private var extraPayment = ""
     @State private var notes = ""
     @State private var selectedColorHex = "FF3B30"
+    @State private var selectedAccount: Account?
+    @State private var useLinkedAccount = false
 
     private let colorOptions = [
         "FF3B30",  // Red
@@ -34,14 +48,60 @@ struct DebtFormView: View {
     var body: some View {
         NavigationStack {
             Form {
+                // Link to existing account section - shown prominently at top for new debts
+                if !debtAccounts.isEmpty && existingDebt == nil {
+                    Section {
+                        Picker("Link Account", selection: $selectedAccount) {
+                            Text("Manual Entry").tag(nil as Account?)
+                            ForEach(debtAccounts) { account in
+                                HStack {
+                                    Text(account.name)
+                                    Spacer()
+                                    Text(account.type.rawValue)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .tag(account as Account?)
+                            }
+                        }
+                        .onChange(of: selectedAccount) { _, newAccount in
+                            if let account = newAccount {
+                                prefillFromAccount(account)
+                                useLinkedAccount = true
+                            } else {
+                                useLinkedAccount = false
+                            }
+                        }
+                    } header: {
+                        Text("Quick Setup")
+                    } footer: {
+                        if selectedAccount != nil {
+                            Text("Balance will automatically sync from this account.")
+                        } else {
+                            Text("Select an existing account to sync balances, or enter debt details manually.")
+                        }
+                    }
+                }
+
                 Section("Debt Details") {
                     TextField("Name", text: $name)
 
-                    HStack {
-                        Text(currencySymbol)
-                            .foregroundStyle(.secondary)
-                        TextField("Current Balance", text: $currentBalance)
-                            .keyboardType(.decimalPad)
+                    if useLinkedAccount && selectedAccount != nil {
+                        LabeledContent("Current Balance") {
+                            HStack(spacing: AppTheme.Spacing.xSmall) {
+                                Text(abs(selectedAccount?.balance ?? 0), format: .currency(code: currencyCode))
+                                    .foregroundStyle(.secondary)
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    } else {
+                        HStack {
+                            Text(currencySymbol)
+                                .foregroundStyle(.secondary)
+                            TextField("Current Balance", text: $currentBalance)
+                                .keyboardType(.decimalPad)
+                        }
                     }
 
                     HStack {
@@ -154,6 +214,8 @@ struct DebtFormView: View {
                     extraPayment = debt.extraPayment > 0 ? "\(debt.extraPayment)" : ""
                     notes = debt.notes ?? ""
                     selectedColorHex = debt.colorHex
+                    selectedAccount = debt.linkedAccount
+                    useLinkedAccount = debt.linkedAccount != nil
                 }
             }
         }
@@ -167,15 +229,24 @@ struct DebtFormView: View {
     }
 
     private var isValid: Bool {
-        !name.isEmpty &&
-        Decimal(string: currentBalance) != nil &&
-        Decimal(string: interestRate) != nil &&
-        Decimal(string: minimumPayment) != nil
+        let hasBalance = useLinkedAccount && selectedAccount != nil || Decimal(string: currentBalance) != nil
+        return !name.isEmpty &&
+            hasBalance &&
+            Decimal(string: interestRate) != nil &&
+            Decimal(string: minimumPayment) != nil
     }
 
     private var payoffProjection: DebtPayoffCalculator.PayoffProjection? {
-        guard let balance = Decimal(string: currentBalance),
-              let rate = Decimal(string: interestRate),
+        let balance: Decimal
+        if useLinkedAccount, let account = selectedAccount {
+            balance = abs(account.balance)
+        } else if let parsedBalance = Decimal(string: currentBalance) {
+            balance = parsedBalance
+        } else {
+            return nil
+        }
+
+        guard let rate = Decimal(string: interestRate),
               let minimum = Decimal(string: minimumPayment),
               balance > 0, minimum > 0 else {
             return nil
@@ -194,9 +265,28 @@ struct DebtFormView: View {
 
     // MARK: - Actions
 
+    private func prefillFromAccount(_ account: Account) {
+        name = account.name
+        // Account balance is negative for debt accounts, so negate it
+        let balance = abs(account.balance)
+        currentBalance = "\(balance)"
+        if originalBalance.isEmpty {
+            originalBalance = "\(balance)"
+        }
+    }
+
     private func saveDebt() {
-        guard let balance = Decimal(string: currentBalance),
-              let rate = Decimal(string: interestRate),
+        // Get balance from linked account or manual entry
+        let balance: Decimal
+        if useLinkedAccount, let account = selectedAccount {
+            balance = abs(account.balance)
+        } else if let parsedBalance = Decimal(string: currentBalance) {
+            balance = parsedBalance
+        } else {
+            return
+        }
+
+        guard let rate = Decimal(string: interestRate),
               let minimum = Decimal(string: minimumPayment) else {
             return
         }
@@ -214,6 +304,7 @@ struct DebtFormView: View {
             debt.extraPayment = extra
             debt.notes = notes.isEmpty ? nil : notes
             debt.colorHex = selectedColorHex
+            debt.linkedAccount = useLinkedAccount ? selectedAccount : nil
         } else {
             let debt = DebtAccount(
                 name: name,
@@ -223,7 +314,8 @@ struct DebtFormView: View {
                 minimumPayment: minimum,
                 extraPayment: extra,
                 colorHex: selectedColorHex,
-                notes: notes.isEmpty ? nil : notes
+                notes: notes.isEmpty ? nil : notes,
+                linkedAccount: useLinkedAccount ? selectedAccount : nil
             )
             modelContext.insert(debt)
         }
@@ -235,5 +327,5 @@ struct DebtFormView: View {
 
 #Preview {
     DebtFormView()
-        .modelContainer(for: [DebtAccount.self], inMemory: true)
+        .modelContainer(for: [DebtAccount.self, Account.self], inMemory: true)
 }

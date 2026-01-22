@@ -33,17 +33,25 @@ struct ToolsView: View {
                             subtitle: "A Spotify‑wrapped style recap with highlights, trends, and insights."
                         )
                     }
+                    NavigationLink {
+                        DebtPayoffPlannerView()
+                    } label: {
+                        ToolComingItem(
+                            title: "Debt Payoff Planner",
+                            subtitle: "Build payoff plans, compare strategies, and track progress toward zero."
+                        )
+                    }
+                    NavigationLink {
+                        BillsDashboardView()
+                    } label: {
+                        ToolComingItem(
+                            title: "Bills Dashboard",
+                            subtitle: "An overview of your repeating monthly bills with due dates, totals, and trends."
+                        )
+                    }
                 }
 
                 Section("Planned Features") {
-                    ToolComingItem(
-                        title: "Debt Payoff Planner",
-                        subtitle: "Build payoff plans, compare strategies, and track progress toward zero."
-                    )
-                    ToolComingItem(
-                        title: "Bills Dashboard",
-                        subtitle: "An overview of your repeating monthly bills with due dates, totals, and trends."
-                    )
                     ToolComingItem(
                         title: "Receipt Scanner",
                         subtitle: "Capture receipts and auto-extract merchant, date, totals, and line items."

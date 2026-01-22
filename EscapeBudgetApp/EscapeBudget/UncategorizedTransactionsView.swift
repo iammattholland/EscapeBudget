@@ -36,6 +36,7 @@ struct UncategorizedTransactionsView: View {
             }
             .navigationTitle("Categorize")
             .navigationBarTitleDisplayMode(.inline)
+            .accessibilityIdentifier("uncategorizedTransactionsView")
             .toolbar {
                 toolbarContent
             }

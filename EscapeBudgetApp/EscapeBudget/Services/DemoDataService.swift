@@ -54,6 +54,27 @@ final class DemoDataService {
             modelContext.insert(interest!)
         }
 
+        // Ensure the income group actually contains its categories so grouping works in all views.
+        var incomeCategories = incomeGroup.categories ?? []
+        for category in [paycheck, bonus, interest].compactMap({ $0 }) {
+            if !incomeCategories.contains(where: { $0.persistentModelID == category.persistentModelID }) {
+                incomeCategories.append(category)
+            }
+            if category.group?.persistentModelID != incomeGroup.persistentModelID {
+                category.group = incomeGroup
+            }
+        }
+        incomeGroup.categories = incomeCategories
+
+        func attach(_ categories: [Category], to group: CategoryGroup) {
+            group.categories = categories
+            for category in categories {
+                if category.group?.persistentModelID != group.persistentModelID {
+                    category.group = group
+                }
+            }
+        }
+
 
         // Expense Groups - Using budget template categories
         // House
@@ -61,7 +82,7 @@ final class DemoDataService {
         let mortgage = Category(name: "Mortgage", assigned: 1500, activity: 0, isDemoData: true)
         let homeInsurance = Category(name: "Home Insurance", assigned: 150, activity: 0, isDemoData: true)
         let propertyTaxes = Category(name: "Property Taxes", assigned: 300, activity: 0, isDemoData: true)
-        house.categories = [mortgage, homeInsurance, propertyTaxes]
+        attach([mortgage, homeInsurance, propertyTaxes], to: house)
 
         // Bills & Utilities
         let billsUtilities = CategoryGroup(name: "Bills & Utilities", order: 1, isDemoData: true)
@@ -69,7 +90,7 @@ final class DemoDataService {
         let gasUtility = Category(name: "Gas Utility", assigned: 80, activity: 0, isDemoData: true)
         let internet = Category(name: "Internet", assigned: 80, activity: 0, isDemoData: true)
         let cellphone = Category(name: "Cellphone", assigned: 70, activity: 0, isDemoData: true)
-        billsUtilities.categories = [electricity, gasUtility, internet, cellphone]
+        attach([electricity, gasUtility, internet, cellphone], to: billsUtilities)
 
         // Food & Dining
         let foodDining = CategoryGroup(name: "Food & Dining", order: 2, isDemoData: true)
@@ -77,7 +98,7 @@ final class DemoDataService {
         let restaurants = Category(name: "Restaurants", assigned: 250, activity: 0, isDemoData: true)
         let coffeeShops = Category(name: "Coffee Shops", assigned: 80, activity: 0, isDemoData: true)
         let alcoholBars = Category(name: "Alcohol & Bars", assigned: 100, activity: 0, isDemoData: true)
-        foodDining.categories = [groceries, restaurants, coffeeShops, alcoholBars]
+        attach([groceries, restaurants, coffeeShops, alcoholBars], to: foodDining)
 
         // Auto & Transport
         let autoTransport = CategoryGroup(name: "Auto & Transport", order: 3, isDemoData: true)
@@ -85,40 +106,39 @@ final class DemoDataService {
         let gas = Category(name: "Gas", assigned: 200, activity: 0, isDemoData: true)
         let publicTransport = Category(name: "Public Transportation", assigned: 100, activity: 0, isDemoData: true)
         let autoMaintenance = Category(name: "Auto Maintenance", assigned: 100, activity: 0, isDemoData: true)
-        autoTransport.categories = [autoInsurance, gas, publicTransport, autoMaintenance]
+        attach([autoInsurance, gas, publicTransport, autoMaintenance], to: autoTransport)
 
         // Entertainment
         let entertainment = CategoryGroup(name: "Entertainment", order: 4, isDemoData: true)
         let subscriptions = Category(name: "Subscriptions", assigned: 50, activity: 0, isDemoData: true)
         let entertainmentGeneral = Category(name: "Entertainment", assigned: 150, activity: 0, isDemoData: true)
         let dateNight = Category(name: "Date Night", assigned: 100, activity: 0, isDemoData: true)
-        entertainment.categories = [subscriptions, entertainmentGeneral, dateNight]
+        attach([subscriptions, entertainmentGeneral, dateNight], to: entertainment)
 
         // Health & Fitness
         let healthFitness = CategoryGroup(name: "Health & Fitness", order: 5, isDemoData: true)
         let gym = Category(name: "Gym Membership", assigned: 45, activity: 0, isDemoData: true)
         let healthServices = Category(name: "Health Services", assigned: 100, activity: 0, isDemoData: true)
-        healthFitness.categories = [gym, healthServices]
+        attach([gym, healthServices], to: healthFitness)
 
         // Shopping
         let shopping = CategoryGroup(name: "Shopping", order: 6, isDemoData: true)
         let clothing = Category(name: "Clothing", assigned: 150, activity: 0, isDemoData: true)
         let electronics = Category(name: "Electronics", assigned: 100, activity: 0, isDemoData: true)
         let toiletries = Category(name: "Toiletries", assigned: 50, activity: 0, isDemoData: true)
-        shopping.categories = [clothing, electronics, toiletries]
+        attach([clothing, electronics, toiletries], to: shopping)
 
         // Personal Care
         let personalCare = CategoryGroup(name: "Personal Care", order: 7, isDemoData: true)
         let personalCareServices = Category(name: "Personal Care Services", assigned: 80, activity: 0, isDemoData: true)
-        personalCare.categories = [personalCareServices]
+        attach([personalCareServices], to: personalCare)
 
         // Giving
         let giving = CategoryGroup(name: "Giving", order: 8, isDemoData: true)
         let charity = Category(name: "Charity", assigned: 200, activity: 0, isDemoData: true)
         let gifts = Category(name: "Gifts", assigned: 100, activity: 0, isDemoData: true)
-        giving.categories = [charity, gifts]
+        attach([charity, gifts], to: giving)
 
-        modelContext.insert(incomeGroup)
         modelContext.insert(house)
         modelContext.insert(billsUtilities)
         modelContext.insert(foodDining)
@@ -723,5 +743,96 @@ final class DemoDataService {
             context: modelContext,
             memo: "Initial deposit"
         )
+    }
+
+    static func ensureDemoDebtAccounts(modelContext: ModelContext) {
+        // Check if demo mode is active by looking for demo accounts
+        let demoAccounts = (try? modelContext.fetch(FetchDescriptor<Account>(predicate: #Predicate { $0.isDemoData }))) ?? []
+        guard !demoAccounts.isEmpty else { return }
+
+        // Check if debt accounts already exist
+        let existingDebts = (try? modelContext.fetch(FetchDescriptor<DebtAccount>(predicate: #Predicate { $0.isDemoData }))) ?? []
+        guard existingDebts.isEmpty else { return }
+
+        // Find the Visa Signature credit card account to link
+        let visaSignature = demoAccounts.first { $0.name == "Visa Signature" && $0.type == .creditCard }
+
+        // Seed demo debt accounts
+        // Visa Signature is linked to the actual credit card account - balance syncs automatically
+        let chaseVisa = DebtAccount(
+            name: "Visa Signature",
+            currentBalance: abs(visaSignature?.balance ?? 850.25),
+            originalBalance: 2500,
+            interestRate: 0.2199,
+            minimumPayment: 45,
+            extraPayment: 25,
+            colorHex: "FF3B30",
+            notes: "High interest - prioritize payoff",
+            linkedAccount: visaSignature,
+            isDemoData: true
+        )
+        modelContext.insert(chaseVisa)
+
+        let carLoan = DebtAccount(
+            name: "Car Loan",
+            currentBalance: 12500,
+            originalBalance: 22000,
+            interestRate: 0.0649,
+            minimumPayment: 385,
+            colorHex: "007AFF",
+            notes: "2022 Honda Accord",
+            isDemoData: true
+        )
+        modelContext.insert(carLoan)
+
+        let studentLoan = DebtAccount(
+            name: "Student Loan",
+            currentBalance: 18200,
+            originalBalance: 35000,
+            interestRate: 0.0525,
+            minimumPayment: 210,
+            colorHex: "5856D6",
+            notes: "Federal loan - income-driven repayment",
+            isDemoData: true
+        )
+        modelContext.insert(studentLoan)
+    }
+
+    /// Repairs demo data stores that may have missing `Category.group` backlinks (e.g., from earlier demo seeds).
+    @MainActor
+    static func ensureDemoCategoryRelationships(modelContext: ModelContext) {
+        guard ((try? modelContext.fetchCount(FetchDescriptor<Account>(predicate: #Predicate { $0.isDemoData }))) ?? 0) > 0 else {
+            return
+        }
+
+        do {
+            let groups = try modelContext.fetch(FetchDescriptor<CategoryGroup>())
+            for group in groups {
+                for category in (group.categories ?? []) {
+                    if category.group?.persistentModelID != group.persistentModelID {
+                        category.group = group
+                    }
+                }
+            }
+
+            if let incomeGroup = groups.first(where: { $0.type == .income }) {
+                let likelyIncomeNames: Set<String> = ["Paycheck", "Salary", "Bonus", "Interest"]
+                let categories = try modelContext.fetch(FetchDescriptor<Category>())
+                var incomeCategories = incomeGroup.categories ?? []
+                for category in categories where likelyIncomeNames.contains(category.name) {
+                    if category.group?.persistentModelID != incomeGroup.persistentModelID {
+                        category.group = incomeGroup
+                    }
+                    if !incomeCategories.contains(where: { $0.persistentModelID == category.persistentModelID }) {
+                        incomeCategories.append(category)
+                    }
+                }
+                incomeGroup.categories = incomeCategories
+            }
+
+            try modelContext.save()
+        } catch {
+            // Fail soft; demo mode should remain usable even if this repair cannot run.
+        }
     }
 }

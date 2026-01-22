@@ -10,6 +10,13 @@ struct PredictiveInsightsEngine {
         let start: Date
         let endExclusive: Date
         let label: String
+        let kind: Kind
+
+        enum Kind {
+            case month
+            case year
+            case rolling
+        }
     }
 
     private func previousComparisonRange(for dateRange: (start: Date, end: Date), calendar: Calendar = .current) -> ComparisonRange {
@@ -24,7 +31,7 @@ struct PredictiveInsightsEngine {
 
         if isFullMonth {
             let prevMonthStart = calendar.date(byAdding: .month, value: -1, to: monthStart) ?? monthStart
-            return ComparisonRange(start: prevMonthStart, endExclusive: monthStart, label: "last month")
+            return ComparisonRange(start: prevMonthStart, endExclusive: monthStart, label: "last month", kind: .month)
         }
 
         // Detect a full calendar year selection (e.g. year filter).
@@ -35,13 +42,13 @@ struct PredictiveInsightsEngine {
 
         if isFullYear {
             let prevYearStart = calendar.date(byAdding: .year, value: -1, to: yearStart) ?? yearStart
-            return ComparisonRange(start: prevYearStart, endExclusive: yearStart, label: "last year")
+            return ComparisonRange(start: prevYearStart, endExclusive: yearStart, label: "last year", kind: .year)
         }
 
         // Fallback: compare against the immediately preceding range of the same duration.
         let duration = max(1, end.timeIntervalSince(start))
         let prevStart = start.addingTimeInterval(-duration)
-        return ComparisonRange(start: prevStart, endExclusive: start, label: "previous period")
+        return ComparisonRange(start: prevStart, endExclusive: start, label: "previous period", kind: .rolling)
     }
 
     private func daysInclusive(from start: Date, to end: Date, calendar: Calendar = .current) -> Int {
@@ -49,6 +56,74 @@ struct PredictiveInsightsEngine {
         let endDay = calendar.startOfDay(for: end)
         let delta = calendar.dateComponents([.day], from: startDay, to: endDay).day ?? 0
         return max(1, delta + 1)
+    }
+
+    private func roundedCurrency(_ amount: Decimal) -> Decimal {
+        var value = amount
+        var rounded = Decimal()
+        NSDecimalRound(&rounded, &value, 2, .bankers)
+        return rounded
+    }
+
+    private func median(_ values: [Double]) -> Double? {
+        guard !values.isEmpty else { return nil }
+        let sorted = values.sorted()
+        let mid = sorted.count / 2
+        if sorted.count.isMultiple(of: 2) {
+            return (sorted[mid - 1] + sorted[mid]) / 2.0
+        }
+        return sorted[mid]
+    }
+
+    private func amountLooksStable(_ amounts: [Decimal]) -> Bool {
+        guard amounts.count >= 3 else { return true }
+        let ns = amounts.map { NSDecimalNumber(decimal: $0) }
+        let doubles = ns.map { abs($0.doubleValue) }.sorted()
+        guard let med = median(doubles), med > 0 else { return false }
+        let allowedAbsolute = max(5.0, med * 0.25)
+        let inBand = doubles.filter { abs($0 - med) <= allowedAbsolute }.count
+        return Double(inBand) / Double(doubles.count) >= 0.8
+    }
+
+    private func intervalsLookMonthly(_ intervalsInDays: [Double]) -> (isMonthly: Bool, medianDays: Int)? {
+        guard intervalsInDays.count >= 1 else { return nil }
+        let cleaned = intervalsInDays.filter { $0.isFinite && $0 > 0 }
+        guard !cleaned.isEmpty else { return nil }
+
+        let med = median(cleaned) ?? cleaned.reduce(0, +) / Double(cleaned.count)
+        guard med >= 25, med <= 35 else { return (false, Int(med.rounded())) }
+
+        if cleaned.count >= 2 {
+            let band = cleaned.filter { abs($0 - med) <= 6 }.count
+            let stableEnough = Double(band) / Double(cleaned.count) >= 0.75
+            return (stableEnough, Int(med.rounded()))
+        }
+
+        return (true, Int(med.rounded()))
+    }
+
+    private func expenseOutflowTotal(transactions: [Transaction]) -> Decimal {
+        var outflow: Decimal = 0
+        var refunds: Decimal = 0
+        for tx in transactions where tx.kind == .standard && tx.account?.isTrackingOnly != true {
+            if tx.amount < 0 {
+                outflow += abs(tx.amount)
+            } else if tx.amount > 0, tx.category?.group?.type == .expense {
+                refunds += tx.amount
+            }
+        }
+        return max(0, outflow - refunds)
+    }
+
+    private func incomeTotal(transactions: [Transaction]) -> Decimal {
+        transactions
+            .filter { tx in
+                tx.kind == .standard &&
+                tx.account?.isTrackingOnly != true &&
+                tx.amount > 0 &&
+                tx.category?.group?.type == .income
+            }
+            .reduce(Decimal(0)) { $0 + $1.amount }
     }
 
     struct Insight: Identifiable, Hashable {
@@ -181,29 +256,36 @@ struct PredictiveInsightsEngine {
         var insights: [Insight] = []
 
         // Group transactions by normalized payee
-        let expenses = transactions.filter { $0.amount < 0 && $0.kind == .standard }
+        let expenses = transactions.filter { $0.amount < 0 && $0.kind == .standard && $0.account?.isTrackingOnly != true }
         let grouped = Dictionary(grouping: expenses) { transaction in
             PayeeNormalizer.normalizeForComparison(transaction.payee)
         }
 
         for (payee, txs) in grouped where txs.count >= 2 {
             // Check if transactions occur at regular intervals
-            let sortedDates = txs.map { $0.date }.sorted()
+            let sortedTxs = txs.sorted { $0.date < $1.date }
+            let sortedDates = sortedTxs.map(\.date)
             if sortedDates.count >= 2 {
-                let intervals = zip(sortedDates.dropFirst(), sortedDates).map { $1.timeIntervalSince($0) }
-                let avgInterval = intervals.reduce(0, +) / Double(intervals.count)
+                let intervalsDays = zip(sortedDates, sortedDates.dropFirst()).map { pair in
+                    pair.1.timeIntervalSince(pair.0) / (24 * 3600)
+                }
+                guard let monthlyCheck = intervalsLookMonthly(intervalsDays) else { continue }
 
                 // If average interval is roughly monthly (25-35 days), it's likely recurring
-                if avgInterval > 25 * 24 * 3600 && avgInterval < 35 * 24 * 3600 {
+                if monthlyCheck.isMonthly {
+                    // Avoid tagging wildly varying amounts as "recurring".
+                    let amounts = sortedTxs.map(\.amount)
+                    guard amountLooksStable(amounts) else { continue }
+
                     let avgAmount = txs.reduce(Decimal(0)) { $0 + abs($1.amount) } / Decimal(txs.count)
                     let displayPayee = txs.first?.payee ?? payee
-                    let avgDays = Int((avgInterval / (24 * 3600)).rounded())
+                    let avgDays = monthlyCheck.medianDays
 
                     insights.append(Insight(
                         type: .recurringExpenseDetected,
                         title: "\(displayPayee) is recurring",
-                        description: "About \(avgAmount.formatted(.currency(code: currencyCode))) monthly",
-                        why: "Based on \(txs.count) payments ~ every \(avgDays) days.",
+                        description: "About \(avgAmount.formatted(.currency(code: currencyCode))) monthly.",
+                        why: "Based on \(txs.count) payments about every \(avgDays) days.",
                         severity: .info,
                         actionable: true,
                         relatedPayee: displayPayee
@@ -221,20 +303,30 @@ struct PredictiveInsightsEngine {
         var insights: [Insight] = []
 
         // Get historical average spending per category
-        let currentExpenses = transactions.filter { $0.amount < 0 && $0.kind == .standard }
+        let currentStandard = transactions.filter { $0.kind == .standard && $0.account?.isTrackingOnly != true }
         struct CategoryBucket: Hashable {
             let id: PersistentIdentifier?
             let name: String
+
+            func hash(into hasher: inout Hasher) {
+                hasher.combine(name.lowercased())
+            }
+
+            static func == (lhs: CategoryBucket, rhs: CategoryBucket) -> Bool {
+                lhs.name.caseInsensitiveCompare(rhs.name) == .orderedSame
+            }
         }
 
-        var categorySpending: [CategoryBucket: Decimal] = [:]
-        categorySpending.reserveCapacity(16)
-        for tx in currentExpenses {
+        var categoryNet: [CategoryBucket: Decimal] = [:]
+        categoryNet.reserveCapacity(16)
+        for tx in currentStandard where tx.amount != 0 {
             let bucket = CategoryBucket(
                 id: tx.category?.persistentModelID,
                 name: tx.category?.name ?? "Uncategorized"
             )
-            categorySpending[bucket, default: 0] += abs(tx.amount)
+            // Treat refunds (positive amounts with expense categories) as reducing category spend.
+            if tx.amount > 0, tx.category?.group?.type != .expense { continue }
+            categoryNet[bucket, default: 0] += tx.amount
         }
 
         // Fetch historical data (3 full months before current period; aligns to calendar months).
@@ -244,33 +336,49 @@ struct PredictiveInsightsEngine {
         let historicalStart = calendar.date(byAdding: .month, value: -3, to: rangeMonthStart) ?? rangeMonthStart
         let historicalEnd = rangeMonthStart
 
+        let standardRaw = TransactionKind.standard.rawValue
         var descriptor = FetchDescriptor<Transaction>()
         descriptor.predicate = #Predicate<Transaction> { tx in
             tx.date >= historicalStart &&
             tx.date < historicalEnd &&
-            tx.amount < 0 &&
-            tx.kindRawValue == "Standard"
+            tx.kindRawValue == standardRaw
         }
 
         guard let rawHistoricalTxs = try? modelContext.fetch(descriptor) else { return insights }
         let historicalTxs = rawHistoricalTxs.filter { $0.account?.isTrackingOnly != true }
 
-        var historicalCategorySpending: [CategoryBucket: Decimal] = [:]
-        historicalCategorySpending.reserveCapacity(16)
+        var historicalCategoryNet: [CategoryBucket: Decimal] = [:]
+        historicalCategoryNet.reserveCapacity(16)
+        var historicalCategoryCount: [CategoryBucket: Int] = [:]
+        historicalCategoryCount.reserveCapacity(16)
         for tx in historicalTxs {
             let bucket = CategoryBucket(
                 id: tx.category?.persistentModelID,
                 name: tx.category?.name ?? "Uncategorized"
             )
-            historicalCategorySpending[bucket, default: 0] += abs(tx.amount)
+            if tx.amount > 0, tx.category?.group?.type != .expense { continue }
+            historicalCategoryNet[bucket, default: 0] += tx.amount
+            historicalCategoryCount[bucket, default: 0] += 1
         }
-        for (bucket, total) in historicalCategorySpending {
-            historicalCategorySpending[bucket] = total / 3
+        var historicalCategoryAvgOutflow: [CategoryBucket: Decimal] = [:]
+        historicalCategoryAvgOutflow.reserveCapacity(historicalCategoryNet.count)
+        for (bucket, net) in historicalCategoryNet {
+            // Avoid strong claims without enough historical data.
+            let count = historicalCategoryCount[bucket] ?? 0
+            guard count >= 3 else { continue }
+            let outflow = max(0, -net)
+            historicalCategoryAvgOutflow[bucket] = outflow / 3
         }
 
         // Compare current to historical
-        for (bucket, currentAmount) in categorySpending {
-            if let historicalAvg = historicalCategorySpending[bucket], historicalAvg > 0 {
+        for (bucket, net) in categoryNet {
+            let currentAmount = max(0, -net)
+            if let historicalAvg = historicalCategoryAvgOutflow[bucket], historicalAvg > 0 {
+                // Avoid noisy percent spikes on tiny amounts.
+                guard currentAmount >= 50 || historicalAvg >= 50 else { continue }
+                let delta = currentAmount - historicalAvg
+                guard delta >= 50 else { continue }
+
                 let increase = Double(truncating: ((currentAmount - historicalAvg) / historicalAvg) as NSNumber)
 
                 if increase > 0.5 { // 50% increase
@@ -278,7 +386,7 @@ struct PredictiveInsightsEngine {
                     insights.append(Insight(
                         type: .unusualSpending,
                         title: "\(bucket.name) spending is high",
-                        description: "\(currentAmount.formatted(.currency(code: currencyCode))) vs \(historicalAvg.formatted(.currency(code: currencyCode))) (up \(percent)%)",
+                        description: "\(currentAmount.formatted(.currency(code: currencyCode))) vs \(historicalAvg.formatted(.currency(code: currencyCode))) (up \(percent)%).",
                         why: "Compared to your average from the prior 3 months.",
                         severity: .warning,
                         actionable: true,
@@ -314,23 +422,24 @@ struct PredictiveInsightsEngine {
         guard daysRemaining > 0 && daysPassed > 0 else { return insights }
 
         // Find categories on track to exceed budget
-        let expenseCategories = categories.filter { $0.group?.type == .expense && $0.assigned > 0 }
+        let expenseCategories = categories.filter { $0.group?.type == .expense && $0.assigned >= 25 }
 
         for category in expenseCategories {
-            let spent = transactions
-                .filter { $0.category?.persistentModelID == category.persistentModelID && $0.amount < 0 }
-                .reduce(Decimal(0)) { $0 + abs($1.amount) }
+            let net = transactions
+                .filter { $0.category?.persistentModelID == category.persistentModelID && $0.kind == .standard && $0.account?.isTrackingOnly != true }
+                .reduce(Decimal(0)) { $0 + $1.amount }
+            let spent = max(0, -net)
+
+            guard spent >= 10 else { continue }
 
             let dailyRate = spent / Decimal(daysPassed)
             let projectedTotal = dailyRate * Decimal(totalDays)
 
             if projectedTotal > category.assigned {
-                let overBy = projectedTotal - category.assigned
-
                 insights.append(Insight(
                     type: .budgetProjection,
                     title: "\(category.name) budget at risk",
-                    description: "Projected \(projectedTotal.formatted(.currency(code: currencyCode))) vs budget \(category.assigned.formatted(.currency(code: currencyCode)))",
+                    description: "Projected \(projectedTotal.formatted(.currency(code: currencyCode))) vs budget \(category.assigned.formatted(.currency(code: currencyCode))).",
                     why: "Based on \(daysPassed) day\(daysPassed == 1 ? "" : "s") of spend so far.",
                     severity: .warning,
                     actionable: true,
@@ -354,26 +463,37 @@ struct PredictiveInsightsEngine {
     ) -> [Insight] {
         var insights: [Insight] = []
 
+        let computedIncome = incomeTotal(transactions: transactions)
+        let computedExpenses = expenseOutflowTotal(transactions: transactions)
+        let effectiveIncome = computedIncome
+        let effectiveExpenses = computedExpenses
+
+        let computedSavingsRate: Double? = {
+            guard effectiveIncome > 0 else { return nil }
+            let rate = (effectiveIncome - effectiveExpenses) / effectiveIncome
+            return Double(truncating: rate as NSNumber)
+        }()
+
         // 1. Low savings rate alert
-        if let savingsRate, currentIncome > 0 {
+        if let savingsRate = computedSavingsRate ?? savingsRate, effectiveIncome > 0 {
             if savingsRate < 0 {
                 insights.append(Insight(
                     type: .savingsOpportunity,
                     title: "Spending over income",
-                    description: "\(currentExpenses.formatted(.currency(code: currencyCode))) expenses vs \(currentIncome.formatted(.currency(code: currencyCode))) income",
+                    description: "\(effectiveExpenses.formatted(.currency(code: currencyCode))) expenses vs \(effectiveIncome.formatted(.currency(code: currencyCode))) income.",
                     why: "This period’s expenses exceed your income.",
                     severity: .alert,
                     actionable: true
                 ))
             } else if savingsRate < 0.10 {
-                let targetSavings = currentIncome * 0.10 // 10% target
-                let currentSavings = currentIncome - currentExpenses
+                let targetSavings = effectiveIncome * 0.10 // 10% target
+                let currentSavings = effectiveIncome - effectiveExpenses
                 let gap = targetSavings - currentSavings
 
                 insights.append(Insight(
                     type: .savingsOpportunity,
                     title: "Try saving a bit more",
-                    description: "Save \(gap.formatted(.currency(code: currencyCode))) more to reach 10%",
+                    description: "Save \(gap.formatted(.currency(code: currencyCode))) more to reach 10%.",
                     why: "Target savings is 10% of your income.",
                     severity: .info,
                     actionable: true
@@ -389,7 +509,7 @@ struct PredictiveInsightsEngine {
             insights.append(Insight(
                 type: .savingsOpportunity,
                 title: "Lots of small purchases",
-                description: "\(smallPurchases.count) items under $20 add up to \(total.formatted(.currency(code: currencyCode)))",
+                description: "\(smallPurchases.count) items under $20 add up to \(total.formatted(.currency(code: currencyCode))).",
                 severity: .info,
                 actionable: true
             ))
@@ -421,16 +541,21 @@ struct PredictiveInsightsEngine {
 
         for (payee, txs) in grouped where txs.count >= 3 {
             let sortedTxs = txs.sorted { $0.date < $1.date }
-            let intervals = zip(sortedTxs.dropFirst(), sortedTxs).map {
+            let intervals = zip(sortedTxs, sortedTxs.dropFirst()).map {
                 $1.date.timeIntervalSince($0.date) / (24 * 3600) // Days between
             }
 
-            let avgDaysBetween = intervals.reduce(0, +) / Double(intervals.count)
+            guard let monthlyCheck = intervalsLookMonthly(intervals) else { continue }
 
             // Monthly bill (25-35 days interval)
-            if avgDaysBetween > 25 && avgDaysBetween < 35, let lastTx = sortedTxs.last {
-                let nextExpectedDate = Calendar.current.date(byAdding: .day, value: Int(avgDaysBetween), to: lastTx.date) ?? Date()
-                let daysUntil = Calendar.current.dateComponents([.day], from: Date(), to: nextExpectedDate).day ?? 0
+            if monthlyCheck.isMonthly, let lastTx = sortedTxs.last {
+                // Avoid labeling variable amounts as "usually $X".
+                guard amountLooksStable(sortedTxs.map(\.amount)) else { continue }
+
+                let calendar = Calendar.current
+                let nextExpectedDate = calendar.date(byAdding: .day, value: monthlyCheck.medianDays, to: lastTx.date) ?? Date()
+                let now = Date()
+                let daysUntil = calendar.dateComponents([.day], from: calendar.startOfDay(for: now), to: calendar.startOfDay(for: nextExpectedDate)).day ?? 0
 
                 if daysUntil > 0 && daysUntil <= 7 { // Bill due within 7 days
                     let avgAmount = sortedTxs.reduce(Decimal(0)) { $0 + abs($1.amount) } / Decimal(sortedTxs.count)
@@ -439,9 +564,10 @@ struct PredictiveInsightsEngine {
                     insights.append(Insight(
                         type: .upcomingBill,
                         title: "\(displayPayee) coming soon",
-                        description: "Usually \(avgAmount.formatted(.currency(code: currencyCode))) in \(daysUntil) day\(daysUntil == 1 ? "" : "s")",
+                        description: "Usually \(avgAmount.formatted(.currency(code: currencyCode))) in \(daysUntil) day\(daysUntil == 1 ? "" : "s").",
+                        why: "Based on \(sortedTxs.count) payments about every \(monthlyCheck.medianDays) days.",
                         severity: .info,
-                        actionable: false,
+                        actionable: true,
                         relatedPayee: displayPayee
                     ))
                 }
@@ -461,25 +587,43 @@ struct PredictiveInsightsEngine {
         let previousStart = comparison.start
         let previousEnd = comparison.endExclusive
 
-        var descriptor = FetchDescriptor<Transaction>()
-        descriptor.predicate = #Predicate<Transaction> { tx in
-            tx.date >= previousStart &&
-            tx.date < previousEnd &&
-            tx.amount < 0 &&
-            tx.kindRawValue == "Standard"
+        let standardRaw = TransactionKind.standard.rawValue
+        let descriptor = FetchDescriptor<Transaction>(
+            predicate: #Predicate { tx in
+                tx.date >= previousStart &&
+                tx.date < previousEnd &&
+                tx.kindRawValue == standardRaw
+            }
+        )
+
+        guard let previousTxs = try? modelContext.fetch(descriptor) else { return insights }
+
+        let currentOutflowTotal = expenseOutflowTotal(transactions: transactions)
+        let previousOutflowTotal = expenseOutflowTotal(transactions: previousTxs)
+
+        let currentAmount = roundedCurrency(currentOutflowTotal)
+        let previousAmount = roundedCurrency(previousOutflowTotal)
+
+        guard max(currentAmount, previousAmount) >= 50 else { return insights }
+
+        let currentValue: Decimal
+        let previousValue: Decimal
+        switch comparison.kind {
+        case .month, .year:
+            currentValue = currentAmount
+            previousValue = previousAmount
+        case .rolling:
+            let currentDays = daysInclusive(from: dateRange.0, to: dateRange.1, calendar: calendar)
+            let previousDays = daysInclusive(from: previousStart, to: previousEnd.addingTimeInterval(-1), calendar: calendar)
+            currentValue = currentAmount / Decimal(currentDays)
+            previousValue = previousAmount / Decimal(previousDays)
         }
 
-        guard let rawPreviousTxs = try? modelContext.fetch(descriptor) else { return insights }
-        let previousTxs = rawPreviousTxs.filter { $0.account?.isTrackingOnly != true }
+        let delta = currentValue - previousValue
+        if abs(delta) <= 0.01 { return insights }
 
-        let currentSpending = transactions
-            .filter { $0.amount < 0 && $0.kind == .standard && $0.account?.isTrackingOnly != true }
-            .reduce(Decimal(0)) { $0 + abs($1.amount) }
-
-        let previousSpending = previousTxs.reduce(Decimal(0)) { $0 + abs($1.amount) }
-
-        if previousSpending > 0 {
-            let change = Double(truncating: ((currentSpending - previousSpending) / previousSpending) as NSNumber)
+        if previousValue > 0 {
+            let change = Double(truncating: (delta / previousValue) as NSNumber)
 
             if abs(change) > 0.15 { // 15% change
                 let direction = change > 0 ? "up" : "down"
@@ -489,7 +633,7 @@ struct PredictiveInsightsEngine {
                 insights.append(Insight(
                     type: .spendingTrend,
                     title: "Spending is \(direction) \(percent)%",
-                    description: "\(currentSpending.formatted(.currency(code: currencyCode))) vs \(previousSpending.formatted(.currency(code: currencyCode))) \(comparison.label)",
+                    description: "\(currentAmount.formatted(.currency(code: currencyCode))) vs \(previousAmount.formatted(.currency(code: currencyCode))) \(comparison.label).",
                     why: "Compared to \(comparison.label) (\(formattedShortDateRange(start: previousStart, endExclusive: previousEnd, calendar: calendar))).",
                     severity: severity,
                     actionable: change > 0
@@ -505,44 +649,55 @@ struct PredictiveInsightsEngine {
     private func analyzeIncomeVariation(transactions: [Transaction], dateRange: (Date, Date), currencyCode: String) -> [Insight] {
         var insights: [Insight] = []
 
-        // Filter income transactions (positive amounts with income category type)
-        let currentIncome = transactions.filter { tx in
-            guard tx.amount > 0 else { return false }
-            return tx.kind == .standard &&
-                tx.account?.isTrackingOnly != true &&
-                tx.category?.group?.type == .income
-        }.reduce(Decimal(0)) { $0 + $1.amount }
+        let currentIncomeTotal = incomeTotal(transactions: transactions)
 
         let calendar = Calendar.current
         let comparison = previousComparisonRange(for: (start: dateRange.0, end: dateRange.1), calendar: calendar)
         let previousStart = comparison.start
         let previousEnd = comparison.endExclusive
 
+        let standardRaw = TransactionKind.standard.rawValue
         let descriptor = FetchDescriptor<Transaction>(
             predicate: #Predicate { tx in
                 tx.date >= previousStart &&
                 tx.date < previousEnd &&
-                tx.amount > 0 &&
-                tx.kindRawValue == "Standard"
+                tx.kindRawValue == standardRaw
             }
         )
 
-        guard let rawPreviousTxs = try? modelContext.fetch(descriptor) else { return insights }
-        let previousTxs = rawPreviousTxs.filter { $0.account?.isTrackingOnly != true }
+        guard let previousTxs = try? modelContext.fetch(descriptor) else { return insights }
+        let previousIncomeTotal = incomeTotal(transactions: previousTxs)
 
-        let previousIncome = previousTxs
-            .filter { $0.category?.group?.type == .income }
-            .reduce(Decimal(0)) { $0 + $1.amount }
+        let currentAmount = roundedCurrency(currentIncomeTotal)
+        let previousAmount = roundedCurrency(previousIncomeTotal)
 
-        if previousIncome > 0 && currentIncome > 0 {
-            let change = Double(truncating: ((currentIncome - previousIncome) / previousIncome) as NSNumber)
+        guard max(currentAmount, previousAmount) >= 50 else { return insights }
+
+        let currentValue: Decimal
+        let previousValue: Decimal
+        switch comparison.kind {
+        case .month, .year:
+            currentValue = currentAmount
+            previousValue = previousAmount
+        case .rolling:
+            let currentDays = daysInclusive(from: dateRange.0, to: dateRange.1, calendar: calendar)
+            let previousDays = daysInclusive(from: previousStart, to: previousEnd.addingTimeInterval(-1), calendar: calendar)
+            currentValue = currentAmount / Decimal(currentDays)
+            previousValue = previousAmount / Decimal(previousDays)
+        }
+
+        let delta = currentValue - previousValue
+        if abs(delta) <= 0.01 { return insights }
+
+        if previousValue > 0, currentValue > 0 {
+            let change = Double(truncating: (delta / previousValue) as NSNumber)
             let percent = Int((abs(change) * 100).rounded())
 
             if change < -0.10 { // 10% decrease
                 insights.append(Insight(
                     type: .incomeVariation,
                     title: "Income is down \(percent)%",
-                    description: "\(currentIncome.formatted(.currency(code: currencyCode))) vs \(previousIncome.formatted(.currency(code: currencyCode))) \(comparison.label)",
+                    description: "\(currentAmount.formatted(.currency(code: currencyCode))) vs \(previousAmount.formatted(.currency(code: currencyCode))) \(comparison.label).",
                     why: "Compared to \(comparison.label) (\(formattedShortDateRange(start: previousStart, endExclusive: previousEnd, calendar: calendar))).",
                     severity: .warning,
                     actionable: true
@@ -550,13 +705,22 @@ struct PredictiveInsightsEngine {
             } else if change > 0.10 { // 10% increase
                 insights.append(Insight(
                     type: .incomeVariation,
-                    title: "Income is up \(Int((change * 100).rounded()))%",
-                    description: "\(currentIncome.formatted(.currency(code: currencyCode))) vs \(previousIncome.formatted(.currency(code: currencyCode))) \(comparison.label)",
+                    title: "Income is up \(percent)%",
+                    description: "\(currentAmount.formatted(.currency(code: currencyCode))) vs \(previousAmount.formatted(.currency(code: currencyCode))) \(comparison.label).",
                     why: "Compared to \(comparison.label) (\(formattedShortDateRange(start: previousStart, endExclusive: previousEnd, calendar: calendar))).",
                     severity: .info,
                     actionable: false
                 ))
             }
+        } else if previousAmount > 0, currentAmount == 0 {
+            insights.append(Insight(
+                type: .incomeVariation,
+                title: "Income dropped to zero",
+                description: "No income found for this period. It was \(previousAmount.formatted(.currency(code: currencyCode))) \(comparison.label).",
+                why: "Compared to \(comparison.label) (\(formattedShortDateRange(start: previousStart, endExclusive: previousEnd, calendar: calendar))).",
+                severity: .warning,
+                actionable: true
+            ))
         }
 
         return insights

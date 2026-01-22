@@ -12,7 +12,11 @@ final class DebtAccount: DemoDataTrackable {
     var colorHex: String
     var notes: String?
     var createdDate: Date
+    var sortOrder: Int = 0
     var isDemoData: Bool = false
+
+    // Optional link to an existing Account (credit card, loan, etc.)
+    var linkedAccount: Account?
 
     init(
         name: String,
@@ -23,6 +27,8 @@ final class DebtAccount: DemoDataTrackable {
         extraPayment: Decimal = 0,
         colorHex: String = "FF3B30",
         notes: String? = nil,
+        sortOrder: Int = 0,
+        linkedAccount: Account? = nil,
         isDemoData: Bool = false
     ) {
         self.name = name
@@ -33,6 +39,8 @@ final class DebtAccount: DemoDataTrackable {
         self.extraPayment = extraPayment
         self.colorHex = colorHex
         self.notes = notes
+        self.sortOrder = sortOrder
+        self.linkedAccount = linkedAccount
         self.createdDate = Date()
         self.isDemoData = isDemoData
     }
@@ -43,13 +51,27 @@ final class DebtAccount: DemoDataTrackable {
         minimumPayment + extraPayment
     }
 
+    /// Returns the effective current balance - synced from linked account if available, otherwise the manual currentBalance
+    var effectiveBalance: Decimal {
+        if let account = linkedAccount {
+            // Account balances for debt accounts are negative, so we take the absolute value
+            return abs(account.balance)
+        }
+        return currentBalance
+    }
+
+    /// Indicates if this debt is synced with a linked account
+    var isSyncedWithAccount: Bool {
+        linkedAccount != nil
+    }
+
     var isPaidOff: Bool {
-        currentBalance <= 0
+        effectiveBalance <= 0
     }
 
     var payoffProgress: Double {
         guard originalBalance > 0 else { return 1.0 }
-        let paid = originalBalance - currentBalance
+        let paid = originalBalance - effectiveBalance
         return min(1.0, max(0.0, Double(truncating: (paid / originalBalance) as NSNumber)))
     }
 
@@ -67,23 +89,23 @@ final class DebtAccount: DemoDataTrackable {
 
     /// Calculates months remaining to pay off the debt
     var monthsRemaining: Int? {
-        guard currentBalance > 0, totalMonthlyPayment > 0 else { return isPaidOff ? 0 : nil }
+        guard effectiveBalance > 0, totalMonthlyPayment > 0 else { return isPaidOff ? 0 : nil }
 
         let monthlyRate = monthlyInterestRate
 
         // If payment is less than monthly interest, debt will never be paid off
-        let monthlyInterest = currentBalance * monthlyRate
+        let monthlyInterest = effectiveBalance * monthlyRate
         guard totalMonthlyPayment > monthlyInterest else { return nil }
 
         if monthlyRate == 0 {
             // No interest - simple division
-            return Int(ceil(Double(truncating: (currentBalance / totalMonthlyPayment) as NSNumber)))
+            return Int(ceil(Double(truncating: (effectiveBalance / totalMonthlyPayment) as NSNumber)))
         }
 
         // Standard amortization formula: n = -log(1 - (r * P) / M) / log(1 + r)
         // where P = principal, r = monthly rate, M = monthly payment
         let r = Double(truncating: monthlyRate as NSNumber)
-        let P = Double(truncating: currentBalance as NSNumber)
+        let P = Double(truncating: effectiveBalance as NSNumber)
         let M = Double(truncating: totalMonthlyPayment as NSNumber)
 
         let numerator = log(1 - (r * P) / M)
@@ -105,7 +127,7 @@ final class DebtAccount: DemoDataTrackable {
     var projectedTotalInterest: Decimal? {
         guard let months = monthsRemaining, months > 0 else { return isPaidOff ? 0 : nil }
 
-        var balance = currentBalance
+        var balance = effectiveBalance
         var totalInterest: Decimal = 0
         let monthlyRate = monthlyInterestRate
 
@@ -145,7 +167,7 @@ final class DebtAccount: DemoDataTrackable {
         }
 
         // Payment too low warning
-        let monthlyInterest = currentBalance * monthlyInterestRate
+        let monthlyInterest = effectiveBalance * monthlyInterestRate
         if totalMonthlyPayment <= monthlyInterest {
             return "Payment doesn't cover interest"
         }

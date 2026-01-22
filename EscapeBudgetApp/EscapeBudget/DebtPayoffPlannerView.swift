@@ -3,14 +3,19 @@ import SwiftData
 
 struct DebtPayoffPlannerView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \DebtAccount.createdDate, order: .reverse) private var debts: [DebtAccount]
+    @Query(sort: \DebtAccount.sortOrder) private var debts: [DebtAccount]
     @AppStorage("currencyCode") private var currencyCode = "USD"
+    @AppStorage("isDemoMode") private var isDemoMode = false
     @Environment(\.appColorMode) private var appColorMode
 
     @State private var showingAddDebt = false
     @State private var showingQuickPayment = false
     @State private var selectedDebtForPayment: DebtAccount?
     @State private var paymentAmount = ""
+    @State private var hasCheckedDemoData = false
+    @State private var debtToDelete: DebtAccount?
+    @State private var showingDeleteConfirmation = false
+    @State private var isEditing = false
 
     var body: some View {
         Group {
@@ -102,20 +107,32 @@ struct DebtPayoffPlannerView: View {
                                         .tint(AppColors.success(for: appColorMode))
                                     }
                                 }
-                                .swipeActions(edge: .trailing) {
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
-                                        deleteDebt(debt)
+                                        debtToDelete = debt
+                                        showingDeleteConfirmation = true
                                     } label: {
                                         Label("Delete", systemImage: "trash")
                                     }
                                 }
                         }
+                        .onMove(perform: moveDebts)
                     }
                 }
                 .coordinateSpace(name: "DebtPayoffPlannerView.scroll")
+                .environment(\.editMode, .constant(isEditing ? .active : .inactive))
             }
         }
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                if !debts.isEmpty {
+                    Button(isEditing ? "Done" : "Reorder") {
+                        withAnimation {
+                            isEditing.toggle()
+                        }
+                    }
+                }
+            }
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { showingAddDebt = true }) {
                     Label("Add Debt", systemImage: "plus")
@@ -137,12 +154,30 @@ struct DebtPayoffPlannerView: View {
         } message: {
             Text("How much did you pay?")
         }
+        .alert("Delete Debt?", isPresented: $showingDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {
+                debtToDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                if let debt = debtToDelete {
+                    deleteDebt(debt)
+                }
+                debtToDelete = nil
+            }
+        } message: {
+            if let debt = debtToDelete {
+                Text("Are you sure you want to delete \"\(debt.name)\"? This action cannot be undone.")
+            }
+        }
+        .onAppear {
+            seedDemoDataIfNeeded()
+        }
     }
 
     // MARK: - Computed Properties
 
     private var totalDebt: Decimal {
-        debts.reduce(0) { $0 + $1.currentBalance }
+        debts.reduce(0) { $0 + $1.effectiveBalance }
     }
 
     private var totalMonthlyPayment: Decimal {
@@ -165,6 +200,18 @@ struct DebtPayoffPlannerView: View {
 
     private func deleteDebt(_ debt: DebtAccount) {
         modelContext.delete(debt)
+        try? modelContext.save()
+    }
+
+    private func moveDebts(from source: IndexSet, to destination: Int) {
+        var reorderedDebts = debts
+        reorderedDebts.move(fromOffsets: source, toOffset: destination)
+
+        for (index, debt) in reorderedDebts.enumerated() {
+            debt.sortOrder = index
+        }
+
+        try? modelContext.save()
     }
 
     private func recordPayment() {
@@ -179,6 +226,13 @@ struct DebtPayoffPlannerView: View {
         paymentAmount = ""
         selectedDebtForPayment = nil
 
+        try? modelContext.save()
+    }
+
+    private func seedDemoDataIfNeeded() {
+        guard isDemoMode, !hasCheckedDemoData else { return }
+        hasCheckedDemoData = true
+        DemoDataService.ensureDemoDebtAccounts(modelContext: modelContext)
         try? modelContext.save()
     }
 }
@@ -223,13 +277,26 @@ struct DebtRow: View {
 
                 // Content
                 VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-                    Text(debt.name)
-                        .appSectionTitleText()
+                    HStack {
+                        Text(debt.name)
+                            .appSectionTitleText()
+                        if debt.linkedAccount != nil {
+                            Image(systemName: "link")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
 
                     HStack(spacing: AppTheme.Spacing.xSmall) {
-                        Text(debt.currentBalance, format: .currency(code: currencyCode))
+                        Text(debt.effectiveBalance, format: .currency(code: currencyCode))
                             .appSecondaryBodyText()
                             .foregroundStyle(.secondary)
+
+                        if debt.isSyncedWithAccount {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
 
                         if !debt.isPaidOff {
                             Text("•")
@@ -258,5 +325,5 @@ struct DebtRow: View {
     NavigationStack {
         DebtPayoffPlannerView()
     }
-    .modelContainer(for: [DebtAccount.self], inMemory: true)
+    .modelContainer(for: [DebtAccount.self, Account.self], inMemory: true)
 }

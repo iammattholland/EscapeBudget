@@ -214,6 +214,237 @@ final class EscapeBudgetUITests: XCTestCase {
         ruleRow.tap()
         XCTAssertFalse(app.buttons["autoRuleEditor.exceptionRemoveButton.amzn_123"].exists)
     }
+
+    @MainActor
+    func testHomeInsightFixUncategorizedOpensCategorizeSheet() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["ui_testing"]
+        app.launch()
+
+        app.selectAppTab(named: "Home")
+
+        let row = app.otherElements["overviewInsight.row.uncategorized"].firstMatch
+        app.scrollToTop()
+        app.scrollToMakeHittable(row)
+        XCTAssertTrue(row.waitForExistence(timeout: 25))
+
+        let fixButton = row.buttons["overviewInsight.action.uncategorized"].firstMatch
+        XCTAssertTrue(fixButton.waitForExistence(timeout: 5))
+        fixButton.tap()
+
+        XCTAssertTrue(app.navigationBars["Categorize"].waitForExistence(timeout: 12))
+    }
+
+    @MainActor
+    func testHomeInsightFixRecurringExpenseOpensPayeeAndPrefillsRule() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["ui_testing", "ui_seed_recurring"]
+        app.launch()
+
+        app.selectAppTab(named: "Home")
+
+        let row = app.otherElements["overviewInsight.row.recurringExpenseDetected__payee_netflix"].firstMatch
+        app.scrollToTop()
+        app.scrollToMakeHittable(row)
+        XCTAssertTrue(row.waitForExistence(timeout: 25))
+
+        let fixButton = row.buttons["overviewInsight.action.recurringExpenseDetected__payee_netflix"].firstMatch
+        XCTAssertTrue(fixButton.waitForExistence(timeout: 5))
+        fixButton.tap()
+
+        XCTAssertTrue(app.navigationBars["Netflix"].waitForExistence(timeout: 12))
+        let createRule = app.buttons["Create Rule"].firstMatch
+        XCTAssertTrue(createRule.waitForExistence(timeout: 5))
+        createRule.tap()
+
+        XCTAssertTrue(app.navigationBars["New Rule"].waitForExistence(timeout: 12))
+
+        let payeeField = app.textFields["autoRuleEditor.matchPayeeValue"].firstMatch
+        XCTAssertTrue(payeeField.waitForExistence(timeout: 5))
+        XCTAssertEqual(payeeField.value as? String, "netflix")
+
+        let nameField = app.textFields["autoRuleEditor.name"].firstMatch
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+        XCTAssertEqual(nameField.value as? String, "Rule for Netflix")
+    }
+
+    @MainActor
+    func testHomeInsightReviewSpendingTrendOpensExpensesDetail() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["ui_testing", "ui_seed_trend"]
+        app.launch()
+
+        app.selectAppTab(named: "Home")
+
+        let row = app.otherElements["overviewInsight.row.spendingTrend"].firstMatch
+        app.scrollToTop()
+        app.scrollToMakeHittable(row)
+        XCTAssertTrue(row.waitForExistence(timeout: 25))
+
+        let reviewButton = row.buttons["overviewInsight.action.spendingTrend"].firstMatch
+        XCTAssertTrue(reviewButton.waitForExistence(timeout: 5))
+        reviewButton.tap()
+
+        XCTAssertTrue(app.navigationBars["Expenses"].waitForExistence(timeout: 12))
+    }
+
+    @MainActor
+    func testHomeInsightReviewIncomeVariationOpensIncomeDetail() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["ui_testing", "ui_seed_income_variation"]
+        app.launch()
+
+        app.selectAppTab(named: "Home")
+
+        let row = app.otherElements["overviewInsight.row.incomeVariation"].firstMatch
+        app.scrollToTop()
+        app.scrollToMakeHittable(row)
+        XCTAssertTrue(row.waitForExistence(timeout: 25))
+
+        let reviewButton = row.buttons["overviewInsight.action.incomeVariation"].firstMatch
+        XCTAssertTrue(reviewButton.waitForExistence(timeout: 5))
+        reviewButton.tap()
+
+        XCTAssertTrue(app.navigationBars["Income"].waitForExistence(timeout: 12))
+    }
+
+    @MainActor
+    func testHomeInsightFixBudgetProjectionOpensBudgetFixSheet() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["ui_testing", "ui_seed_budget_projection"]
+        app.launch()
+
+        app.selectAppTab(named: "Home")
+
+        let row = app.otherElements["overviewInsight.row.budgetProjection__cat_Groceries"].firstMatch
+        app.scrollToTop()
+        app.scrollToMakeHittable(row)
+        XCTAssertTrue(row.waitForExistence(timeout: 25))
+
+        let fixButton = row.buttons["overviewInsight.action.budgetProjection__cat_Groceries"].firstMatch
+        XCTAssertTrue(fixButton.waitForExistence(timeout: 5))
+        fixButton.tap()
+
+        XCTAssertTrue(app.navigationBars["Groceries"].waitForExistence(timeout: 12))
+    }
+
+    @MainActor
+    func testHomeInsightFixUnusualSpendingOpensCategoryTransactions() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["ui_testing", "ui_seed_unusual_spending"]
+        app.launch()
+
+        app.selectAppTab(named: "Home")
+
+        let row = app.otherElements.matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "overviewInsight.row.unusualSpending")
+        ).firstMatch
+        app.scrollToTop()
+        app.scrollToMakeHittable(row)
+        XCTAssertTrue(row.waitForExistence(timeout: 60))
+
+        let fixButton = row.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH %@", "overviewInsight.action.unusualSpending")
+        ).firstMatch
+        XCTAssertTrue(fixButton.waitForExistence(timeout: 5))
+        fixButton.tap()
+
+        XCTAssertTrue(app.navigationBars["Groceries"].waitForExistence(timeout: 12))
+    }
+
+    @MainActor
+    func testHomeInsightReviewSavingsOpportunityOpensExpensesDetail() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["ui_testing", "ui_seed_savings_opportunity"]
+        app.launch()
+
+        app.selectAppTab(named: "Home")
+
+        let row = app.otherElements["overviewInsight.row.savingsOpportunity"].firstMatch
+        app.scrollToTop()
+        app.scrollToMakeHittable(row)
+        XCTAssertTrue(row.waitForExistence(timeout: 25))
+
+        let reviewButton = row.buttons["overviewInsight.action.savingsOpportunity"].firstMatch
+        XCTAssertTrue(reviewButton.waitForExistence(timeout: 5))
+        reviewButton.tap()
+
+        XCTAssertTrue(app.navigationBars["Expenses"].waitForExistence(timeout: 12))
+    }
+
+    @MainActor
+    func testHomeInsightReviewUpcomingBillOpensPayeeTransactions() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["ui_testing", "ui_seed_upcoming_bill"]
+        app.launch()
+
+        app.selectAppTab(named: "Home")
+
+        let row = app.otherElements["overviewInsight.row.upcomingBill__payee_upcoming_seed"].firstMatch
+        app.scrollToTop()
+        app.scrollToMakeHittable(row)
+        XCTAssertTrue(row.waitForExistence(timeout: 25))
+
+        let reviewButton = row.buttons["overviewInsight.action.upcomingBill__payee_upcoming_seed"].firstMatch
+        XCTAssertTrue(reviewButton.waitForExistence(timeout: 5))
+        reviewButton.tap()
+
+        XCTAssertTrue(app.navigationBars["Upcoming Seed"].waitForExistence(timeout: 12))
+    }
+
+    @MainActor
+    func testHomeInsightUpcomingBillCreateRulePrefillsEditor() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["ui_testing", "ui_seed_upcoming_bill"]
+        app.launch()
+
+        app.selectAppTab(named: "Home")
+
+        let row = app.otherElements["overviewInsight.row.upcomingBill__payee_upcoming_seed"].firstMatch
+        app.scrollToTop()
+        app.scrollToMakeHittable(row)
+        XCTAssertTrue(row.waitForExistence(timeout: 25))
+
+        let reviewButton = row.buttons["overviewInsight.action.upcomingBill__payee_upcoming_seed"].firstMatch
+        XCTAssertTrue(reviewButton.waitForExistence(timeout: 5))
+        reviewButton.tap()
+
+        XCTAssertTrue(app.navigationBars["Upcoming Seed"].waitForExistence(timeout: 12))
+
+        let createRule = app.buttons["Create Rule"].firstMatch
+        XCTAssertTrue(createRule.waitForExistence(timeout: 5))
+        createRule.tap()
+
+        XCTAssertTrue(app.navigationBars["New Rule"].waitForExistence(timeout: 12))
+
+        let payeeField = app.textFields["autoRuleEditor.matchPayeeValue"].firstMatch
+        XCTAssertTrue(payeeField.waitForExistence(timeout: 5))
+        XCTAssertEqual(payeeField.value as? String, "upcoming seed")
+
+        let nameField = app.textFields["autoRuleEditor.name"].firstMatch
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+        XCTAssertEqual(nameField.value as? String, "Rule for Upcoming Seed")
+    }
+
+    @MainActor
+    func testHomeInsightUncategorizedWorksOnIPadLayout() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["ui_testing"]
+        app.launch()
+
+        app.selectAppTab(named: "Home")
+
+        let row = app.otherElements["overviewInsight.row.uncategorized"].firstMatch
+        app.scrollToTop()
+        app.scrollToMakeHittable(row)
+        XCTAssertTrue(row.waitForExistence(timeout: 25))
+
+        let fixButton = row.buttons["overviewInsight.action.uncategorized"].firstMatch
+        XCTAssertTrue(fixButton.waitForExistence(timeout: 5))
+        fixButton.tap()
+
+        XCTAssertTrue(app.navigationBars["Categorize"].waitForExistence(timeout: 12))
+    }
 }
 
 private extension XCUIElement {
@@ -247,6 +478,18 @@ private extension XCUIElement {
 }
 
 private extension XCUIApplication {
+    func selectAppTab(named name: String) {
+        if self.tabBars.buttons[name].waitForExistence(timeout: 3) {
+            self.tabBars.buttons[name].tap()
+            return
+        }
+
+        let candidate = self.tables.cells.staticTexts[name].firstMatch
+        if candidate.waitForExistence(timeout: 5) {
+            candidate.tap()
+        }
+    }
+
     func dismissKeyboardIfPresent() {
         guard self.keyboards.firstMatch.exists else { return }
 

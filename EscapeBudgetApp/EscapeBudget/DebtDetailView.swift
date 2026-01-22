@@ -57,9 +57,23 @@ struct DebtDetailView: View {
             // Balance Section
             Section("Balance") {
                 LabeledContent("Current Balance") {
-                    Text(debt.currentBalance, format: .currency(code: currencyCode))
-                        .fontWeight(.semibold)
-                        .foregroundStyle(debt.isPaidOff ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
+                    HStack(spacing: AppTheme.Spacing.xSmall) {
+                        Text(debt.effectiveBalance, format: .currency(code: currencyCode))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(debt.isPaidOff ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
+                        if debt.isSyncedWithAccount {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                if debt.isSyncedWithAccount, let account = debt.linkedAccount {
+                    LabeledContent("Synced from") {
+                        Text(account.name)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 LabeledContent("Original Balance") {
@@ -67,7 +81,7 @@ struct DebtDetailView: View {
                 }
 
                 LabeledContent("Amount Paid") {
-                    Text(debt.originalBalance - debt.currentBalance, format: .currency(code: currencyCode))
+                    Text(debt.originalBalance - debt.effectiveBalance, format: .currency(code: currencyCode))
                         .foregroundStyle(AppColors.success(for: appColorMode))
                 }
             }
@@ -172,7 +186,7 @@ struct DebtWhatIfView: View {
     @State private var extraPaymentAmount: Double = 0
 
     private var maxExtraPayment: Double {
-        min(500, Double(truncating: debt.currentBalance as NSNumber))
+        min(500, Double(truncating: debt.effectiveBalance as NSNumber))
     }
 
     private var projection: DebtPayoffCalculator.PayoffProjection? {
@@ -180,7 +194,7 @@ struct DebtWhatIfView: View {
         let totalPayment = debt.totalMonthlyPayment + extra
 
         return DebtPayoffCalculator.calculatePayoff(
-            balance: debt.currentBalance,
+            balance: debt.effectiveBalance,
             interestRate: debt.interestRate,
             monthlyPayment: totalPayment
         )
@@ -188,7 +202,7 @@ struct DebtWhatIfView: View {
 
     private var originalProjection: DebtPayoffCalculator.PayoffProjection? {
         DebtPayoffCalculator.calculatePayoff(
-            balance: debt.currentBalance,
+            balance: debt.effectiveBalance,
             interestRate: debt.interestRate,
             monthlyPayment: debt.totalMonthlyPayment
         )

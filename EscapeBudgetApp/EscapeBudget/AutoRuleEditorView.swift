@@ -10,6 +10,37 @@ struct AutoRuleEditorView: View {
     @Query(sort: \TransactionTag.order) private var tags: [TransactionTag]
 
     let rule: AutoRule?
+    let prefill: Prefill?
+
+    struct Prefill: Hashable, Identifiable {
+        let id = UUID()
+        var name: String?
+        var matchPayeeCondition: PayeeMatchCondition
+        var matchPayeeValue: String
+
+        init(
+            name: String? = nil,
+            matchPayeeCondition: PayeeMatchCondition = .contains,
+            matchPayeeValue: String
+        ) {
+            self.name = name
+            self.matchPayeeCondition = matchPayeeCondition
+            self.matchPayeeValue = matchPayeeValue
+        }
+
+        // Hashable conformance excludes id for value-based equality
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(name)
+            hasher.combine(matchPayeeCondition)
+            hasher.combine(matchPayeeValue)
+        }
+
+        static func == (lhs: Prefill, rhs: Prefill) -> Bool {
+            lhs.name == rhs.name &&
+            lhs.matchPayeeCondition == rhs.matchPayeeCondition &&
+            lhs.matchPayeeValue == rhs.matchPayeeValue
+        }
+    }
 
     // Form State
     @State private var name: String = ""
@@ -53,6 +84,7 @@ struct AutoRuleEditorView: View {
     @State private var payeeExceptionToRemove: String?
     @State private var payeeExceptionPayeeInput: String = ""
     @State private var excludedPayeeKeysDraft: [String] = []
+    @State private var didApplyPrefill = false
 
     private var isEditing: Bool { rule != nil }
 
@@ -99,6 +131,11 @@ struct AutoRuleEditorView: View {
             .replacingOccurrences(of: " ", with: "_")
             .replacingOccurrences(of: "[^a-zA-Z0-9_]", with: "", options: .regularExpression)
         return "autoRuleEditor.exceptionRemoveButton.\(safe)"
+    }
+
+    init(rule: AutoRule? = nil, prefill: Prefill? = nil) {
+        self.rule = rule
+        self.prefill = prefill
     }
 
     var body: some View {
@@ -421,6 +458,7 @@ struct AutoRuleEditorView: View {
             }
             .onAppear {
                 loadRuleData()
+                applyPrefillIfNeeded()
             }
             .sheet(isPresented: $showingPreview) {
                 PreviewMatchesSheet(
@@ -521,6 +559,21 @@ struct AutoRuleEditorView: View {
             actionStatusEnabled = true
             actionStatus = status
         }
+    }
+
+    private func applyPrefillIfNeeded() {
+        guard !isEditing else { return }
+        guard let prefill, !didApplyPrefill else { return }
+        didApplyPrefill = true
+
+        if let name = prefill.name, self.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            self.name = name
+        }
+
+        matchPayeeEnabled = true
+        matchPayeeCondition = prefill.matchPayeeCondition
+        matchPayeeValue = prefill.matchPayeeValue
+        matchPayeeCaseSensitive = false
     }
 
     private func saveRule() {
