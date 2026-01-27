@@ -302,6 +302,9 @@ struct SpendingForecastView: View {
     private var emptyForecastView: some View {
         List {
             ScrollOffsetReader(coordinateSpace: scrollCoordinateSpace, id: scrollCoordinateSpace)
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
             EmptyDataCard(
                 systemImage: "chart.line.uptrend.xyaxis",
                 title: "No Forecast",
@@ -316,7 +319,7 @@ struct SpendingForecastView: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
-        .background(Color(.systemBackground))
+        .appLightModePageBackground()
         .coordinateSpace(name: scrollCoordinateSpace)
     }
 

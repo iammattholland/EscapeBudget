@@ -29,14 +29,23 @@ extension View {
         self
             .padding(.horizontal, isCompact ? AppTheme.Spacing.tight : AppTheme.Spacing.chromePaddingHorizontal)
             .padding(.vertical, isCompact ? AppTheme.Spacing.chromePaddingVerticalCompact : AppTheme.Spacing.chromePaddingVertical)
+    }
+
+    func topMenuBarStyle(isCompact: Bool = false) -> some View {
+        self
+            .padding(.top, isCompact ? AppTheme.Spacing.nano : AppTheme.Spacing.micro)
+            .padding(.bottom, isCompact ? AppTheme.Spacing.nano : AppTheme.Spacing.micro)
+            .frame(maxWidth: AppTheme.Layout.topMenuMaxWidth)
             .background(
                 RoundedRectangle(cornerRadius: isCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
-                    .fill(.ultraThinMaterial)
+                    .fill(Color(.systemBackground))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: isCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(AppTheme.Stroke.subtleOpacity), lineWidth: AppTheme.Stroke.subtle)
+                    .strokeBorder(Color(.separator), lineWidth: AppTheme.Stroke.subtle)
             )
+            .padding(.horizontal, AppTheme.Spacing.screenHorizontal)
+            .frame(maxWidth: .infinity)
     }
 }
 

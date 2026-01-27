@@ -126,7 +126,7 @@ struct RetirementView: View {
 	                }
 	                .listStyle(.plain)
 	                .scrollContentBackground(.hidden)
-	                .background(Color(.systemBackground))
+	                .appLightModePageBackground()
                     .coordinateSpace(name: "RetirementView.scroll")
 	            } else {
 	                ScrollView {

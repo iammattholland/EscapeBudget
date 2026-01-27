@@ -26,6 +26,14 @@ struct ToolsView: View {
 
                 Section("Available Now") {
                     NavigationLink {
+                        SpendingChallengesView()
+                    } label: {
+                        ToolComingItem(
+                            title: "Spending Challenges",
+                            subtitle: "Build better habits with verifiable goals tracked by your transactions."
+                        )
+                    }
+                    NavigationLink {
                         YearEndReviewView()
                     } label: {
                         ToolComingItem(

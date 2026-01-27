@@ -427,7 +427,7 @@ struct AllTransactionsView: View {
 		        }
 		        .listStyle(.plain)
 		        .scrollContentBackground(.hidden)
-		        .background(Color(.systemBackground))
+		        .appLightModePageBackground()
                 .background(ScrollOffsetEmitter(id: "AllTransactionsView.scroll"))
 	            .coordinateSpace(name: "AllTransactionsView.scroll")
 		    }
@@ -448,7 +448,7 @@ struct AllTransactionsView: View {
 		        }
 		        .listStyle(.plain)
 		        .scrollContentBackground(.hidden)
-		        .background(Color(.systemBackground))
+		        .appLightModePageBackground()
                 .background(ScrollOffsetEmitter(id: "AllTransactionsView.scroll"))
 	            .coordinateSpace(name: "AllTransactionsView.scroll")
 		    }
@@ -914,19 +914,13 @@ private struct TransactionsQueryView: View {
         let startDate = config.startDate
         let endDate = config.endDate
         let payeeName = config.payeeName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let hasMinAmount = config.minAmount != nil
-        let minAmount = config.minAmount ?? 0
-        let hasMaxAmount = config.maxAmount != nil
-        let maxAmount = config.maxAmount ?? 0
         let accountID = config.accountID
 
         _transactions = Query(
             filter: #Predicate<Transaction> { tx in
                 (!useDateRange || (tx.date >= startDate && tx.date <= endDate)) &&
-                (payeeName.isEmpty || tx.payee.localizedCaseInsensitiveContains(payeeName)) &&
-                (accountID == nil || tx.account?.persistentModelID == accountID) &&
-                (!hasMinAmount || tx.amount >= minAmount || tx.amount <= -minAmount) &&
-                (!hasMaxAmount || (tx.amount <= maxAmount && tx.amount >= -maxAmount))
+                (payeeName.isEmpty || tx.payee.localizedStandardContains(payeeName)) &&
+                (accountID == nil || tx.account?.persistentModelID == accountID)
             },
             sort: \Transaction.date,
             order: .reverse

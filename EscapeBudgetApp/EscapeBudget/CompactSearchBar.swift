@@ -23,9 +23,13 @@ struct CompactSearchBar: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, showsBackground ? AppTheme.Spacing.tight : AppTheme.Spacing.micro)
-        .padding(.vertical, showsBackground ? AppTheme.Spacing.xSmall : AppTheme.Spacing.micro)
+        .padding(.horizontal, showsBackground ? AppTheme.Spacing.tight : AppTheme.Spacing.compact)
+        .padding(.vertical, showsBackground ? AppTheme.Spacing.xSmall : AppTheme.Spacing.compact)
         .background(showsBackground ? Color(.secondarySystemFill) : Color.clear)
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
+                .strokeBorder(Color(.separator), lineWidth: AppTheme.Stroke.subtle)
+        )
     }
 }

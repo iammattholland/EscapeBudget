@@ -4,6 +4,9 @@ import SwiftData
 struct ManageView: View {
     @EnvironmentObject private var navigator: AppNavigator
     @EnvironmentObject private var manageNavigator: ManageNavigator
+    @Query private var allTransactions: [Transaction]
+    @Query private var accounts: [Account]
+    @Query(sort: \CategoryGroup.order) private var categoryGroups: [CategoryGroup]
     @State private var transactionsSearchText = ""
     @State private var budgetSearchText = ""
     @State private var accountsSearchText = ""
@@ -20,18 +23,27 @@ struct ManageView: View {
             return $accountsSearchText
         }
     }
+
+    private var shouldShowSearchBar: Bool {
+        switch manageNavigator.selectedSection {
+        case .transactions:
+            return !allTransactions.isEmpty
+        case .budget:
+            return categoryGroups.contains { $0.type == .expense }
+        case .accounts:
+            return !accounts.isEmpty
+        }
+    }
     
     var body: some View {
         NavigationStack {
             manageBody
                 .safeAreaInset(edge: .top, spacing: 0) {
                     VStack(spacing: AppTheme.Spacing.compact) {
-                        Picker("Section", selection: $manageNavigator.selectedSection) {
-                            ForEach(ManageSection.allCases, id: \.self) { section in
-                                Text(section.rawValue).tag(section)
-                            }
-                        }
-                        .pickerStyle(.segmented)
+                        TopChromeTabs(
+                            selection: $manageNavigator.selectedSection,
+                            tabs: ManageSection.allCases.map { .init(id: $0, title: $0.rawValue) }
+                        )
                         .simultaneousGesture(TapGesture().onEnded {
 #if canImport(UIKit)
                             KeyboardUtilities.dismiss()
@@ -42,15 +54,16 @@ struct ManageView: View {
                             KeyboardUtilities.dismiss()
 #endif
                         }
-                        .topChromeSegmentedStyle()
+                        .topMenuBarStyle()
 
-                        CompactSearchBar(text: activeSearchText, placeholder: "Search", showsBackground: false)
-                            .topChromeSegmentedStyle(isCompact: true)
+                        if shouldShowSearchBar {
+                            CompactSearchBar(text: activeSearchText, placeholder: "Search", showsBackground: false)
+                                .topMenuBarStyle(isCompact: true)
+                        }
                     }
-                    .padding(.top, AppTheme.Spacing.topChromeOffset)
-                    .appAdaptiveScreenHorizontalPadding()
                     .padding(.top, AppTheme.Spacing.xSmall)
-                    .padding(.bottom, AppTheme.Spacing.xSmall)
+                    .frame(maxWidth: AppTheme.Layout.topMenuMaxWidth)
+                    .frame(maxWidth: .infinity)
                 }
                 .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
                     let key: String
@@ -69,6 +82,7 @@ struct ManageView: View {
             .withAppLogo()
             .environment(\.demoPillVisible, demoPillVisible)
             .foregroundStyle(.primary)
+            .appLightModePageBackground()
             .sheet(isPresented: $navigator.showingAddTransaction) {
                 TransactionFormView()
             }

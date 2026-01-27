@@ -44,6 +44,7 @@ struct ReviewView: View {
                             tabs: ReportSection.allCases.map { .init(id: $0, title: $0.rawValue) },
                             isCompact: isTopChromeCompact
                         )
+                        .topMenuBarStyle(isCompact: isTopChromeCompact)
 
                         DateRangeFilterHeader(
                             filterMode: $filterMode,
@@ -53,11 +54,11 @@ struct ReviewView: View {
                             isCompact: isTopChromeCompact
                         )
                         .topChromeSegmentedStyle(isCompact: isTopChromeCompact)
+                        .topMenuBarStyle(isCompact: isTopChromeCompact)
                     }
                     .padding(.top, topChromeLargeTitleClearance)
-                    .appAdaptiveScreenHorizontalPadding()
-                    .padding(.top, AppTheme.Spacing.xSmall)
-                    .padding(.bottom, AppTheme.Spacing.xSmall)
+                    .frame(maxWidth: AppTheme.Layout.topMenuMaxWidth)
+                    .frame(maxWidth: .infinity)
                 }
                 .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
                     let offset = activeScrollKey.flatMap { offsets[$0] } ?? 0

@@ -165,6 +165,7 @@ struct PredictiveInsightsEngine {
             case unusualSpending
             case budgetProjection
             case savingsOpportunity
+            case smallPurchases
             case upcomingBill
             case spendingTrend
             case incomeVariation
@@ -507,7 +508,7 @@ struct PredictiveInsightsEngine {
             let total = smallPurchases.reduce(Decimal(0)) { $0 + abs($1.amount) }
 
             insights.append(Insight(
-                type: .savingsOpportunity,
+                type: .smallPurchases,
                 title: "Lots of small purchases",
                 description: "\(smallPurchases.count) items under $20 add up to \(total.formatted(.currency(code: currencyCode))).",
                 severity: .info,

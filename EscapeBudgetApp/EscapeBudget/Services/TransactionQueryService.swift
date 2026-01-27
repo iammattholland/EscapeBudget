@@ -13,15 +13,15 @@ enum TransactionQueryService {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !needle.isEmpty else { return true }
 
-        if transaction.payee.localizedCaseInsensitiveContains(needle) { return true }
-        if (transaction.memo?.localizedCaseInsensitiveContains(needle) ?? false) { return true }
+        if transaction.payee.localizedStandardContains(needle) { return true }
+        if (transaction.memo?.localizedStandardContains(needle) ?? false) { return true }
         if transaction.amount.formatted().contains(needle) { return true }
-        if (transaction.account?.name.localizedCaseInsensitiveContains(needle) ?? false) { return true }
-        if (transaction.category?.name.localizedCaseInsensitiveContains(needle) ?? false) { return true }
-        if ((transaction.tags ?? []).contains { $0.name.localizedCaseInsensitiveContains(needle) }) { return true }
+        if (transaction.account?.name.localizedStandardContains(needle) ?? false) { return true }
+        if (transaction.category?.name.localizedStandardContains(needle) ?? false) { return true }
+        if ((transaction.tags ?? []).contains { $0.name.localizedStandardContains(needle) }) { return true }
         if ((transaction.purchasedItems ?? []).contains {
-            $0.name.localizedCaseInsensitiveContains(needle) ||
-            ($0.note?.localizedCaseInsensitiveContains(needle) ?? false)
+            $0.name.localizedStandardContains(needle) ||
+            ($0.note?.localizedStandardContains(needle) ?? false)
         }) { return true }
 
         return false
@@ -35,7 +35,7 @@ enum TransactionQueryService {
         }
 
         if !filter.payeeName.isEmpty {
-            if !transaction.payee.localizedCaseInsensitiveContains(filter.payeeName) { return false }
+            if !transaction.payee.localizedStandardContains(filter.payeeName) { return false }
         }
 
         if let min = Decimal(string: filter.minAmount) {

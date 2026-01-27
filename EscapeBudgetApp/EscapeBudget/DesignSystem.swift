@@ -73,6 +73,8 @@ enum AppTheme {
         static let maxContentWidthRegular: CGFloat = 720
         /// Max content width on Mac
         static let maxContentWidthMac: CGFloat = 820
+        /// Max width for top menu chrome (slightly wider than settings default)
+        static let topMenuMaxWidth: CGFloat = 640
         /// Scroll offset threshold for compact chrome transitions
         static let scrollCompactThreshold: CGFloat = 12
         /// Minimum drag distance to trigger swipe actions
@@ -351,6 +353,10 @@ extension View {
         self.modifier(AppAdaptiveScreenHorizontalPaddingModifier())
     }
 
+    func appLightModePageBackground() -> some View {
+        self.modifier(AppLightModePageBackgroundModifier())
+    }
+
     // MARK: Icon Helpers
 
     /// Custom icon size - use sparingly, prefer named sizes
@@ -389,6 +395,14 @@ extension View {
     /// Uses .continuous style by default for Apple HIG compliance.
     func appCornerRadius(_ radius: CGFloat, style: RoundedCornerStyle = .continuous) -> some View {
         self.clipShape(RoundedRectangle(cornerRadius: radius, style: style))
+    }
+}
+
+private struct AppLightModePageBackgroundModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        content.background(colorScheme == .dark ? Color.clear : Color(.systemGroupedBackground))
     }
 }
 

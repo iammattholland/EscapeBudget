@@ -50,6 +50,7 @@ struct SettingsView: View {
     @State private var appearanceMode: String = "System"
     @State private var showingNotificationOptions = false
     @State private var hasInitializedServices = false
+    @State private var originalSectionHeaderTopPadding: CGFloat?
     
     // Currency options
     let currencies = [
@@ -122,7 +123,7 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var settingsList: some View {
-        List {
+        let baseList = List {
             ScrollOffsetReader(coordinateSpace: "SettingsView.scroll", id: "SettingsView.scroll")
                 .listRowInsets(EdgeInsets())
                 .listRowSeparator(.hidden)
@@ -622,52 +623,76 @@ struct SettingsView: View {
                     }
                 }
         }
-        .appConstrainContentWidth()
-        .coordinateSpace(name: "SettingsView.scroll")
-        .alert("Authentication Failed", isPresented: $showBiometricError) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("Could not enable \(authService.biometricType.displayName). Please try again or check your device settings.")
-        }
-        .sheet(isPresented: $showingExportData) {
-            ExportDataView()
-        }
-        .sheet(isPresented: $showingImportData) {
-            ImportDataView()
-        }
-        .sheet(isPresented: $showingRestoreBackup) {
-            RestoreBackupView()
-        }
-        .confirmationDialog("Rebuild Stats?", isPresented: $showingRebuildStatsConfirm, titleVisibility: .visible) {
-            Button("Rebuild", role: .destructive) {
-                Task { @MainActor in
-                    isRebuildingStats = true
-                    TransactionStatsUpdateCoordinator.beginDeferringUpdates()
-                    defer {
-                        TransactionStatsUpdateCoordinator.endDeferringUpdates()
-                        isRebuildingStats = false
-                    }
+        .listSectionSpacing(.compact)
+        let list: some View = {
+            if #available(iOS 17.0, *) {
+                return AnyView(baseList.contentMargins(.top, 0, for: .scrollContent))
+            }
+            return AnyView(baseList)
+        }()
 
-                    MonthlyAccountTotalsService.rebuildAll(modelContext: modelContext)
-                    MonthlyCashflowTotalsService.rebuildAll(modelContext: modelContext)
+        list
+            .appConstrainContentWidth()
+            .coordinateSpace(name: "SettingsView.scroll")
+            .onAppear {
+                if #available(iOS 15.0, *) {
+                    if originalSectionHeaderTopPadding == nil {
+                        originalSectionHeaderTopPadding = UITableView.appearance().sectionHeaderTopPadding
+                    }
+                    UITableView.appearance().sectionHeaderTopPadding = 0
                 }
             }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Rebuilds aggregated totals used for Home/Review/Forecast/Retirement. Use if numbers ever look off after a big import.")
-        }
-        .sheet(isPresented: $showingDeleteSheet) {
-            deleteSheet
-        }
-        .onAppear {
-            appearanceMode = userAppearanceString
+            .onDisappear {
+                if #available(iOS 15.0, *) {
+                    if let originalSectionHeaderTopPadding {
+                        UITableView.appearance().sectionHeaderTopPadding = originalSectionHeaderTopPadding
+                    }
+                }
+            }
+            .alert("Authentication Failed", isPresented: $showBiometricError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Could not enable \(authService.biometricType.displayName). Please try again or check your device settings.")
+            }
+            .sheet(isPresented: $showingExportData) {
+                ExportDataView()
+            }
+            .sheet(isPresented: $showingImportData) {
+                ImportDataView()
+            }
+            .sheet(isPresented: $showingRestoreBackup) {
+                RestoreBackupView()
+            }
+            .confirmationDialog("Rebuild Stats?", isPresented: $showingRebuildStatsConfirm, titleVisibility: .visible) {
+                Button("Rebuild", role: .destructive) {
+                    Task { @MainActor in
+                        isRebuildingStats = true
+                        TransactionStatsUpdateCoordinator.beginDeferringUpdates()
+                        defer {
+                            TransactionStatsUpdateCoordinator.endDeferringUpdates()
+                            isRebuildingStats = false
+                        }
 
-            guard !hasInitializedServices else { return }
-            hasInitializedServices = true
+                        MonthlyAccountTotalsService.rebuildAll(modelContext: modelContext)
+                        MonthlyCashflowTotalsService.rebuildAll(modelContext: modelContext)
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Rebuilds aggregated totals used for Home/Review/Forecast/Retirement. Use if numbers ever look off after a big import.")
+            }
+            .sheet(isPresented: $showingDeleteSheet) {
+                deleteSheet
+            }
+            .onAppear {
+                appearanceMode = userAppearanceString
 
-            premiumStatusService.ensureTrialStarted()
-            userAccountService.reloadFromStorage()
-        }
+                guard !hasInitializedServices else { return }
+                hasInitializedServices = true
+
+                premiumStatusService.ensureTrialStarted()
+                userAccountService.reloadFromStorage()
+            }
     }
 
     private var deleteSheet: some View {

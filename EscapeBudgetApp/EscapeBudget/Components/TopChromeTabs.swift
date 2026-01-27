@@ -30,6 +30,9 @@ struct TopChromeTabs<Selection: Hashable>: View {
                 } label: {
                     Text(tab.title)
                         .font(AppTheme.Typography.tabLabel)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .allowsTightening(true)
                         .foregroundStyle(selection == tab.id ? .primary : .secondary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, AppTheme.Spacing.compact)

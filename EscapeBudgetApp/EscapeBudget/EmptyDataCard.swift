@@ -35,8 +35,18 @@ struct EmptyDataCard: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(
+            RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+                .fill(colorScheme == .dark ? Color(.secondarySystemGroupedBackground) : Color(.systemBackground))
+        )
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+                .strokeBorder(Color(.separator), lineWidth: AppTheme.Stroke.subtle)
+                .opacity(colorScheme == .dark ? 0 : 1)
+        )
+        .listRowBackground(Color.clear)
+        .listRowSeparator(.hidden)
         .padding(.vertical, AppTheme.Spacing.xxLarge)
         .padding(.horizontal, AppTheme.Spacing.screenHorizontal)
     }

@@ -22,6 +22,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
 
     @Binding var selectedDate: Date
     @State private var showingIncomeExpenseDetail: IncomeExpenseDetail?
+    @State private var smallPurchaseReview: SmallPurchaseReviewSheetItem?
         @State private var showingUncategorizedFix = false
         @State private var categoryToFixBudget: Category?
         @State private var categoryToReview: Category?
@@ -319,6 +320,15 @@ private struct MonthlyNetWorthPoint: Identifiable {
         return min(1, Double(truncating: (budgetSpent / budgetAssigned) as NSNumber))
     }
 
+    private var velocityData: SpendingVelocityData {
+        SpendingVelocityCalculator.compute(
+            periodStart: dateRangeDates.0,
+            periodEnd: dateRangeDates.1,
+            totalSpent: periodExpenses,
+            budgetAssigned: budgetAssigned
+        )
+    }
+
     private var overBudgetCategories: [(category: Category, overBy: Decimal)] {
         expenseCategories.compactMap { category in
             let over = spent(for: category) - category.assigned
@@ -415,6 +425,8 @@ private struct MonthlyNetWorthPoint: Identifiable {
                     return .reviewPayee(payee)
                 case .spendingTrend, .savingsOpportunity:
                     return insight.actionable ? .showIncomeExpenseDetail(.expenses) : nil
+                case .smallPurchases:
+                    return insight.actionable ? .showSmallPurchases(20) : nil
                 case .incomeVariation:
                     return insight.actionable ? .showIncomeExpenseDetail(.income) : nil
                 case .upcomingBill:
@@ -431,7 +443,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                     // "Upcoming bill" is actionable but typically a review flow (not a fix).
                     if insightType == .upcomingBill { return "Review" }
                     return "Fix"
-                case .showIncomeExpenseDetail, .openReview:
+                case .showIncomeExpenseDetail, .showSmallPurchases, .openReview:
                     return "Review"
                 case .importData:
                     return "Import"
@@ -604,6 +616,13 @@ private struct MonthlyNetWorthPoint: Identifiable {
                 }
 
                 BudgetReviewSectionCard {
+                    OverviewSpendingVelocityCard(
+                        velocityData: velocityData,
+                        currencyCode: currencyCode
+                    )
+                }
+
+                BudgetReviewSectionCard {
                     OverviewBudgetHealthCard(
                         assigned: budgetAssigned,
                         spent: budgetSpent,
@@ -739,6 +758,20 @@ private struct MonthlyNetWorthPoint: Identifiable {
                 categoryGroups: categoryGroups
             )
         }
+        .sheet(item: $smallPurchaseReview) { item in
+            let items = filteredTransactions
+                .filter { $0.amount < 0 && abs($0.amount) < item.threshold }
+                .sorted { $0.date > $1.date }
+            IncomeExpenseDetailSheet(
+                detail: .expenses,
+                transactions: items,
+                currencyCode: currencyCode,
+                dateRange: dateRangeDates,
+                accounts: accounts,
+                categoryGroups: categoryGroups,
+                titleOverride: "Small purchases"
+            )
+        }
         .sheet(isPresented: $showingUncategorizedFix) {
             UncategorizedTransactionsView(
                 transactions: uncategorizedExpenses,
@@ -803,6 +836,8 @@ private struct MonthlyNetWorthPoint: Identifiable {
             payeeToReview = PayeeReviewSheetItem(payee: payee, key: key, transactions: transactions, dateRange: (start, end))
         case .showIncomeExpenseDetail(let detail):
             showingIncomeExpenseDetail = detail
+        case .showSmallPurchases(let threshold):
+            smallPurchaseReview = SmallPurchaseReviewSheetItem(threshold: threshold)
         case .openReview(let section):
             navigator.openReview(section: section, date: selectedDate, filterMode: filterMode, customStartDate: customStartDate, customEndDate: customEndDate)
         case .importData:
@@ -842,6 +877,11 @@ private struct PayeeReviewSheetItem: Identifiable {
         self.transactions = transactions
         self.dateRange = dateRange
     }
+}
+
+private struct SmallPurchaseReviewSheetItem: Identifiable {
+    let id = UUID()
+    let threshold: Decimal
 }
 
 private struct NewRulePrefillSheetItem: Identifiable {
@@ -1027,6 +1067,7 @@ private enum OverviewInsightAction: Hashable {
     case showCategoryTransactions(PersistentIdentifier)
     case reviewPayee(String)
     case showIncomeExpenseDetail(IncomeExpenseDetail)
+    case showSmallPurchases(Decimal)
     case openReview(AppNavigator.ReviewSection)
     case importData
 }
@@ -1096,6 +1137,25 @@ private struct IncomeExpenseDetailSheet: View {
     let dateRange: (start: Date, end: Date)
     let accounts: [Account]
     let categoryGroups: [CategoryGroup]
+    let titleOverride: String?
+
+    init(
+        detail: IncomeExpenseDetail,
+        transactions: [Transaction],
+        currencyCode: String,
+        dateRange: (start: Date, end: Date),
+        accounts: [Account],
+        categoryGroups: [CategoryGroup],
+        titleOverride: String? = nil
+    ) {
+        self.detail = detail
+        self.transactions = transactions
+        self.currencyCode = currencyCode
+        self.dateRange = dateRange
+        self.accounts = accounts
+        self.categoryGroups = categoryGroups
+        self.titleOverride = titleOverride
+    }
 
     @State private var selectedAccount: Account?
     @State private var selectedCategory: Category?
@@ -1133,9 +1193,9 @@ private struct IncomeExpenseDetailSheet: View {
             List {
 	                Section {
 	                    HStack(alignment: .firstTextBaseline) {
-	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-	                            Text(detail.title)
-	                                .appSectionTitleText()
+                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                            Text(titleOverride ?? detail.title)
+                                .appSectionTitleText()
 
 	                            Text(dateRangeTitle)
 	                                .appSecondaryBodyText()
@@ -1157,9 +1217,9 @@ private struct IncomeExpenseDetailSheet: View {
 
                 if filteredTransactions.isEmpty {
                     ContentUnavailableView(
-                        hasActiveFilters ? "No Matching Transactions" : "No \(detail.title)",
+                        hasActiveFilters ? "No Matching Transactions" : "No \(titleOverride ?? detail.title)",
                         systemImage: hasActiveFilters ? "line.3.horizontal.decrease.circle" : "tray",
-                        description: Text(hasActiveFilters ? "Try adjusting your filters." : "No \(detail.title.lowercased()) transactions found for this period.")
+                        description: Text(hasActiveFilters ? "Try adjusting your filters." : "No \((titleOverride ?? detail.title).lowercased()) transactions found for this period.")
                     )
                     .listRowSeparator(.hidden)
                 } else {

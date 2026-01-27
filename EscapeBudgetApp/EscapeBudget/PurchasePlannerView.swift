@@ -52,7 +52,7 @@ struct PurchasePlannerView: View {
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
-                .background(Color(.systemBackground))
+                .appLightModePageBackground()
                 .coordinateSpace(name: "PurchasePlannerView.scroll")
             } else {
                 List {

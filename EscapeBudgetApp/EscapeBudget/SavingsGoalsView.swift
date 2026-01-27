@@ -34,7 +34,7 @@ struct SavingsGoalsView: View {
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
-                .background(Color(.systemBackground))
+                .appLightModePageBackground()
                 .coordinateSpace(name: "SavingsGoalsView.scroll")
             } else {
                 List {

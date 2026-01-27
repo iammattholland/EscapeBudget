@@ -4,9 +4,9 @@ import SwiftData
 struct PlanView: View {
     enum PlanSection: String, CaseIterable, Identifiable {
         case goals = "Goals"
-        case purchases = "Purchases"
+        case purchases = "Spend"
         case forecast = "Forecast"
-        case retirement = "Retirement"
+        case retirement = "Retire"
         
         var id: String { rawValue }
     }
@@ -18,13 +18,15 @@ struct PlanView: View {
         NavigationStack {
             planBody
                 .safeAreaInset(edge: .top, spacing: 0) {
-                    TopChromeTabs(
-                        selection: $selectedSection,
-                        tabs: PlanSection.allCases.map { .init(id: $0, title: $0.rawValue) }
-                    )
-                    .appAdaptiveScreenHorizontalPadding()
-                    .padding(.top, AppTheme.Spacing.xSmall)
-                    .padding(.bottom, AppTheme.Spacing.xSmall)
+                    VStack(spacing: 0) {
+                        TopChromeTabs(
+                            selection: $selectedSection,
+                            tabs: PlanSection.allCases.map { .init(id: $0, title: $0.rawValue) }
+                        )
+                        .topMenuBarStyle()
+                    }
+                    .frame(maxWidth: AppTheme.Layout.topMenuMaxWidth)
+                    .frame(maxWidth: .infinity)
                 }
                 .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
                     let key: String
@@ -40,9 +42,10 @@ struct PlanView: View {
                     }
                     demoPillVisible = (offsets[key] ?? 0) > -20
                 }
-            .navigationTitle("Plan")
+            .navigationTitle(navigationTitle)
             .withAppLogo()
             .environment(\.demoPillVisible, demoPillVisible)
+            .appLightModePageBackground()
         }
     }
 
@@ -57,6 +60,19 @@ struct PlanView: View {
             PlanForecastHubView()
         case .retirement:
             RetirementView()
+        }
+    }
+
+    private var navigationTitle: String {
+        switch selectedSection {
+        case .goals:
+            return "Plan Goals"
+        case .purchases:
+            return "Plan Spending"
+        case .forecast:
+            return "Plan Forecast"
+        case .retirement:
+            return "Plan Retirement"
         }
     }
 }
@@ -86,16 +102,12 @@ private struct PlanForecastHubView: View {
                 SpendingForecastView()
                     .onAppear { selectedTab = .spending }
             } else {
-                Picker("Forecast", selection: $selectedTab) {
-                    ForEach(ForecastTab.allCases) { tab in
-                        Text(tab.rawValue).tag(tab)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .topChromeSegmentedStyle(isCompact: true)
-                .appAdaptiveScreenHorizontalPadding()
-                .padding(.top, AppTheme.Spacing.xSmall)
-                .padding(.bottom, AppTheme.Spacing.xSmall)
+                TopChromeTabs(
+                    selection: $selectedTab,
+                    tabs: ForecastTab.allCases.map { .init(id: $0, title: $0.rawValue) },
+                    isCompact: true
+                )
+                .topMenuBarStyle(isCompact: true)
 
                 Group {
                     switch selectedTab {

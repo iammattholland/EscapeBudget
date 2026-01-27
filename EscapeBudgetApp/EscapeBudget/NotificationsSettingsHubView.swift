@@ -23,12 +23,10 @@ struct NotificationsSettingsHubView: View {
                             selection: selectedTabBinding,
                             tabs: Tab.allCases.map { .init(id: $0, title: $0.rawValue) }
                         )
-                            .padding(.horizontal, AppTheme.Spacing.medium)
-                            .padding(.top, AppTheme.Spacing.xSmall)
-                            .padding(.bottom, AppTheme.Spacing.xSmall)
-                            .frame(maxWidth: maxContentWidth)
-                            .frame(maxWidth: .infinity)
+                            .topMenuBarStyle()
                     }
+                    .frame(maxWidth: AppTheme.Layout.topMenuMaxWidth)
+                    .frame(maxWidth: .infinity)
                     .contentShape(Rectangle())
                     .background(Color.black.opacity(0.001))
                     .zIndex(10)
