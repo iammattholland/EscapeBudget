@@ -255,7 +255,7 @@ struct BudgetPerformanceView: View {
 
                 if shouldShowBudgetDetails {
                     BudgetReviewSectionCard {
-                        ReviewCalloutBar(title: "Quick Actions", items: budgetCallouts)
+                        ReviewCalloutBar(title: "Quick Actions", items: budgetCallouts, isVertical: true)
                     }
 
                     ForEach(expenseGroups) { group in

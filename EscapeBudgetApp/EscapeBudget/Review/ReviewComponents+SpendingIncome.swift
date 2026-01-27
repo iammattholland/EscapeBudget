@@ -173,7 +173,7 @@ struct ReportsSpendingView: View {
                 }
 
                 BudgetReviewSectionCard {
-                    ReviewCalloutBar(title: "Quick Actions", items: spendingCallouts)
+                    ReviewCalloutBar(title: "Quick Actions", items: spendingCallouts, isVertical: true)
                 }
 
                 BudgetReviewSectionCard {
@@ -562,7 +562,7 @@ struct ReportsIncomeView: View {
                 }
 
                 BudgetReviewSectionCard {
-                    ReviewCalloutBar(title: "Quick Actions", items: incomeCallouts)
+                    ReviewCalloutBar(title: "Quick Actions", items: incomeCallouts, isVertical: true)
                 }
 
                 BudgetReviewSectionCard {

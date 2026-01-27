@@ -230,11 +230,13 @@ struct SettingsView: View {
             }
 
             Section("Preferences") {
-                Picker("Language", selection: $appLanguage) {
+                Picker(selection: $appLanguage) {
                     ForEach(languages, id: \.self) { language in
                         Text(language).tag(language)
                     }
-                    }
+                } label: {
+                    Label("Language", systemImage: "globe")
+                }
 
                     NavigationLink {
                         CurrencySelectionView(selectedCurrency: $currencyCode, currencies: currencies)
@@ -288,7 +290,7 @@ struct SettingsView: View {
                             set: { newValue in
                                 appIconModeRawValue = newValue
                                 Task {
-                                    await AppIconController.apply(modeRawValue: newValue, colorScheme: colorScheme)
+                                    await AppIconController.apply(modeRawValue: newValue)
                                 }
                             }
                         )) {
@@ -444,27 +446,14 @@ struct SettingsView: View {
 	                if !isDemoMode {
 	                    Section("Demo") {
 	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                                Text("Try Demo Mode")
-                                    .fontWeight(.regular)
+                                Toggle(isOn: $isDemoMode) {
+                                    Label("Try Demo Mode", systemImage: "sparkles")
+                                }
                                 Text("Explore with sample data without affecting your real information")
                                     .appCaptionText()
                                     .foregroundStyle(.secondary)
                             }
-
-                            Button {
-                                isDemoMode = true
-                            } label: {
-                                HStack {
-                                    Text("Enable Demo Mode")
-                                    Spacer()
-                                    Image(systemName: "arrow.right")
-                                        .appCaptionText()
-                                }
-                            }
-                            .buttonStyle(.borderless)
-                        }
-                        .padding(.vertical, AppTheme.Spacing.micro)
+                            .padding(.vertical, AppTheme.Spacing.micro)
                     }
                 }
 
@@ -632,6 +621,8 @@ struct SettingsView: View {
         }()
 
         list
+            .environment(\.symbolRenderingMode, .monochrome)
+            .tint(.primary)
             .appConstrainContentWidth()
             .coordinateSpace(name: "SettingsView.scroll")
             .onAppear {
@@ -750,11 +741,13 @@ struct SettingsView: View {
     
     private func updateAppearance(_ mode: String) {
         userAppearanceString = mode
-        
-        // This force updates the window appearance immediately
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            windowScene.windows.first?.overrideUserInterfaceStyle = mode == "Dark" ? .dark : (mode == "Light" ? .light : .unspecified)
-        }
+
+        // Force-update all windows immediately so the change is visible without leaving Settings.
+        let style: UIUserInterfaceStyle = mode == "Dark" ? .dark : (mode == "Light" ? .light : .unspecified)
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .forEach { $0.overrideUserInterfaceStyle = style }
     }
     
     private func enableBiometrics() {

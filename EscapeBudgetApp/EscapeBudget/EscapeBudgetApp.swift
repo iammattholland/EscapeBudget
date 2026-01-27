@@ -398,6 +398,7 @@ enum AppIconController {
     private static let appIconModeDefaultsKey = "appIconMode"
     private static let lightIconName = "AppIconLight"
     private static let legacyLightIconName = "AppIcon-Light"
+    private static var lastApplied: (modeRawValue: String, interfaceStyle: UIUserInterfaceStyle)?
 
     static func migratePreferenceIfNeeded() {
         guard UserDefaults.standard.object(forKey: appIconModeDefaultsKey) == nil else { return }
@@ -408,10 +409,33 @@ enum AppIconController {
         UserDefaults.standard.set(inferredMode.rawValue, forKey: appIconModeDefaultsKey)
     }
 
-    static func apply(modeRawValue: String, colorScheme: ColorScheme) async {
+    private static func deviceInterfaceStyle() -> UIUserInterfaceStyle {
+        let scene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive }
+            ?? UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+
+        return scene?.screen.traitCollection.userInterfaceStyle ?? .unspecified
+    }
+
+    static func apply(modeRawValue: String) async {
         guard UIApplication.shared.supportsAlternateIcons else { return }
+        // iOS can reject icon changes while backgrounded/inactive.
+        let hasActiveScene = UIApplication.shared.connectedScenes.contains {
+            ($0 as? UIWindowScene)?.activationState == .foregroundActive
+        }
+        guard hasActiveScene else { return }
 
         migratePreferenceIfNeeded()
+
+        let interfaceStyle = deviceInterfaceStyle()
+
+        // Avoid repeated icon work when SwiftUI re-runs tasks for the same inputs.
+        if let lastApplied,
+           lastApplied.modeRawValue == modeRawValue,
+           lastApplied.interfaceStyle == interfaceStyle {
+            return
+        }
 
         let mode = AppIconMode(rawValue: modeRawValue) ?? .dark
         let targetAlternateIconName: String? = {
@@ -421,16 +445,23 @@ enum AppIconController {
             case .light:
                 return lightIconName
             case .system:
-                return colorScheme == .dark ? nil : lightIconName
+                return interfaceStyle == .dark ? nil : lightIconName
             }
         }()
 
         let currentAlternateIconName = UIApplication.shared.alternateIconName
-        if currentAlternateIconName == targetAlternateIconName { return }
-        if currentAlternateIconName == legacyLightIconName, targetAlternateIconName == lightIconName { return }
+        if currentAlternateIconName == targetAlternateIconName {
+            lastApplied = (modeRawValue, interfaceStyle)
+            return
+        }
+        if currentAlternateIconName == legacyLightIconName, targetAlternateIconName == lightIconName {
+            lastApplied = (modeRawValue, interfaceStyle)
+            return
+        }
 
         do {
             try await UIApplication.shared.setAlternateIconName(targetAlternateIconName)
+            lastApplied = (modeRawValue, interfaceStyle)
         } catch {
             SecurityLogger.shared.logSecurityError(error, context: "apply_app_icon")
         }
@@ -439,22 +470,15 @@ enum AppIconController {
 
 private struct AppIconSettingsApplier: ViewModifier {
     @AppStorage("appIconMode") private var appIconModeRawValue = AppIconMode.dark.rawValue
-    @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
         content
             .task {
-                await AppIconController.apply(modeRawValue: appIconModeRawValue, colorScheme: colorScheme)
+                await AppIconController.apply(modeRawValue: appIconModeRawValue)
             }
             .onChange(of: appIconModeRawValue) { _, newValue in
                 Task {
-                    await AppIconController.apply(modeRawValue: newValue, colorScheme: colorScheme)
-                }
-            }
-            .onChange(of: colorScheme) { _, newScheme in
-                guard AppIconMode(rawValue: appIconModeRawValue) == .system else { return }
-                Task {
-                    await AppIconController.apply(modeRawValue: appIconModeRawValue, colorScheme: newScheme)
+                    await AppIconController.apply(modeRawValue: newValue)
                 }
             }
     }

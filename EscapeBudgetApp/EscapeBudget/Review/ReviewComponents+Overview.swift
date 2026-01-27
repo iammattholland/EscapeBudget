@@ -103,6 +103,12 @@ private struct MonthlyNetWorthPoint: Identifiable {
 	        let interval = PerformanceSignposts.begin("Review.recomputeAccountBalances")
 	        defer { PerformanceSignposts.end(interval, "accounts=\(accounts.count) totals=\(monthlyAccountTotals.count)") }
 
+	        // SwiftData can be fragile during early app lifecycle; bail out fast when there is no work.
+	        guard !accounts.isEmpty || !monthlyAccountTotals.isEmpty else {
+	            accountBalances = [:]
+	            return
+	        }
+
 	        let calendar = Calendar.current
 	        let endMonthStart = calendar.startOfMonth(for: endDate)
 
@@ -120,7 +126,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
 	        var partialSameMonthAfterByAccountID: [PersistentIdentifier: Decimal] = [:]
 
 	        // If endDate is effectively end-of-month, skip the fetch.
-	        if endDate < endExclusive.addingTimeInterval(-1) {
+	        if !accounts.isEmpty && endDate < endExclusive.addingTimeInterval(-1) {
 	            let fetchInterval = PerformanceSignposts.begin("Review.recomputeAccountBalances.fetchRemainder")
 	            do {
 	                let descriptor = FetchDescriptor<Transaction>(

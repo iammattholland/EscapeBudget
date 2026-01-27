@@ -29,7 +29,10 @@ struct CompactSearchBar: View {
         .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
-                .strokeBorder(Color(.separator), lineWidth: AppTheme.Stroke.subtle)
+                .strokeBorder(
+                    showsBackground ? Color(.separator) : .clear,
+                    lineWidth: AppTheme.Stroke.subtle
+                )
         )
     }
 }

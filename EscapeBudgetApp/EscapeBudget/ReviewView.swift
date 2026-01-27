@@ -53,7 +53,6 @@ struct ReviewView: View {
                             customEndDate: $customEndDate,
                             isCompact: isTopChromeCompact
                         )
-                        .topChromeSegmentedStyle(isCompact: isTopChromeCompact)
                         .topMenuBarStyle(isCompact: isTopChromeCompact)
                     }
                     .padding(.top, topChromeLargeTitleClearance)

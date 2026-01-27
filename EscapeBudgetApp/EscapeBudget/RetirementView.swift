@@ -148,7 +148,7 @@ struct RetirementView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button("Edit Plan Settings", systemImage: "slider.horizontal.3") {
                         showingPlanSettings = true
@@ -164,8 +164,12 @@ struct RetirementView: View {
                         }
                     }
                 } label: {
-                    Image(systemName: "ellipsis")
+                    Image(systemName: "ellipsis.circle")
+                        .imageScale(.large)
                 }
+                .tint(.black)
+                .accessibilityLabel("Retirement Menu")
+                .accessibilityIdentifier("retirement.menu")
             }
         }
         .alert("Delete retirement plan?", isPresented: $showingDeletePlanConfirm) {

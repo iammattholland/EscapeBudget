@@ -20,14 +20,15 @@ struct ReviewCalloutBar: View {
 
     let title: String
     let items: [Item]
+    var isVertical: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
             Text(title)
                 .appSectionTitleText()
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: AppTheme.Spacing.small) {
+            if isVertical {
+                VStack(spacing: AppTheme.Spacing.small) {
                     ForEach(items) { item in
                         if let action = item.action {
                             Button(action: action) {
@@ -35,7 +36,8 @@ struct ReviewCalloutBar: View {
                                     systemImage: item.systemImage,
                                     title: item.title,
                                     value: item.value,
-                                    tint: item.tint
+                                    tint: item.tint,
+                                    isFullWidth: true
                                 )
                             }
                             .buttonStyle(.plain)
@@ -44,12 +46,39 @@ struct ReviewCalloutBar: View {
                                 systemImage: item.systemImage,
                                 title: item.title,
                                 value: item.value,
-                                tint: item.tint
+                                tint: item.tint,
+                                isFullWidth: true
                             )
                         }
                     }
                 }
                 .padding(.vertical, AppTheme.Spacing.micro)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: AppTheme.Spacing.small) {
+                        ForEach(items) { item in
+                            if let action = item.action {
+                                Button(action: action) {
+                                    ReviewCalloutChip(
+                                        systemImage: item.systemImage,
+                                        title: item.title,
+                                        value: item.value,
+                                        tint: item.tint
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                            } else {
+                                ReviewCalloutChip(
+                                    systemImage: item.systemImage,
+                                    title: item.title,
+                                    value: item.value,
+                                    tint: item.tint
+                                )
+                            }
+                        }
+                    }
+                    .padding(.vertical, AppTheme.Spacing.micro)
+                }
             }
         }
     }
@@ -60,6 +89,7 @@ private struct ReviewCalloutChip: View {
     let title: String
     let value: String?
     let tint: Color
+    var isFullWidth: Bool = false
 
     var body: some View {
         HStack(spacing: AppTheme.Spacing.compact) {
@@ -85,7 +115,8 @@ private struct ReviewCalloutChip: View {
         }
         .padding(.vertical, AppTheme.Spacing.compact)
         .padding(.horizontal, AppTheme.Spacing.small)
-        .frame(minWidth: 150)
+        .frame(maxWidth: isFullWidth ? .infinity : nil, alignment: .leading)
+        .frame(minWidth: isFullWidth ? nil : 150)
         .background(
             RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
                 .fill(Color(.systemBackground))

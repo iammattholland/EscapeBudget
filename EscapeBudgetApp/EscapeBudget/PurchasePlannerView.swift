@@ -134,9 +134,19 @@ struct PurchasePlannerView: View {
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { showingAddPurchase = true }) {
-                    Label("Add Purchase", systemImage: "plus")
+                Menu {
+                    Button {
+                        showingAddPurchase = true
+                    } label: {
+                        Label("Add Purchase", systemImage: "plus")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .imageScale(.large)
                 }
+                .tint(.black)
+                .accessibilityLabel("Purchase Planner Menu")
+                .accessibilityIdentifier("purchasePlanner.menu")
             }
         }
         .sheet(isPresented: $showingAddPurchase) {

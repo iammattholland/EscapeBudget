@@ -103,9 +103,19 @@ struct SavingsGoalsView: View {
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: { showingAddGoal = true }) {
-                    Label("Add Goal", systemImage: "plus")
+                Menu {
+                    Button {
+                        showingAddGoal = true
+                    } label: {
+                        Label("Add Goal", systemImage: "plus")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .imageScale(.large)
                 }
+                .tint(.black)
+                .accessibilityLabel("Savings Goals Menu")
+                .accessibilityIdentifier("savingsGoals.menu")
             }
         }
         .sheet(isPresented: $showingAddGoal) {
