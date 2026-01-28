@@ -38,6 +38,7 @@ struct DebtPayoffPlannerView: View {
                     .listRowBackground(Color.clear)
                 }
                 .listStyle(.plain)
+                .appListCompactSpacing()
                 .scrollContentBackground(.hidden)
                 .background(Color(.systemBackground))
                 .coordinateSpace(name: "DebtPayoffPlannerView.scroll")
@@ -119,6 +120,8 @@ struct DebtPayoffPlannerView: View {
                         .onMove(perform: moveDebts)
                     }
                 }
+                .listStyle(.plain)
+                .appListCompactSpacing()
                 .coordinateSpace(name: "DebtPayoffPlannerView.scroll")
                 .environment(\.editMode, .constant(isEditing ? .active : .inactive))
             }

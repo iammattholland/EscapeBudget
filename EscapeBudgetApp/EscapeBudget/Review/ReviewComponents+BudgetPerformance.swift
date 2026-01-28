@@ -12,6 +12,7 @@ struct BudgetPerformanceView: View {
 	@Binding var filterMode: DateRangeFilterHeader.FilterMode
 	@Binding var customStartDate: Date
 	@Binding var customEndDate: Date
+    private let topChrome: AnyView?
 	@State private var selectedCategory: Category?
     @State private var categoryToFix: Category?
     @State private var standardTransactions: [Transaction] = []
@@ -25,6 +26,20 @@ struct BudgetPerformanceView: View {
             start: dateRangeDates.0,
             end: dateRangeDates.1
         )
+    }
+
+    init(
+        selectedDate: Binding<Date>,
+        filterMode: Binding<DateRangeFilterHeader.FilterMode>,
+        customStartDate: Binding<Date>,
+        customEndDate: Binding<Date>,
+        topChrome: (() -> AnyView)? = nil
+    ) {
+        self._selectedDate = selectedDate
+        self._filterMode = filterMode
+        self._customStartDate = customStartDate
+        self._customEndDate = customEndDate
+        self.topChrome = topChrome?()
     }
 
     private var expenseGroups: [CategoryGroup] {
@@ -242,68 +257,73 @@ struct BudgetPerformanceView: View {
         ScrollView {
             VStack(spacing: AppTheme.Spacing.cardGap) {
                 ScrollOffsetReader(coordinateSpace: "BudgetPerformanceView.scroll", id: "BudgetPerformanceView.scroll")
-
-                BudgetReviewSectionCard {
-                    BudgetReviewSummaryCard(
-                        currencyCode: currencyCode,
-                        periodLabel: budgetPeriodLabel,
-                        assigned: totalAssigned,
-                        spent: totalSpent,
-                        remaining: totalRemaining
-                    )
+                if let topChrome {
+                    topChrome
                 }
 
-                if shouldShowBudgetDetails {
+                VStack(spacing: AppTheme.Spacing.cardGap) {
                     BudgetReviewSectionCard {
-                        ReviewCalloutBar(title: "Quick Actions", items: budgetCallouts, isVertical: true)
+                        BudgetReviewSummaryCard(
+                            currencyCode: currencyCode,
+                            periodLabel: budgetPeriodLabel,
+                            assigned: totalAssigned,
+                            spent: totalSpent,
+                            remaining: totalRemaining
+                        )
                     }
 
-                    ForEach(expenseGroups) { group in
-                        let assigned = groupAssigned(group)
-                        let spent = groupActivity(group)
-                        let remaining = assigned - spent
-
+                    if shouldShowBudgetDetails {
                         BudgetReviewSectionCard {
-                            BudgetReviewGroupCardHeader(
-                                groupName: group.name,
-                                assigned: assigned,
-                                spent: spent,
-                                remaining: remaining,
-                                currencyCode: currencyCode
-                            )
+                            ReviewCalloutBar(title: "Quick Actions", items: budgetCallouts, isVertical: true)
+                        }
 
-                            VStack(spacing: 0) {
-                                ForEach(Array(group.sortedCategories.enumerated()), id: \.element.persistentModelID) { index, category in
-                                    Button {
-                                        selectedCategory = category
-                                    } label: {
-                                        BudgetProgressRow(
-                                            category: category,
-                                            activity: activityFor(category: category),
-                                            transactionCount: transactionsFor(category: category).count
-                                        )
-                                        .padding(.vertical, AppTheme.Spacing.hairline)
-                                    }
-                                    .buttonStyle(.plain)
+                        ForEach(expenseGroups) { group in
+                            let assigned = groupAssigned(group)
+                            let spent = groupActivity(group)
+                            let remaining = assigned - spent
 
-                                    if index != group.sortedCategories.count - 1 {
-                                        Divider()
-                                            .padding(.leading, AppTheme.Spacing.indentXL)
-                                            .opacity(0.35)
+                            BudgetReviewSectionCard {
+                                BudgetReviewGroupCardHeader(
+                                    groupName: group.name,
+                                    assigned: assigned,
+                                    spent: spent,
+                                    remaining: remaining,
+                                    currencyCode: currencyCode
+                                )
+
+                                VStack(spacing: 0) {
+                                    ForEach(Array(group.sortedCategories.enumerated()), id: \.element.persistentModelID) { index, category in
+                                        Button {
+                                            selectedCategory = category
+                                        } label: {
+                                            BudgetProgressRow(
+                                                category: category,
+                                                activity: activityFor(category: category),
+                                                transactionCount: transactionsFor(category: category).count
+                                            )
+                                            .padding(.vertical, AppTheme.Spacing.hairline)
+                                        }
+                                        .buttonStyle(.plain)
+
+                                        if index != group.sortedCategories.count - 1 {
+                                            Divider()
+                                                .padding(.leading, AppTheme.Spacing.indentXL)
+                                                .opacity(0.35)
+                                        }
                                     }
                                 }
+                                .padding(.top, AppTheme.Spacing.compact)
                             }
-                            .padding(.top, AppTheme.Spacing.compact)
+                        }
+                    } else {
+                        BudgetReviewSectionCard {
+                            BudgetInsightsEmptyStateCard(hasBudgetGroups: hasBudgetGroups)
                         }
                     }
-                } else {
-                    BudgetReviewSectionCard {
-                        BudgetInsightsEmptyStateCard(hasBudgetGroups: hasBudgetGroups)
-                    }
                 }
+                .padding(.horizontal, AppTheme.Spacing.medium)
+                .padding(.vertical, AppTheme.Spacing.tight)
             }
-            .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.vertical, AppTheme.Spacing.tight)
         }
         .coordinateSpace(name: "BudgetPerformanceView.scroll")
         .background(BudgetPerformanceTransactionsQuery(start: dateRangeDates.0, end: dateRangeDates.1) { fetched in

@@ -185,6 +185,7 @@ struct AutoRulesView: View {
                     }
                 }
                 .listStyle(.insetGrouped)
+                .appListCompactSpacing()
             }
         }
     }

@@ -214,6 +214,7 @@ struct AutoRuleHistoryView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .appListCompactSpacing()
     }
 
     // MARK: - Empty State

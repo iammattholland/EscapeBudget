@@ -5,6 +5,11 @@ struct BadgesView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
     @StateObject private var badgeService = BadgeService.shared
+    private let topChrome: AnyView?
+
+    init(topChrome: (() -> AnyView)? = nil) {
+        self.topChrome = topChrome?()
+    }
 
     private func tint(for role: Badge.TintRole) -> Color {
         switch role {
@@ -23,6 +28,9 @@ struct BadgesView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
                 ScrollOffsetReader(coordinateSpace: "BadgesView.scroll", id: "BadgesView.scroll")
+                if let topChrome {
+                    topChrome
+                }
 
                 streaksCard
                 

@@ -17,17 +17,6 @@ struct PlanView: View {
     var body: some View {
         NavigationStack {
             planBody
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    VStack(spacing: 0) {
-                        TopChromeTabs(
-                            selection: $selectedSection,
-                            tabs: PlanSection.allCases.map { .init(id: $0, title: $0.rawValue) }
-                        )
-                        .topMenuBarStyle()
-                    }
-                    .frame(maxWidth: AppTheme.Layout.topMenuMaxWidth)
-                    .frame(maxWidth: .infinity)
-                }
                 .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
                     let key: String
                     switch selectedSection {
@@ -49,17 +38,27 @@ struct PlanView: View {
         }
     }
 
+    private var planTopChrome: some View {
+        VStack(spacing: 0) {
+            TopChromeTabs(
+                selection: $selectedSection,
+                tabs: PlanSection.allCases.map { .init(id: $0, title: $0.rawValue) }
+            )
+            .topMenuBarStyle()
+        }
+    }
+
     @ViewBuilder
     private var planBody: some View {
         switch selectedSection {
         case .goals:
-            SavingsGoalsView()
+            SavingsGoalsView(topChrome: { AnyView(planTopChrome) })
         case .purchases:
-            PurchasePlannerView()
+            PurchasePlannerView(topChrome: { AnyView(planTopChrome) })
         case .forecast:
-            PlanForecastHubView()
+            PlanForecastHubView(topChrome: { AnyView(planTopChrome) })
         case .retirement:
-            RetirementView()
+            RetirementView(topChrome: { AnyView(planTopChrome) })
         }
     }
 
@@ -89,6 +88,11 @@ private struct PlanForecastHubView: View {
     @Query(sort: \PurchasePlan.purchaseDate) private var purchasePlans: [PurchasePlan]
 
     @State private var selectedTab: ForecastTab = .spending
+    private let topChrome: AnyView?
+
+    init(topChrome: (() -> AnyView)? = nil) {
+        self.topChrome = topChrome?()
+    }
 
     private var isEmptyForecastHub: Bool {
         let hasActiveRecurring = recurringPurchases.contains { $0.isActive }
@@ -97,26 +101,33 @@ private struct PlanForecastHubView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            if isEmptyForecastHub {
-                SpendingForecastView()
-                    .onAppear { selectedTab = .spending }
-            } else {
-                TopChromeTabs(
-                    selection: $selectedTab,
-                    tabs: ForecastTab.allCases.map { .init(id: $0, title: $0.rawValue) },
-                    isCompact: true
-                )
-                .topMenuBarStyle(isCompact: true)
+        let forecastTabs = TopChromeTabs(
+            selection: $selectedTab,
+            tabs: ForecastTab.allCases.map { .init(id: $0, title: $0.rawValue) },
+            isCompact: true
+        )
+        .topMenuBarStyle(isCompact: true)
 
-                Group {
-                    switch selectedTab {
-                    case .spending:
-                        SpendingForecastView()
-                    case .cashFlow:
-                        CashFlowForecastView()
-                    }
-                }
+        let combinedTopChrome: AnyView? = {
+            let tabsView = AnyView(forecastTabs)
+            if let topChrome {
+                return AnyView(VStack(spacing: AppTheme.Spacing.compact) {
+                    topChrome
+                    tabsView
+                })
+            }
+            return tabsView
+        }()
+
+        if isEmptyForecastHub {
+            SpendingForecastView(topChrome: combinedTopChrome)
+                .onAppear { selectedTab = .spending }
+        } else {
+            switch selectedTab {
+            case .spending:
+                SpendingForecastView(topChrome: combinedTopChrome)
+            case .cashFlow:
+                CashFlowForecastView(topChrome: combinedTopChrome)
             }
         }
     }

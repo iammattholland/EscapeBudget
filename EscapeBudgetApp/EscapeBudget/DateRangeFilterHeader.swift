@@ -80,14 +80,6 @@ struct DateRangeFilterHeader: View {
             .disabled(filterMode == .custom || filterMode == .last3Months)
             .opacity((filterMode == .custom || filterMode == .last3Months) ? 0.3 : 1.0)
         }
-        .background(
-            RoundedRectangle(cornerRadius: isCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
-                .fill(Color(.systemBackground))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: isCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
-                .strokeBorder(Color(.separator), lineWidth: AppTheme.Stroke.subtle)
-        )
         .confirmationDialog("Select Range", isPresented: $showingModeDialog, titleVisibility: .visible) {
             Button("This Month") {
                 filterMode = .month

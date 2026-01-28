@@ -20,6 +20,12 @@ struct BudgetView: View {
     @State private var selectedDate = Date()
     @Binding var searchText: String
     @State private var isMonthHeaderCompact = false
+    private let topChrome: AnyView?
+
+    init(searchText: Binding<String>, topChrome: AnyView? = nil) {
+        self._searchText = searchText
+        self.topChrome = topChrome
+    }
     
     @State private var showingAddGroup = false
     @State private var newGroupName = ""
@@ -99,11 +105,6 @@ struct BudgetView: View {
         isMonthHeaderCompact ? 18 : 22
     }
 
-    private var monthChromeSpacerHeight: CGFloat {
-        // Space reserved at top of the list so the floating month header doesn't cover first rows.
-        isMonthHeaderCompact ? 64 : 74
-    }
-
     // MARK: - Computed Data (Replaces N+1 Query Pattern)
 
     /// Transactions for the selected month (computed once per render)
@@ -147,20 +148,27 @@ struct BudgetView: View {
                     .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
             )
             .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.top, AppTheme.Spacing.xSmall)
+            .padding(.top, AppTheme.Spacing.micro)
             .padding(.bottom, AppTheme.Spacing.xSmall)
     }
     
     var body: some View {
         List {
-            Color.clear
-                .frame(height: monthChromeSpacerHeight)
+            if let topChrome {
+                topChrome
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            }
+            monthChromeView
                 .listRowInsets(EdgeInsets())
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
             budgetListContent
             }
             .listStyle(.insetGrouped)
+            .appListCompactSpacing()
+            .appListTopInset()
             .environment(\.editMode, $editMode)
             .coordinateSpace(name: "BudgetView.scroll")
             .background(ScrollOffsetEmitter(id: "BudgetView.scroll", emitLegacy: true))
@@ -169,9 +177,6 @@ struct BudgetView: View {
                 let calendar = Calendar.current
                 let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: selectedDate)) ?? selectedDate
                 postBudgetAlertsIfNeeded(for: selectedDate, monthTransactions: monthTransactions, startOfMonth: startOfMonth)
-            }
-            .overlay(alignment: .top) {
-                monthChromeView
             }
             .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
                 let shouldCompact = offset < -AppTheme.Layout.scrollCompactThreshold

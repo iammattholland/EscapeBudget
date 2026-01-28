@@ -73,8 +73,8 @@ enum AppTheme {
         static let maxContentWidthRegular: CGFloat = 720
         /// Max content width on Mac
         static let maxContentWidthMac: CGFloat = 820
-        /// Max width for top menu chrome (slightly wider than settings default)
-        static let topMenuMaxWidth: CGFloat = 640
+        /// Max width for top menu chrome (match card/content width)
+        static let topMenuMaxWidth: CGFloat = 720
         /// Scroll offset threshold for compact chrome transitions
         static let scrollCompactThreshold: CGFloat = 12
         /// Minimum drag distance to trigger swipe actions
@@ -351,6 +351,30 @@ extension View {
     /// Applies only horizontal screen padding (adapts to device).
     func appAdaptiveScreenHorizontalPadding() -> some View {
         self.modifier(AppAdaptiveScreenHorizontalPaddingModifier())
+    }
+
+    // MARK: List Styling
+
+    /// Tightens list spacing by removing extra top inset and compacting section gaps.
+    @ViewBuilder
+    func appListCompactSpacing() -> some View {
+        let styled = self.listSectionSpacing(.compact)
+
+        if #available(iOS 17.0, *) {
+            styled.contentMargins(.top, 0, for: .scrollContent)
+        } else {
+            styled
+        }
+    }
+
+    /// Applies a consistent top inset for list content.
+    @ViewBuilder
+    func appListTopInset(_ value: CGFloat = AppTheme.Spacing.compact) -> some View {
+        if #available(iOS 17.0, *) {
+            self.contentMargins(.top, value, for: .scrollContent)
+        } else {
+            self.padding(.top, value)
+        }
     }
 
     func appLightModePageBackground() -> some View {

@@ -12,6 +12,11 @@ struct PurchasePlannerView: View {
     @State private var showingMarkPurchased = false
     @State private var selectedPurchaseForMark: PurchasePlan?
     @State private var actualPrice = ""
+    private let topChrome: AnyView?
+
+    init(topChrome: (() -> AnyView)? = nil) {
+        self.topChrome = topChrome?()
+    }
     
     enum FilterOption: String, CaseIterable {
         case all = "All"
@@ -34,6 +39,12 @@ struct PurchasePlannerView: View {
         Group {
             if filteredPurchases.isEmpty {
                 List {
+                    if let topChrome {
+                        topChrome
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
                     ScrollOffsetReader(coordinateSpace: "PurchasePlannerView.scroll", id: "PurchasePlannerView.scroll")
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
@@ -51,11 +62,18 @@ struct PurchasePlannerView: View {
                     .listRowBackground(Color.clear)
                 }
                 .listStyle(.plain)
+                .appListCompactSpacing()
                 .scrollContentBackground(.hidden)
                 .appLightModePageBackground()
                 .coordinateSpace(name: "PurchasePlannerView.scroll")
             } else {
                 List {
+                    if let topChrome {
+                        topChrome
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
                     ScrollOffsetReader(coordinateSpace: "PurchasePlannerView.scroll", id: "PurchasePlannerView.scroll")
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
@@ -129,6 +147,8 @@ struct PurchasePlannerView: View {
                         }
                     }
                 }
+                .listStyle(.plain)
+                .appListCompactSpacing()
                 .coordinateSpace(name: "PurchasePlannerView.scroll")
             }
         }

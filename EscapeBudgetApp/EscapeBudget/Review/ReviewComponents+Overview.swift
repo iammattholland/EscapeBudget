@@ -583,105 +583,108 @@ private struct MonthlyNetWorthPoint: Identifiable {
         ScrollView {
             VStack(spacing: AppTheme.Spacing.cardGap) {
                 ScrollOffsetReader(coordinateSpace: "ReportsOverviewView.scroll", id: "ReportsOverviewView.scroll")
+                topChromeView
 
-                BudgetReviewSectionCard {
-                    OverviewHealthCard(
-                        score: healthScore,
-                        insights: insightRows,
-                        income: periodIncome,
-                        expenses: periodExpenses,
-                        currencyCode: currencyCode,
-                        savingsRate: savingsRate,
-                        onTapIncome: { showingIncomeExpenseDetail = .income },
-                        onTapExpenses: { showingIncomeExpenseDetail = .expenses },
-                        onTapInsightAction: handleInsightAction
-                    )
-                }
-
-                BudgetReviewSectionCard {
-                    OverviewNetWorthCard(
-                        netWorth: totalNetWorth,
-                        assets: totalAssets,
-                        debt: totalDebt,
-                        accountsCount: accounts.count,
-                        currencyCode: currencyCode,
-                        series: monthlyNetWorthSeries
-                    )
-                }
-
-                BudgetReviewSectionCard {
-                    OverviewCashFlowCard(
-                        income: periodIncome,
-                        expenses: periodExpenses,
-                        netChange: netChange,
-                        averageDailyIncome: averageDailyIncome,
-                        averageDailySpend: averageDailySpend,
-                        currencyCode: currencyCode,
-                        savingsRate: savingsRate
-                    )
-                }
-
-                BudgetReviewSectionCard {
-                    OverviewSpendingVelocityCard(
-                        velocityData: velocityData,
-                        currencyCode: currencyCode
-                    )
-                }
-
-                BudgetReviewSectionCard {
-                    OverviewBudgetHealthCard(
-                        assigned: budgetAssigned,
-                        spent: budgetSpent,
-                        remaining: budgetRemaining,
-                        currencyCode: currencyCode,
-                        utilization: budgetUtilization,
-                        overBudgetCategories: Array(overBudgetCategories.prefix(3))
-                    )
-                }
-
-                BudgetReviewSectionCard {
-                    OverviewTopSpendingCard(
-                        totalSpending: periodExpenses,
-                        items: Array(topSpendingCategories.prefix(5)),
-                        currencyCode: currencyCode
-                    )
-                }
-
-                BudgetReviewSectionCard {
-                    OverviewCategorizationCard(
-                        categorizedCount: filteredTransactions.filter { $0.amount < 0 && $0.category != nil }.count,
-                        categorizedAmount: topSpendingCategories.filter { $0.name != "Uncategorized" }.reduce(0) { $0 + $1.total },
-                        uncategorizedCount: uncategorizedCount,
-                        uncategorizedAmount: uncategorizedAmount,
-                        currencyCode: currencyCode
-                    )
-                }
-
-                if !activeGoals.isEmpty {
+                VStack(spacing: AppTheme.Spacing.cardGap) {
                     BudgetReviewSectionCard {
-                        OverviewGoalsCard(
-                            goals: Array(activeGoals.prefix(3)),
-                            totalProgress: goalsProgress,
+                        OverviewHealthCard(
+                            score: healthScore,
+                            insights: insightRows,
+                            income: periodIncome,
+                            expenses: periodExpenses,
+                            currencyCode: currencyCode,
+                            savingsRate: savingsRate,
+                            onTapIncome: { showingIncomeExpenseDetail = .income },
+                            onTapExpenses: { showingIncomeExpenseDetail = .expenses },
+                            onTapInsightAction: handleInsightAction
+                        )
+                    }
+
+                    BudgetReviewSectionCard {
+                        OverviewNetWorthCard(
+                            netWorth: totalNetWorth,
+                            assets: totalAssets,
+                            debt: totalDebt,
+                            accountsCount: accounts.count,
+                            currencyCode: currencyCode,
+                            series: monthlyNetWorthSeries
+                        )
+                    }
+
+                    BudgetReviewSectionCard {
+                        OverviewCashFlowCard(
+                            income: periodIncome,
+                            expenses: periodExpenses,
+                            netChange: netChange,
+                            averageDailyIncome: averageDailyIncome,
+                            averageDailySpend: averageDailySpend,
+                            currencyCode: currencyCode,
+                            savingsRate: savingsRate
+                        )
+                    }
+
+                    BudgetReviewSectionCard {
+                        OverviewSpendingVelocityCard(
+                            velocityData: velocityData,
                             currencyCode: currencyCode
                         )
                     }
-                }
 
-                BudgetReviewSectionCard {
-                    OverviewHighlightsCard(
-                        transactionCount: filteredTransactions.count,
-                        largestExpense: largestExpense,
-                        largestIncome: largestIncome,
-                        currencyCode: currencyCode
-                    )
-                }
+                    BudgetReviewSectionCard {
+                        OverviewBudgetHealthCard(
+                            assigned: budgetAssigned,
+                            spent: budgetSpent,
+                            remaining: budgetRemaining,
+                            currencyCode: currencyCode,
+                            utilization: budgetUtilization,
+                            overBudgetCategories: Array(overBudgetCategories.prefix(3))
+                        )
+                    }
 
-                BudgetReviewSectionCard {
-                    OverviewDeepDiveLinks(selectedDate: $selectedDate)
+                    BudgetReviewSectionCard {
+                        OverviewTopSpendingCard(
+                            totalSpending: periodExpenses,
+                            items: Array(topSpendingCategories.prefix(5)),
+                            currencyCode: currencyCode
+                        )
+                    }
+
+                    BudgetReviewSectionCard {
+                        OverviewCategorizationCard(
+                            categorizedCount: filteredTransactions.filter { $0.amount < 0 && $0.category != nil }.count,
+                            categorizedAmount: topSpendingCategories.filter { $0.name != "Uncategorized" }.reduce(0) { $0 + $1.total },
+                            uncategorizedCount: uncategorizedCount,
+                            uncategorizedAmount: uncategorizedAmount,
+                            currencyCode: currencyCode
+                        )
+                    }
+
+                    if !activeGoals.isEmpty {
+                        BudgetReviewSectionCard {
+                            OverviewGoalsCard(
+                                goals: Array(activeGoals.prefix(3)),
+                                totalProgress: goalsProgress,
+                                currencyCode: currencyCode
+                            )
+                        }
+                    }
+
+                    BudgetReviewSectionCard {
+                        OverviewHighlightsCard(
+                            transactionCount: filteredTransactions.count,
+                            largestExpense: largestExpense,
+                            largestIncome: largestIncome,
+                            currencyCode: currencyCode
+                        )
+                    }
+
+                    BudgetReviewSectionCard {
+                        OverviewDeepDiveLinks(selectedDate: $selectedDate)
+                    }
                 }
+                .padding(.horizontal, AppTheme.Spacing.medium)
+                .padding(.vertical, AppTheme.Spacing.tight)
             }
-            .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.vertical, AppTheme.Spacing.tight)
         }
         .background(Color(.systemGroupedBackground))
         .background(
@@ -694,29 +697,6 @@ private struct MonthlyNetWorthPoint: Identifiable {
             .id("\(dateRangeDates.0.timeIntervalSinceReferenceDate)-\(dateRangeDates.1.timeIntervalSinceReferenceDate)")
         )
         .coordinateSpace(name: "ReportsOverviewView.scroll")
-        .safeAreaInset(edge: .top, spacing: 0) {
-            VStack(spacing: AppTheme.Spacing.compact) {
-                DateRangeFilterHeader(
-                    filterMode: $filterMode,
-                    date: $selectedDate,
-                    customStartDate: $customStartDate,
-                    customEndDate: $customEndDate,
-                    isCompact: isRangeHeaderCompact
-                )
-                .padding(.horizontal, isRangeHeaderCompact ? AppTheme.Spacing.tight : AppTheme.Spacing.cardPadding)
-                .padding(.vertical, isRangeHeaderCompact ? AppTheme.Spacing.compact : AppTheme.Spacing.tight)
-                .background(
-                    RoundedRectangle(cornerRadius: isRangeHeaderCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: isRangeHeaderCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
-                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-                )
-            }
-            .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.bottom, AppTheme.Spacing.compact)
-        }
         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
             let shouldCompact = offset < -AppTheme.Layout.scrollCompactThreshold
             if shouldCompact != isRangeHeaderCompact {
@@ -823,6 +803,17 @@ private struct MonthlyNetWorthPoint: Identifiable {
                 dateRange: dateRangeDates
             )
         }
+    }
+
+    private var topChromeView: some View {
+        DateRangeFilterHeader(
+            filterMode: $filterMode,
+            date: $selectedDate,
+            customStartDate: $customStartDate,
+            customEndDate: $customEndDate,
+            isCompact: isRangeHeaderCompact
+        )
+        .topMenuBarStyle(isCompact: isRangeHeaderCompact)
     }
 
     private func handleInsightAction(_ action: OverviewInsightAction) {
@@ -2026,30 +2017,9 @@ private struct ReportsSpendingStandaloneView: View {
             selectedDate: $selectedDate,
             filterMode: $filterMode,
             customStartDate: $customStartDate,
-            customEndDate: $customEndDate
+            customEndDate: $customEndDate,
+            topChrome: { AnyView(topChromeView) }
         )
-        .safeAreaInset(edge: .top, spacing: 0) {
-            DateRangeFilterHeader(
-                filterMode: $filterMode,
-                date: $selectedDate,
-                customStartDate: $customStartDate,
-                customEndDate: $customEndDate,
-                isCompact: isHeaderCompact
-            )
-            .padding(.horizontal, isHeaderCompact ? AppTheme.Spacing.tight : AppTheme.Spacing.cardPadding)
-            .padding(.vertical, isHeaderCompact ? AppTheme.Spacing.compact : AppTheme.Spacing.tight)
-            .background(
-                RoundedRectangle(cornerRadius: isHeaderCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: isHeaderCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-            )
-            .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.top, AppTheme.Spacing.xSmall)
-            .padding(.bottom, AppTheme.Spacing.compact)
-        }
         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
             let shouldCompact = offset < -AppTheme.Layout.scrollCompactThreshold
             if shouldCompact != isHeaderCompact {
@@ -2063,6 +2033,17 @@ private struct ReportsSpendingStandaloneView: View {
         }
         .navigationTitle("Expenses")
         .navigationBarTitleDisplayMode(.large)
+    }
+
+    private var topChromeView: some View {
+        DateRangeFilterHeader(
+            filterMode: $filterMode,
+            date: $selectedDate,
+            customStartDate: $customStartDate,
+            customEndDate: $customEndDate,
+            isCompact: isHeaderCompact
+        )
+        .topMenuBarStyle(isCompact: isHeaderCompact)
     }
 }
 
@@ -2082,30 +2063,9 @@ private struct ReportsIncomeStandaloneView: View {
             selectedDate: $selectedDate,
             filterMode: $filterMode,
             customStartDate: $customStartDate,
-            customEndDate: $customEndDate
+            customEndDate: $customEndDate,
+            topChrome: { AnyView(topChromeView) }
         )
-        .safeAreaInset(edge: .top, spacing: 0) {
-            DateRangeFilterHeader(
-                filterMode: $filterMode,
-                date: $selectedDate,
-                customStartDate: $customStartDate,
-                customEndDate: $customEndDate,
-                isCompact: isHeaderCompact
-            )
-            .padding(.horizontal, isHeaderCompact ? AppTheme.Spacing.tight : AppTheme.Spacing.cardPadding)
-            .padding(.vertical, isHeaderCompact ? AppTheme.Spacing.compact : AppTheme.Spacing.tight)
-            .background(
-                RoundedRectangle(cornerRadius: isHeaderCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: isHeaderCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-            )
-            .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.top, AppTheme.Spacing.xSmall)
-            .padding(.bottom, AppTheme.Spacing.compact)
-        }
         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
             let shouldCompact = offset < -AppTheme.Layout.scrollCompactThreshold
             if shouldCompact != isHeaderCompact {
@@ -2119,6 +2079,17 @@ private struct ReportsIncomeStandaloneView: View {
         }
         .navigationTitle("Income")
         .navigationBarTitleDisplayMode(.large)
+    }
+
+    private var topChromeView: some View {
+        DateRangeFilterHeader(
+            filterMode: $filterMode,
+            date: $selectedDate,
+            customStartDate: $customStartDate,
+            customEndDate: $customEndDate,
+            isCompact: isHeaderCompact
+        )
+        .topMenuBarStyle(isCompact: isHeaderCompact)
     }
 }
 
@@ -2134,30 +2105,9 @@ private struct BudgetPerformanceStandaloneView: View {
             selectedDate: $selectedDate,
             filterMode: $filterMode,
             customStartDate: $customStartDate,
-            customEndDate: $customEndDate
+            customEndDate: $customEndDate,
+            topChrome: { AnyView(topChromeView) }
         )
-        .safeAreaInset(edge: .top, spacing: 0) {
-            DateRangeFilterHeader(
-                filterMode: $filterMode,
-                date: $selectedDate,
-                customStartDate: $customStartDate,
-                customEndDate: $customEndDate,
-                isCompact: isHeaderCompact
-            )
-            .padding(.horizontal, isHeaderCompact ? AppTheme.Spacing.tight : AppTheme.Spacing.cardPadding)
-            .padding(.vertical, isHeaderCompact ? AppTheme.Spacing.compact : AppTheme.Spacing.tight)
-            .background(
-                RoundedRectangle(cornerRadius: isHeaderCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
-                    .fill(.ultraThinMaterial)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: isHeaderCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-            )
-            .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.top, AppTheme.Spacing.xSmall)
-            .padding(.bottom, AppTheme.Spacing.compact)
-        }
         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
             let shouldCompact = offset < -AppTheme.Layout.scrollCompactThreshold
             if shouldCompact != isHeaderCompact {
@@ -2171,6 +2121,17 @@ private struct BudgetPerformanceStandaloneView: View {
         }
         .navigationTitle("Budget")
         .navigationBarTitleDisplayMode(.large)
+    }
+
+    private var topChromeView: some View {
+        DateRangeFilterHeader(
+            filterMode: $filterMode,
+            date: $selectedDate,
+            customStartDate: $customStartDate,
+            customEndDate: $customEndDate,
+            isCompact: isHeaderCompact
+        )
+        .topMenuBarStyle(isCompact: isHeaderCompact)
     }
 }
 

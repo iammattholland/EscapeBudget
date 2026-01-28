@@ -15,11 +15,19 @@ struct CustomDashboardView: View {
     @State private var customStartDate = Date()
     @State private var customEndDate = Date()
     private let scrollCoordinateSpace = "CustomDashboardView.scroll"
+    private let topChrome: AnyView?
+
+    init(topChrome: (() -> AnyView)? = nil) {
+        self.topChrome = topChrome?()
+    }
     
     var body: some View {
         ScrollView {
             LazyVStack(spacing: AppTheme.Spacing.medium) {
                 ScrollOffsetReader(coordinateSpace: scrollCoordinateSpace, id: scrollCoordinateSpace)
+                if let topChrome {
+                    topChrome
+                }
                 // Header
                 ForEach(widgets) { widget in
                     CustomWidgetContainer(widget: widget) {

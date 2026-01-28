@@ -50,6 +50,7 @@ struct RetirementView: View {
     @State private var derivedInferredMonthlySpending: Decimal? = nil
     @State private var derivedInferredMonthlyContribution: Decimal? = nil
     @State private var isComputingDerived = false
+    private let topChrome: AnyView?
 
     private enum RetirementScenario: String, CaseIterable, Identifiable {
         case yourPlan = "Your Plan"
@@ -82,7 +83,8 @@ struct RetirementView: View {
         RetirementScenario(rawValue: scenarioRawValue) ?? .yourPlan
     }
 
-    init() {
+    init(topChrome: (() -> AnyView)? = nil) {
+        self.topChrome = topChrome?()
         let months = 12
         windowMonths = months
 
@@ -105,12 +107,18 @@ struct RetirementView: View {
 	    var body: some View {
 	        let showOnlyEmptyState = !isConfigured || transactions.isEmpty
 	        Group {
-	            if showOnlyEmptyState {
-	                List {
-                        ScrollOffsetReader(coordinateSpace: "RetirementView.scroll", id: "RetirementView.scroll")
+            if showOnlyEmptyState {
+                List {
+                    if let topChrome {
+                        topChrome
                             .listRowInsets(EdgeInsets())
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
+                    }
+                    ScrollOffsetReader(coordinateSpace: "RetirementView.scroll", id: "RetirementView.scroll")
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
 
 	                    if isConfigured {
 	                        noTransactionDataCard
@@ -123,17 +131,21 @@ struct RetirementView: View {
 	                            .listRowSeparator(.hidden)
 	                            .listRowBackground(Color.clear)
 	                    }
-	                }
-	                .listStyle(.plain)
-	                .scrollContentBackground(.hidden)
-	                .appLightModePageBackground()
+                }
+                .listStyle(.plain)
+                .appListCompactSpacing()
+                .scrollContentBackground(.hidden)
+                .appLightModePageBackground()
                     .coordinateSpace(name: "RetirementView.scroll")
-	            } else {
-	                ScrollView {
-                        ScrollOffsetReader(coordinateSpace: "RetirementView.scroll", id: "RetirementView.scroll")
+            } else {
+                ScrollView {
+                    ScrollOffsetReader(coordinateSpace: "RetirementView.scroll", id: "RetirementView.scroll")
 
-	                    LazyVStack(spacing: AppTheme.Spacing.cardGap) {
-	                        headerCard
+                    LazyVStack(spacing: AppTheme.Spacing.cardGap) {
+                        if let topChrome {
+                            topChrome
+                        }
+                        headerCard
                         snapshotCard
                         projectionCard
                         actionPlanCard

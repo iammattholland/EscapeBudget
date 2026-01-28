@@ -38,33 +38,6 @@ struct ManageView: View {
     var body: some View {
         NavigationStack {
             manageBody
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    VStack(spacing: AppTheme.Spacing.compact) {
-                        TopChromeTabs(
-                            selection: $manageNavigator.selectedSection,
-                            tabs: ManageSection.allCases.map { .init(id: $0, title: $0.rawValue) }
-                        )
-                        .simultaneousGesture(TapGesture().onEnded {
-#if canImport(UIKit)
-                            KeyboardUtilities.dismiss()
-#endif
-                        })
-                        .onChange(of: manageNavigator.selectedSection) { _, _ in
-#if canImport(UIKit)
-                            KeyboardUtilities.dismiss()
-#endif
-                        }
-                        .topMenuBarStyle()
-
-                        if shouldShowSearchBar {
-                            CompactSearchBar(text: activeSearchText, placeholder: "Search", showsBackground: false)
-                                .topMenuBarStyle(isCompact: true)
-                        }
-                    }
-                    .padding(.top, AppTheme.Spacing.xSmall)
-                    .frame(maxWidth: AppTheme.Layout.topMenuMaxWidth)
-                    .frame(maxWidth: .infinity)
-                }
                 .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
                     let key: String
                     switch manageNavigator.selectedSection {
@@ -89,15 +62,45 @@ struct ManageView: View {
         }
     }
 
+    private var manageTopChrome: some View {
+        VStack(spacing: AppTheme.Spacing.compact) {
+            TopChromeTabs(
+                selection: $manageNavigator.selectedSection,
+                tabs: ManageSection.allCases.map { .init(id: $0, title: $0.rawValue) }
+            )
+            .simultaneousGesture(TapGesture().onEnded {
+#if canImport(UIKit)
+                KeyboardUtilities.dismiss()
+#endif
+            })
+            .onChange(of: manageNavigator.selectedSection) { _, _ in
+#if canImport(UIKit)
+                KeyboardUtilities.dismiss()
+#endif
+            }
+            .topMenuBarStyle()
+
+            if shouldShowSearchBar {
+                CompactSearchBar(text: activeSearchText, placeholder: "Search", showsBackground: false)
+                    .topMenuBarStyle(isCompact: true)
+            }
+        }
+        .padding(.top, AppTheme.Spacing.xSmall)
+    }
+
     @ViewBuilder
     private var manageBody: some View {
         switch manageNavigator.selectedSection {
         case .transactions:
-            AllTransactionsView(searchText: $transactionsSearchText, filter: $filter)
+            AllTransactionsView(
+                searchText: $transactionsSearchText,
+                filter: $filter,
+                topChrome: { AnyView(manageTopChrome) }
+            )
         case .budget:
-            ManageBudgetView(searchText: $budgetSearchText)
+            ManageBudgetView(searchText: $budgetSearchText, topChrome: { AnyView(manageTopChrome) })
         case .accounts:
-            AccountsView(searchText: $accountsSearchText)
+            AccountsView(searchText: $accountsSearchText, topChrome: { AnyView(manageTopChrome) })
         }
     }
     
@@ -118,6 +121,12 @@ struct ManageBudgetView: View {
     @Query(sort: \CategoryGroup.order) private var categoryGroups: [CategoryGroup]
     @Binding var searchText: String
     @State private var showingBudgetSetup = false
+    private let topChrome: AnyView?
+
+    init(searchText: Binding<String>, topChrome: (() -> AnyView)? = nil) {
+        self._searchText = searchText
+        self.topChrome = topChrome?()
+    }
 
     private var hasBudget: Bool {
         categoryGroups.contains { $0.type == .expense }
@@ -126,9 +135,15 @@ struct ManageBudgetView: View {
     var body: some View {
         Group {
             if hasBudget {
-                BudgetView(searchText: $searchText)
+                BudgetView(searchText: $searchText, topChrome: topChrome)
             } else {
                 List {
+                    if let topChrome {
+                        topChrome
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
                     EmptyDataCard(
                         systemImage: "chart.pie.fill",
                         title: "No Budget Yet",
@@ -141,6 +156,8 @@ struct ManageBudgetView: View {
                     .listRowBackground(Color.clear)
                 }
                 .listStyle(.plain)
+                .appListCompactSpacing()
+                .appListTopInset()
                 .scrollContentBackground(.hidden)
             }
         }

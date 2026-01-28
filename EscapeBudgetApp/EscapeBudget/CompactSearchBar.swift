@@ -30,7 +30,7 @@ struct CompactSearchBar: View {
         .overlay(
             RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
                 .strokeBorder(
-                    showsBackground ? Color(.separator) : .clear,
+                    Color(.separator).opacity(showsBackground ? 1 : 0.6),
                     lineWidth: AppTheme.Stroke.subtle
                 )
         )

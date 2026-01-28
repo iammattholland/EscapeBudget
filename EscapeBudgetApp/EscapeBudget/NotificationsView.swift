@@ -3,6 +3,7 @@ import SwiftData
 
 struct NotificationsView: View {
     var embedded: Bool = false
+    private let topChrome: AnyView?
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -12,6 +13,11 @@ struct NotificationsView: View {
     @State private var showingDeleteAllConfirmFromMenu = false
     @State private var showingDeleteAllConfirmFromBottom = false
     
+    init(embedded: Bool = false, topChrome: (() -> AnyView)? = nil) {
+        self.embedded = embedded
+        self.topChrome = topChrome?()
+    }
+
     var body: some View {
         Group {
             if embedded {
@@ -68,6 +74,12 @@ struct NotificationsView: View {
 
     private var notificationsList: some View {
         List {
+            if let topChrome {
+                topChrome
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            }
             ScrollOffsetReader(coordinateSpace: "NotificationsView.scroll", id: "NotificationsView.scroll")
                 .listRowInsets(EdgeInsets())
                 .listRowSeparator(.hidden)
@@ -102,6 +114,8 @@ struct NotificationsView: View {
                 }
             }
         }
+        .listStyle(.plain)
+        .appListCompactSpacing()
         .coordinateSpace(name: "NotificationsView.scroll")
         .safeAreaInset(edge: .bottom) {
             if !notifications.isEmpty {

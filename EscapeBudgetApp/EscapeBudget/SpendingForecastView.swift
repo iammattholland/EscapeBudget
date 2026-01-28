@@ -17,6 +17,11 @@ struct SpendingForecastView: View {
     @State private var showingSettings = false
     @StateObject private var notificationService = NotificationService.shared
     private let scrollCoordinateSpace = "PlanForecastHubView.scroll"
+    private let topChrome: AnyView?
+
+    init(topChrome: AnyView? = nil) {
+        self.topChrome = topChrome
+    }
     
     enum ViewMode: String, CaseIterable {
         case list = "List"
@@ -258,6 +263,12 @@ struct SpendingForecastView: View {
     
     private var listView: some View {
         List {
+            if let topChrome {
+                topChrome
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            }
             ScrollOffsetReader(coordinateSpace: scrollCoordinateSpace, id: scrollCoordinateSpace)
 	            ForEach(upcomingPurchases, id: \.id) { item in
 	                HStack(spacing: AppTheme.Spacing.tight) {
@@ -301,6 +312,12 @@ struct SpendingForecastView: View {
 
     private var emptyForecastView: some View {
         List {
+            if let topChrome {
+                topChrome
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            }
             ScrollOffsetReader(coordinateSpace: scrollCoordinateSpace, id: scrollCoordinateSpace)
                 .listRowInsets(EdgeInsets())
                 .listRowSeparator(.hidden)
@@ -318,6 +335,7 @@ struct SpendingForecastView: View {
             .listRowBackground(Color.clear)
         }
         .listStyle(.plain)
+        .appListCompactSpacing()
         .scrollContentBackground(.hidden)
         .appLightModePageBackground()
         .coordinateSpace(name: scrollCoordinateSpace)

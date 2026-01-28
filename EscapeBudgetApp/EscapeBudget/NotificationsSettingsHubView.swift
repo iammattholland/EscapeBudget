@@ -17,20 +17,6 @@ struct NotificationsSettingsHubView: View {
     var body: some View {
         NavigationStack {
             hubBody
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    VStack(spacing: 0) {
-                        TopChromeTabs(
-                            selection: selectedTabBinding,
-                            tabs: Tab.allCases.map { .init(id: $0, title: $0.rawValue) }
-                        )
-                            .topMenuBarStyle()
-                    }
-                    .frame(maxWidth: AppTheme.Layout.topMenuMaxWidth)
-                    .frame(maxWidth: .infinity)
-                    .contentShape(Rectangle())
-                    .background(Color.black.opacity(0.001))
-                    .zIndex(10)
-                }
                 .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
                     let key: String
                     switch selectedTab {
@@ -59,6 +45,16 @@ struct NotificationsSettingsHubView: View {
         .environment(\.demoPillVisible, demoPillVisible)
     }
 
+    private var hubTopChrome: some View {
+        VStack(spacing: 0) {
+            TopChromeTabs(
+                selection: selectedTabBinding,
+                tabs: Tab.allCases.map { .init(id: $0, title: $0.rawValue) }
+            )
+            .topMenuBarStyle()
+        }
+    }
+
     private var selectedTab: Tab {
         Tab(rawValue: selectedTabRawValue) ?? .notifications
     }
@@ -75,11 +71,11 @@ struct NotificationsSettingsHubView: View {
         Group {
             switch selectedTab {
             case .notifications:
-                NotificationsView(embedded: true)
+                NotificationsView(embedded: true, topChrome: { AnyView(hubTopChrome) })
             case .settings:
-                SettingsView(embedded: true, showsAppLogo: false)
+                SettingsView(embedded: true, showsAppLogo: false, topChrome: { AnyView(hubTopChrome) })
             case .badges:
-                BadgesView()
+                BadgesView(topChrome: { AnyView(hubTopChrome) })
             }
         }
         .frame(maxWidth: maxContentWidth)

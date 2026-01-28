@@ -5,81 +5,86 @@ struct ToolsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
+            ScrollView {
                 ScrollOffsetReader(coordinateSpace: "ToolsView.scroll", id: "ToolsView.scroll")
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
 
-                Section {
-                    HStack(spacing: AppTheme.Spacing.tight) {
-                        Image(systemName: "hammer")
-                            .font(.system(size: 24, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                        AppSectionHeader(
-                            title: "Tools",
-                            subtitle: "Your toolbox for deeper insights and planning."
-                        )
-                    }
-                    .padding(.vertical, AppTheme.Spacing.micro)
-                }
+                VStack(alignment: .leading, spacing: AppTheme.Spacing.xLarge) {
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                        Text("Available Now")
+                            .appSectionTitleText()
 
-                Section("Available Now") {
-                    NavigationLink {
-                        SpendingChallengesView()
-                    } label: {
-                        ToolComingItem(
-                            title: "Spending Challenges",
-                            subtitle: "Build better habits with verifiable goals tracked by your transactions."
-                        )
-                    }
-                    NavigationLink {
-                        YearEndReviewView()
-                    } label: {
-                        ToolComingItem(
-                            title: "Year End Review",
-                            subtitle: "A Spotify‑wrapped style recap with highlights, trends, and insights."
-                        )
-                    }
-                    NavigationLink {
-                        DebtPayoffPlannerView()
-                    } label: {
-                        ToolComingItem(
-                            title: "Debt Payoff Planner",
-                            subtitle: "Build payoff plans, compare strategies, and track progress toward zero."
-                        )
-                    }
-                    NavigationLink {
-                        BillsDashboardView()
-                    } label: {
-                        ToolComingItem(
-                            title: "Bills Dashboard",
-                            subtitle: "An overview of your repeating monthly bills with due dates, totals, and trends."
-                        )
-                    }
-                }
+                        VStack(spacing: AppTheme.Spacing.cardGap) {
+                            NavigationLink {
+                                SpendingChallengesView()
+                            } label: {
+                                ToolCard(
+                                    title: "Spending Challenges",
+                                    subtitle: "Build better habits with verifiable goals tracked by your transactions."
+                                )
+                            }
+                            .buttonStyle(.plain)
 
-                Section("Planned Features") {
-                    ToolComingItem(
-                        title: "Receipt Scanner",
-                        subtitle: "Capture receipts and auto-extract merchant, date, totals, and line items."
-                    )
-                    ToolComingItem(
-                        title: "Home Asset Manager",
-                        subtitle: "Track home assets, warranties, and maintenance with reminders and history."
-                    )
-                    ToolComingItem(
-                        title: "Budget Education",
-                        subtitle: "Guided lessons, tips, and best practices tailored to your budget behavior."
-                    )
+                            NavigationLink {
+                                YearEndReviewView()
+                            } label: {
+                                ToolCard(
+                                    title: "Year End Review",
+                                    subtitle: "A Spotify‑wrapped style recap with highlights, trends, and insights."
+                                )
+                            }
+                            .buttonStyle(.plain)
+
+                            NavigationLink {
+                                DebtPayoffPlannerView()
+                            } label: {
+                                ToolCard(
+                                    title: "Debt Payoff Planner",
+                                    subtitle: "Build payoff plans, compare strategies, and track progress toward zero."
+                                )
+                            }
+                            .buttonStyle(.plain)
+
+                            NavigationLink {
+                                BillsDashboardView()
+                            } label: {
+                                ToolCard(
+                                    title: "Bills Dashboard",
+                                    subtitle: "An overview of your repeating monthly bills with due dates, totals, and trends."
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                        Text("Planned Features")
+                            .appSectionTitleText()
+
+                        VStack(spacing: AppTheme.Spacing.cardGap) {
+                            ToolCard(
+                                title: "Receipt Scanner",
+                                subtitle: "Capture receipts and auto-extract merchant, date, totals, and line items."
+                            )
+                            ToolCard(
+                                title: "Home Asset Manager",
+                                subtitle: "Track home assets, warranties, and maintenance with reminders and history."
+                            )
+                            ToolCard(
+                                title: "Budget Education",
+                                subtitle: "Guided lessons, tips, and best practices tailored to your budget behavior."
+                            )
+                        }
+                    }
                 }
+                .padding(.horizontal, AppTheme.Spacing.screenHorizontal)
+                .padding(.top, AppTheme.Spacing.micro)
+                .padding(.bottom, AppTheme.Spacing.large)
             }
             .appConstrainContentWidth()
             .coordinateSpace(name: "ToolsView.scroll")
             .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
                 demoPillVisible = (offsets["ToolsView.scroll"] ?? 0) > -20
             }
-            .scrollContentBackground(.hidden)
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Tools")
             .navigationBarTitleDisplayMode(.inline)
@@ -89,7 +94,7 @@ struct ToolsView: View {
     }
 }
 
-private struct ToolComingItem: View {
+private struct ToolCard: View {
     let title: String
     let subtitle: String
 
@@ -101,7 +106,7 @@ private struct ToolComingItem: View {
                 .appSecondaryBodyText()
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, AppTheme.Spacing.micro)
+        .appCardSurface()
     }
 }
 

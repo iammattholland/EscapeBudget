@@ -56,6 +56,8 @@ struct EscapeBudgetApp: App {
 #if canImport(UIKit)
         // Improves UX across the app by dismissing the keyboard when users scroll.
         UIScrollView.appearance().keyboardDismissMode = .onDrag
+        // Normalize list spacing across the app.
+        UITableView.appearance().sectionHeaderTopPadding = 0
 #endif
         let isUITesting = ProcessInfo.processInfo.arguments.contains("ui_testing")
         // UI tests: force a stable starting state (no onboarding, demo data, deterministic processing).

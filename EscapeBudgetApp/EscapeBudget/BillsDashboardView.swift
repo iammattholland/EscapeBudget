@@ -42,6 +42,7 @@ struct BillsDashboardView: View {
                     .listRowBackground(Color.clear)
                 }
                 .listStyle(.plain)
+                .appListCompactSpacing()
                 .scrollContentBackground(.hidden)
                 .background(Color(.systemBackground))
                 .coordinateSpace(name: "BillsDashboardView.scroll")
@@ -154,6 +155,8 @@ struct BillsDashboardView: View {
                     }
                 }
                 .coordinateSpace(name: "BillsDashboardView.scroll")
+                .listStyle(.plain)
+                .appListCompactSpacing()
             }
         }
         .toolbar {

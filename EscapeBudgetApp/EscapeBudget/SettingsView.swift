@@ -9,6 +9,7 @@ import UIKit
 struct SettingsView: View {
     var embedded: Bool = false
     var showsAppLogo: Bool = true
+    private let topChrome: AnyView?
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -50,7 +51,6 @@ struct SettingsView: View {
     @State private var appearanceMode: String = "System"
     @State private var showingNotificationOptions = false
     @State private var hasInitializedServices = false
-    @State private var originalSectionHeaderTopPadding: CGFloat?
     
     // Currency options
     let currencies = [
@@ -105,6 +105,12 @@ struct SettingsView: View {
     let weekDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
     let languages = ["English"]
     
+    init(embedded: Bool = false, showsAppLogo: Bool = true, topChrome: (() -> AnyView)? = nil) {
+        self.embedded = embedded
+        self.showsAppLogo = showsAppLogo
+        self.topChrome = topChrome?()
+    }
+
     var body: some View {
         Group {
             if embedded {
@@ -124,11 +130,12 @@ struct SettingsView: View {
     @ViewBuilder
     private var settingsList: some View {
         let baseList = List {
-            ScrollOffsetReader(coordinateSpace: "SettingsView.scroll", id: "SettingsView.scroll")
-                .listRowInsets(EdgeInsets())
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-
+            if let topChrome {
+                topChrome
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+            }
             // Demo Mode Section - Prominent at top
             if isDemoMode {
                 Section {
@@ -612,34 +619,13 @@ struct SettingsView: View {
                     }
                 }
         }
-        .listSectionSpacing(.compact)
-        let list: some View = {
-            if #available(iOS 17.0, *) {
-                return AnyView(baseList.contentMargins(.top, 0, for: .scrollContent))
-            }
-            return AnyView(baseList)
-        }()
-
-        list
+        baseList
+            .appListCompactSpacing()
             .environment(\.symbolRenderingMode, .monochrome)
             .tint(.primary)
             .appConstrainContentWidth()
+            .background(ScrollOffsetEmitter(id: "SettingsView.scroll"))
             .coordinateSpace(name: "SettingsView.scroll")
-            .onAppear {
-                if #available(iOS 15.0, *) {
-                    if originalSectionHeaderTopPadding == nil {
-                        originalSectionHeaderTopPadding = UITableView.appearance().sectionHeaderTopPadding
-                    }
-                    UITableView.appearance().sectionHeaderTopPadding = 0
-                }
-            }
-            .onDisappear {
-                if #available(iOS 15.0, *) {
-                    if let originalSectionHeaderTopPadding {
-                        UITableView.appearance().sectionHeaderTopPadding = originalSectionHeaderTopPadding
-                    }
-                }
-            }
             .alert("Authentication Failed", isPresented: $showBiometricError) {
                 Button("OK", role: .cancel) { }
             } message: {

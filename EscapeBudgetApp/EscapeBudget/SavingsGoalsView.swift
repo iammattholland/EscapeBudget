@@ -11,11 +11,22 @@ struct SavingsGoalsView: View {
     @State private var showingQuickContribute = false
     @State private var selectedGoalForContribution: SavingsGoal?
     @State private var contributionAmount = ""
+    private let topChrome: AnyView?
+
+    init(topChrome: (() -> AnyView)? = nil) {
+        self.topChrome = topChrome?()
+    }
     
     var body: some View {
         Group {
             if savingsGoals.isEmpty {
                 List {
+                    if let topChrome {
+                        topChrome
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
                     ScrollOffsetReader(coordinateSpace: "SavingsGoalsView.scroll", id: "SavingsGoalsView.scroll")
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
@@ -33,11 +44,18 @@ struct SavingsGoalsView: View {
                 .listRowBackground(Color.clear)
                 }
                 .listStyle(.plain)
+                .appListCompactSpacing()
                 .scrollContentBackground(.hidden)
                 .appLightModePageBackground()
                 .coordinateSpace(name: "SavingsGoalsView.scroll")
             } else {
                 List {
+                    if let topChrome {
+                        topChrome
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
                     ScrollOffsetReader(coordinateSpace: "SavingsGoalsView.scroll", id: "SavingsGoalsView.scroll")
                         .listRowInsets(EdgeInsets())
                         .listRowSeparator(.hidden)
@@ -98,6 +116,8 @@ struct SavingsGoalsView: View {
                         }
                     }
                 }
+                .listStyle(.plain)
+                .appListCompactSpacing()
                 .coordinateSpace(name: "SavingsGoalsView.scroll")
             }
         }

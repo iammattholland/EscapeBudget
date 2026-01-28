@@ -35,17 +35,9 @@ extension View {
         self
             .padding(.top, isCompact ? AppTheme.Spacing.nano : AppTheme.Spacing.micro)
             .padding(.bottom, isCompact ? AppTheme.Spacing.nano : AppTheme.Spacing.micro)
-            .frame(maxWidth: AppTheme.Layout.topMenuMaxWidth)
-            .background(
-                RoundedRectangle(cornerRadius: isCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
-                    .fill(Color(.systemBackground))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: isCompact ? AppTheme.Radius.chromeCompact : AppTheme.Radius.chrome, style: .continuous)
-                    .strokeBorder(Color(.separator), lineWidth: AppTheme.Stroke.subtle)
-            )
-            .padding(.horizontal, AppTheme.Spacing.screenHorizontal)
             .frame(maxWidth: .infinity)
+            .appConstrainContentWidth(maxWidth: AppTheme.Layout.topMenuMaxWidth)
+            .appAdaptiveScreenHorizontalPadding()
     }
 }
 

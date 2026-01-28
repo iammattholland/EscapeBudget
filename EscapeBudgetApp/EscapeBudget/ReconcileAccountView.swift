@@ -42,6 +42,7 @@ struct ReconcileAccountView: View {
                 reconcileButtonSection
             }
             .listStyle(.insetGrouped)
+            .appListCompactSpacing()
             .scrollDismissesKeyboard(.interactively)
             .simultaneousGesture(
                 TapGesture().onEnded {

@@ -12,8 +12,23 @@ struct ReportsSpendingView: View {
     @Binding var filterMode: DateRangeFilterHeader.FilterMode
     @Binding var customStartDate: Date
     @Binding var customEndDate: Date
+    private let topChrome: AnyView?
     @State private var drilldown: ReviewTransactionDrilldown? = nil
     @State private var transactionToEdit: Transaction? = nil
+
+    init(
+        selectedDate: Binding<Date>,
+        filterMode: Binding<DateRangeFilterHeader.FilterMode>,
+        customStartDate: Binding<Date>,
+        customEndDate: Binding<Date>,
+        topChrome: (() -> AnyView)? = nil
+    ) {
+        self._selectedDate = selectedDate
+        self._filterMode = filterMode
+        self._customStartDate = customStartDate
+        self._customEndDate = customEndDate
+        self.topChrome = topChrome?()
+    }
     @State private var showingUncategorizedFix = false
     @State private var rangedTransactions: [Transaction] = []
     @State private var metrics: SpendingMetrics = .empty
@@ -159,81 +174,86 @@ struct ReportsSpendingView: View {
         ScrollView {
             VStack(spacing: AppTheme.Spacing.cardGap) {
                 ScrollOffsetReader(coordinateSpace: "ReportsSpendingView.scroll", id: "ReportsSpendingView.scroll")
-
-                BudgetReviewSectionCard {
-                    SpendingSummaryCard(
-                        total: totalSpending,
-                        transactionCount: filteredTransactions.count,
-                        avgDaily: averageDailySpend,
-                        avgTransaction: averageExpense,
-                        currencyCode: currencyCode,
-                        uncategorizedAmount: uncategorizedAmount,
-                        largestExpense: largestExpense
-                    )
+                if let topChrome {
+                    topChrome
                 }
 
-                BudgetReviewSectionCard {
-                    ReviewCalloutBar(title: "Quick Actions", items: spendingCallouts, isVertical: true)
-                }
-
-                BudgetReviewSectionCard {
-                    MonthlySpendComparisonCard(referenceDate: $selectedDate)
-                }
-
-                BudgetReviewSectionCard {
-                    ReviewTrendCard(
-                        title: "Spending Trend",
-                        subtitle: "How spending changes across your selected range",
-                        series: spendingTrend,
-                        currencyCode: currencyCode,
-                        tint: AppColors.danger(for: appColorMode)
-                    )
-                }
-
-                BudgetReviewSectionCard {
-                    ReviewBreakdownCard(
-                        title: "Top Categories",
-                        subtitle: "Where your money goes",
-                        items: Array(spendingByCategory.prefix(8)),
-                        total: totalSpending,
-                        currencyCode: currencyCode,
-                        tint: AppColors.danger(for: appColorMode)
-                    ) { name in
-                        let matching = filteredTransactions.filter { ($0.category?.name ?? "Uncategorized") == name }.sorted { $0.date > $1.date }
-                        drilldown = ReviewTransactionDrilldown(
-                            title: name,
-                            subtitle: "Expenses",
-                            transactions: matching,
+                VStack(spacing: AppTheme.Spacing.cardGap) {
+                    BudgetReviewSectionCard {
+                        SpendingSummaryCard(
+                            total: totalSpending,
+                            transactionCount: filteredTransactions.count,
+                            avgDaily: averageDailySpend,
+                            avgTransaction: averageExpense,
                             currencyCode: currencyCode,
-                            emphasizeOutflow: true
+                            uncategorizedAmount: uncategorizedAmount,
+                            largestExpense: largestExpense
                         )
                     }
-                }
 
-                BudgetReviewSectionCard {
-                    ReviewBreakdownCard(
-                        title: "Top Merchants",
-                        subtitle: "Who you pay most often",
-                        items: Array(spendingByMerchant.prefix(8)),
-                        total: totalSpending,
-                        currencyCode: currencyCode,
-                        tint: AppColors.warning(for: appColorMode)
-                    ) { merchant in
-                        let matching = filteredTransactions.filter { $0.payee.trimmingCharacters(in: .whitespacesAndNewlines) == merchant }.sorted { $0.date > $1.date }
-                        drilldown = ReviewTransactionDrilldown(
-                            title: merchant,
-                            subtitle: "Expenses",
-                            transactions: matching,
+                    BudgetReviewSectionCard {
+                        ReviewCalloutBar(title: "Quick Actions", items: spendingCallouts, isVertical: true)
+                    }
+
+                    BudgetReviewSectionCard {
+                        MonthlySpendComparisonCard(referenceDate: $selectedDate)
+                    }
+
+                    BudgetReviewSectionCard {
+                        ReviewTrendCard(
+                            title: "Spending Trend",
+                            subtitle: "How spending changes across your selected range",
+                            series: spendingTrend,
                             currencyCode: currencyCode,
-                            emphasizeOutflow: true
+                            tint: AppColors.danger(for: appColorMode)
                         )
                     }
-                }
 
-                // Insights live on Home; Review keeps action-oriented callouts.
+                    BudgetReviewSectionCard {
+                        ReviewBreakdownCard(
+                            title: "Top Categories",
+                            subtitle: "Where your money goes",
+                            items: Array(spendingByCategory.prefix(8)),
+                            total: totalSpending,
+                            currencyCode: currencyCode,
+                            tint: AppColors.danger(for: appColorMode)
+                        ) { name in
+                            let matching = filteredTransactions.filter { ($0.category?.name ?? "Uncategorized") == name }.sorted { $0.date > $1.date }
+                            drilldown = ReviewTransactionDrilldown(
+                                title: name,
+                                subtitle: "Expenses",
+                                transactions: matching,
+                                currencyCode: currencyCode,
+                                emphasizeOutflow: true
+                            )
+                        }
+                    }
+
+                    BudgetReviewSectionCard {
+                        ReviewBreakdownCard(
+                            title: "Top Merchants",
+                            subtitle: "Who you pay most often",
+                            items: Array(spendingByMerchant.prefix(8)),
+                            total: totalSpending,
+                            currencyCode: currencyCode,
+                            tint: AppColors.warning(for: appColorMode)
+                        ) { merchant in
+                            let matching = filteredTransactions.filter { $0.payee.trimmingCharacters(in: .whitespacesAndNewlines) == merchant }.sorted { $0.date > $1.date }
+                            drilldown = ReviewTransactionDrilldown(
+                                title: merchant,
+                                subtitle: "Expenses",
+                                transactions: matching,
+                                currencyCode: currencyCode,
+                                emphasizeOutflow: true
+                            )
+                        }
+                    }
+
+                    // Insights live on Home; Review keeps action-oriented callouts.
+                }
+                .padding(.horizontal, AppTheme.Spacing.medium)
+                .padding(.vertical, AppTheme.Spacing.tight)
             }
-            .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.vertical, AppTheme.Spacing.tight)
         }
         .background(SpendingTransactionsQuery(start: dateRangeDates.0, end: dateRangeDates.1) { fetched in
             rangedTransactions = fetched
@@ -376,6 +396,7 @@ struct ReportsIncomeView: View {
     @Binding var filterMode: DateRangeFilterHeader.FilterMode
     @Binding var customStartDate: Date
     @Binding var customEndDate: Date
+    private let topChrome: AnyView?
     @State private var drilldown: ReviewTransactionDrilldown? = nil
     @State private var transactionToEdit: Transaction? = nil
 
@@ -386,6 +407,20 @@ struct ReportsIncomeView: View {
         },
         sort: [SortDescriptor(\Transaction.date, order: .reverse)]
     ) private var allStandardTransactions: [Transaction]
+
+    init(
+        selectedDate: Binding<Date>,
+        filterMode: Binding<DateRangeFilterHeader.FilterMode>,
+        customStartDate: Binding<Date>,
+        customEndDate: Binding<Date>,
+        topChrome: (() -> AnyView)? = nil
+    ) {
+        self._selectedDate = selectedDate
+        self._filterMode = filterMode
+        self._customStartDate = customStartDate
+        self._customEndDate = customEndDate
+        self.topChrome = topChrome?()
+    }
 
     // Computed property replaces manual caching - filters by date range and income type
     private var filteredTransactions: [Transaction] {
@@ -548,70 +583,53 @@ struct ReportsIncomeView: View {
         ScrollView {
             VStack(spacing: AppTheme.Spacing.cardGap) {
                 ScrollOffsetReader(coordinateSpace: "ReportsIncomeView.scroll", id: "ReportsIncomeView.scroll")
-
-                BudgetReviewSectionCard {
-                    IncomeSummaryCard(
-                        total: totalIncome,
-                        transactionCount: filteredTransactions.count,
-                        avgDaily: averageDailyIncome,
-                        avgDeposit: averageDeposit,
-                        currencyCode: currencyCode,
-                        largestIncome: largestIncome,
-                        payerConcentration: payerConcentration
-                    )
+                if let topChrome {
+                    topChrome
                 }
 
-                BudgetReviewSectionCard {
-                    ReviewCalloutBar(title: "Quick Actions", items: incomeCallouts, isVertical: true)
-                }
-
-                BudgetReviewSectionCard {
-                    MonthlyIncomeComparisonCard(referenceDate: $selectedDate)
-                }
-
-                BudgetReviewSectionCard {
-                    ReviewTrendCard(
-                        title: "Income Trend",
-                        subtitle: "How income changes across your selected range",
-                        series: incomeTrend,
-                        currencyCode: currencyCode,
-                        tint: AppColors.success(for: appColorMode)
-                    )
-                }
-
-                BudgetReviewSectionCard {
-                    ReviewBreakdownCard(
-                        title: "Top Payers",
-                        subtitle: "Where your income comes from",
-                        items: Array(incomeByPayer.prefix(8)),
-                        total: totalIncome,
-                        currencyCode: currencyCode,
-                        tint: AppColors.success(for: appColorMode)
-                    ) { payer in
-                        let matching = filteredTransactions.filter { $0.payee.trimmingCharacters(in: .whitespacesAndNewlines) == payer }.sorted { $0.date > $1.date }
-                        drilldown = ReviewTransactionDrilldown(
-                            title: payer,
-                            subtitle: "Income",
-                            transactions: matching,
+                VStack(spacing: AppTheme.Spacing.cardGap) {
+                    BudgetReviewSectionCard {
+                        IncomeSummaryCard(
+                            total: totalIncome,
+                            transactionCount: filteredTransactions.count,
+                            avgDaily: averageDailyIncome,
+                            avgDeposit: averageDeposit,
                             currencyCode: currencyCode,
-                            emphasizeOutflow: false
+                            largestIncome: largestIncome,
+                            payerConcentration: payerConcentration
                         )
                     }
-                }
 
-                if !incomeBySource.isEmpty {
+                    BudgetReviewSectionCard {
+                        ReviewCalloutBar(title: "Quick Actions", items: incomeCallouts, isVertical: true)
+                    }
+
+                    BudgetReviewSectionCard {
+                        MonthlyIncomeComparisonCard(referenceDate: $selectedDate)
+                    }
+
+                    BudgetReviewSectionCard {
+                        ReviewTrendCard(
+                            title: "Income Trend",
+                            subtitle: "How income changes across your selected range",
+                            series: incomeTrend,
+                            currencyCode: currencyCode,
+                            tint: AppColors.success(for: appColorMode)
+                        )
+                    }
+
                     BudgetReviewSectionCard {
                         ReviewBreakdownCard(
-                            title: "By Category",
-                            subtitle: "If you track income categories",
-                            items: Array(incomeBySource.prefix(6)),
+                            title: "Top Payers",
+                            subtitle: "Where your income comes from",
+                            items: Array(incomeByPayer.prefix(8)),
                             total: totalIncome,
                             currencyCode: currencyCode,
-                            tint: AppColors.tint(for: appColorMode)
-                        ) { source in
-                            let matching = filteredTransactions.filter { ($0.category?.name ?? $0.payee) == source }.sorted { $0.date > $1.date }
+                            tint: AppColors.success(for: appColorMode)
+                        ) { payer in
+                            let matching = filteredTransactions.filter { $0.payee.trimmingCharacters(in: .whitespacesAndNewlines) == payer }.sorted { $0.date > $1.date }
                             drilldown = ReviewTransactionDrilldown(
-                                title: source,
+                                title: payer,
                                 subtitle: "Income",
                                 transactions: matching,
                                 currencyCode: currencyCode,
@@ -619,12 +637,34 @@ struct ReportsIncomeView: View {
                             )
                         }
                     }
-                }
 
-                // Insights live on Home; Review keeps action-oriented callouts.
+                    if !incomeBySource.isEmpty {
+                        BudgetReviewSectionCard {
+                            ReviewBreakdownCard(
+                                title: "By Category",
+                                subtitle: "If you track income categories",
+                                items: Array(incomeBySource.prefix(6)),
+                                total: totalIncome,
+                                currencyCode: currencyCode,
+                                tint: AppColors.tint(for: appColorMode)
+                            ) { source in
+                                let matching = filteredTransactions.filter { ($0.category?.name ?? $0.payee) == source }.sorted { $0.date > $1.date }
+                                drilldown = ReviewTransactionDrilldown(
+                                    title: source,
+                                    subtitle: "Income",
+                                    transactions: matching,
+                                    currencyCode: currencyCode,
+                                    emphasizeOutflow: false
+                                )
+                            }
+                        }
+                    }
+
+                    // Insights live on Home; Review keeps action-oriented callouts.
+                }
+                .padding(.horizontal, AppTheme.Spacing.medium)
+                .padding(.vertical, AppTheme.Spacing.tight)
             }
-            .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.vertical, AppTheme.Spacing.tight)
         }
         .background(Color(.systemGroupedBackground))
         .coordinateSpace(name: "ReportsIncomeView.scroll")

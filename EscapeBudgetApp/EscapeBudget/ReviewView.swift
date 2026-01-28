@@ -37,28 +37,6 @@ struct ReviewView: View {
     var body: some View {
         NavigationStack {
             reviewBody
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    VStack(spacing: AppTheme.Spacing.compact) {
-                        TopChromeTabs(
-                            selection: $selectedSection,
-                            tabs: ReportSection.allCases.map { .init(id: $0, title: $0.rawValue) },
-                            isCompact: isTopChromeCompact
-                        )
-                        .topMenuBarStyle(isCompact: isTopChromeCompact)
-
-                        DateRangeFilterHeader(
-                            filterMode: $filterMode,
-                            date: $sharedMonth,
-                            customStartDate: $customStartDate,
-                            customEndDate: $customEndDate,
-                            isCompact: isTopChromeCompact
-                        )
-                        .topMenuBarStyle(isCompact: isTopChromeCompact)
-                    }
-                    .padding(.top, topChromeLargeTitleClearance)
-                    .frame(maxWidth: AppTheme.Layout.topMenuMaxWidth)
-                    .frame(maxWidth: .infinity)
-                }
                 .onPreferenceChange(NamedScrollOffsetsPreferenceKey.self) { offsets in
                     let offset = activeScrollKey.flatMap { offsets[$0] } ?? 0
                     lastScrollOffset = offset
@@ -88,6 +66,27 @@ struct ReviewView: View {
         }
     }
 
+    private var reviewTopChrome: some View {
+        VStack(spacing: AppTheme.Spacing.compact) {
+            TopChromeTabs(
+                selection: $selectedSection,
+                tabs: ReportSection.allCases.map { .init(id: $0, title: $0.rawValue) },
+                isCompact: isTopChromeCompact
+            )
+            .topMenuBarStyle(isCompact: isTopChromeCompact)
+
+            DateRangeFilterHeader(
+                filterMode: $filterMode,
+                date: $sharedMonth,
+                customStartDate: $customStartDate,
+                customEndDate: $customEndDate,
+                isCompact: isTopChromeCompact
+            )
+            .topMenuBarStyle(isCompact: isTopChromeCompact)
+        }
+        .padding(.top, topChromeLargeTitleClearance)
+    }
+
     @ViewBuilder
     private var reviewBody: some View {
         Group {
@@ -97,24 +96,27 @@ struct ReviewView: View {
                     selectedDate: $sharedMonth,
                     filterMode: $filterMode,
                     customStartDate: $customStartDate,
-                    customEndDate: $customEndDate
+                    customEndDate: $customEndDate,
+                    topChrome: { AnyView(reviewTopChrome) }
                 )
             case .income:
                 ReportsIncomeView(
                     selectedDate: $sharedMonth,
                     filterMode: $filterMode,
                     customStartDate: $customStartDate,
-                    customEndDate: $customEndDate
+                    customEndDate: $customEndDate,
+                    topChrome: { AnyView(reviewTopChrome) }
                 )
             case .budget:
                 BudgetPerformanceView(
                     selectedDate: $sharedMonth,
                     filterMode: $filterMode,
                     customStartDate: $customStartDate,
-                    customEndDate: $customEndDate
+                    customEndDate: $customEndDate,
+                    topChrome: { AnyView(reviewTopChrome) }
                 )
             case .custom:
-                CustomDashboardView()
+                CustomDashboardView(topChrome: { AnyView(reviewTopChrome) })
             }
         }
         .if(filterMode == .month && selectedSection != .custom) { view in

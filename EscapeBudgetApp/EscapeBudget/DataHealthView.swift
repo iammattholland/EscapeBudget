@@ -214,6 +214,7 @@ struct DataHealthView: View {
                 Text("The audit log avoids sensitive data and keeps a rolling history for debugging and trust.")
             }
         }
+        .appListCompactSpacing()
         .navigationTitle("Data Health")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Copied", isPresented: $showCopiedAlert) {

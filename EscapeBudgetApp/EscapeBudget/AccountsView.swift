@@ -13,11 +13,23 @@ struct AccountsView: View {
     @State private var editingAccount: Account?
     @State private var deletingAccount: Account?
     @State private var selectedAccount: Account?
+    private let topChrome: AnyView?
+
+    init(searchText: Binding<String>, topChrome: (() -> AnyView)? = nil) {
+        self._searchText = searchText
+        self.topChrome = topChrome?()
+    }
 
     var body: some View {
         Group {
             if accounts.isEmpty {
                 List {
+                    if let topChrome {
+                        topChrome
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
                     EmptyDataCard(
                         systemImage: "creditcard",
                         title: "No Accounts",
@@ -31,11 +43,19 @@ struct AccountsView: View {
                     .listRowBackground(Color.clear)
                 }
                 .listStyle(.plain)
+                .appListCompactSpacing()
+                .appListTopInset()
                 .scrollContentBackground(.hidden)
                 .background(ScrollOffsetEmitter(id: "AccountsView.scroll"))
                 .coordinateSpace(name: "AccountsView.scroll")
             } else {
                 List {
+                    if let topChrome {
+                        topChrome
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                    }
                     if filteredAccounts.isEmpty {
                         ContentUnavailableView.search(text: searchText)
                             .listRowInsets(EdgeInsets())
@@ -49,6 +69,7 @@ struct AccountsView: View {
                                 netWorth: netWorth,
                                 currencyCode: currencyCode
                             )
+                            .padding(.top, AppTheme.Spacing.small)
                             .listRowInsets(EdgeInsets())
                             .listRowSeparator(.hidden)
                         }
@@ -92,6 +113,8 @@ struct AccountsView: View {
                     }
                 }
                 .listStyle(.insetGrouped)
+                .appListCompactSpacing()
+                .appListTopInset(AppTheme.Spacing.medium)
                 .background(ScrollOffsetEmitter(id: "AccountsView.scroll"))
                 .coordinateSpace(name: "AccountsView.scroll")
             }

@@ -49,14 +49,20 @@ struct AllTransactionsView: View {
     @State private var selectedTransactionIDs: Set<PersistentIdentifier> = []
     @State private var showingBulkEditSheet = false
     @State private var showingAutoRules = false
+    private let topChrome: AnyView?
 
     // UI state
     @State private var showMonthIndexOverlay = false
     @State private var monthIndexHideWorkItem: DispatchWorkItem?
 
-    init(searchText: Binding<String>, filter: Binding<TransactionFilter>) {
+    init(
+        searchText: Binding<String>,
+        filter: Binding<TransactionFilter>,
+        topChrome: (() -> AnyView)? = nil
+    ) {
         self._searchText = searchText
         self._filter = filter
+        self.topChrome = topChrome?()
     }
 
     // Sheet/modal state
@@ -82,6 +88,16 @@ struct AllTransactionsView: View {
             return "100+ transactions to categorize"
         }
         return "\(uncategorizedCount) transaction\(uncategorizedCount == 1 ? "" : "s") to categorize"
+    }
+
+    @ViewBuilder
+    private func topChromeRow() -> some View {
+        if let topChrome {
+            topChrome
+                .listRowInsets(EdgeInsets())
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+        }
     }
     
     // MARK: - Computed Filtered Data (replaces manual caching)
@@ -417,6 +433,7 @@ struct AllTransactionsView: View {
 
 		    private var loadingStateList: some View {
 		        List {
+                    topChromeRow()
 		            HStack {
 		                Spacer()
 		                ProgressView()
@@ -424,16 +441,19 @@ struct AllTransactionsView: View {
 		            }
 		            .listRowSeparator(.hidden)
 		            .listRowBackground(Color.clear)
-		        }
-		        .listStyle(.plain)
-		        .scrollContentBackground(.hidden)
-		        .appLightModePageBackground()
-                .background(ScrollOffsetEmitter(id: "AllTransactionsView.scroll"))
-	            .coordinateSpace(name: "AllTransactionsView.scroll")
+	        }
+	        .listStyle(.plain)
+	        .appListCompactSpacing()
+	        .appListTopInset()
+	        .scrollContentBackground(.hidden)
+	        .appLightModePageBackground()
+            .background(ScrollOffsetEmitter(id: "AllTransactionsView.scroll"))
+	        .coordinateSpace(name: "AllTransactionsView.scroll")
 		    }
 
 		    private var emptyStateList: some View {
 		        List {
+                    topChromeRow()
 		            EmptyDataCard(
 		                systemImage: "list.bullet.rectangle",
 		                title: "No Transactions",
@@ -445,16 +465,19 @@ struct AllTransactionsView: View {
 	            .listRowInsets(EdgeInsets())
 	            .listRowSeparator(.hidden)
 	            .listRowBackground(Color.clear)
-		        }
-		        .listStyle(.plain)
-		        .scrollContentBackground(.hidden)
-		        .appLightModePageBackground()
-                .background(ScrollOffsetEmitter(id: "AllTransactionsView.scroll"))
-	            .coordinateSpace(name: "AllTransactionsView.scroll")
+	        }
+	        .listStyle(.plain)
+	        .appListCompactSpacing()
+	        .appListTopInset()
+	        .scrollContentBackground(.hidden)
+	        .appLightModePageBackground()
+            .background(ScrollOffsetEmitter(id: "AllTransactionsView.scroll"))
+	        .coordinateSpace(name: "AllTransactionsView.scroll")
 		    }
 
 		    private func transactionsList(proxy: ScrollViewProxy) -> some View {
 		        List {
+                    topChromeRow()
 		            if !filteredTransactions.isEmpty, uncategorizedCount > 0 {
 		                Button {
 		                    navigator.showUncategorized()
@@ -551,11 +574,12 @@ struct AllTransactionsView: View {
 	                }
 	            }
 
-		        }
-                .background(ScrollOffsetEmitter(id: "AllTransactionsView.scroll"))
-	            .coordinateSpace(name: "AllTransactionsView.scroll")
-		        .listSectionSpacing(.custom(14))
-		        .simultaneousGesture(
+	        }
+            .background(ScrollOffsetEmitter(id: "AllTransactionsView.scroll"))
+	        .coordinateSpace(name: "AllTransactionsView.scroll")
+	        .listSectionSpacing(.custom(14))
+	        .appListTopInset()
+	        .simultaneousGesture(
 		            DragGesture()
 	                .onChanged { _ in handleMonthIndexDragBegan() }
 	                .onEnded { _ in handleMonthIndexDragEnded() }

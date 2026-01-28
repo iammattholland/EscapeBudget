@@ -19,6 +19,11 @@ struct CashFlowForecastView: View {
     @Query(sort: \PurchasePlan.purchaseDate) private var purchasePlans: [PurchasePlan]
     @Query(sort: \MonthlyCashflowTotal.monthStart, order: .reverse) private var monthlyTotals: [MonthlyCashflowTotal]
     @State private var suggestedMonthlyIncomeFromStats: Decimal = 0
+    private let topChrome: AnyView?
+
+    init(topChrome: AnyView? = nil) {
+        self.topChrome = topChrome
+    }
 
     private var horizonEnd: Date {
         let calendar = Calendar.current
@@ -222,16 +227,21 @@ struct CashFlowForecastView: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: AppTheme.Spacing.cardGap) {
+            VStack(spacing: AppTheme.Spacing.cardGap) {
                 ScrollOffsetReader(coordinateSpace: "PlanForecastHubView.scroll", id: "PlanForecastHubView.scroll")
-                summaryRow
-                chartCard
-                assumptionsCard
-                accountsCard
-                eventsCard
+                if let topChrome {
+                    topChrome
+                }
+                LazyVStack(spacing: AppTheme.Spacing.cardGap) {
+                    summaryRow
+                    chartCard
+                    assumptionsCard
+                    accountsCard
+                    eventsCard
+                }
+                .padding(.horizontal, AppTheme.Spacing.medium)
+                .padding(.vertical, AppTheme.Spacing.tight)
             }
-            .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.vertical, AppTheme.Spacing.tight)
         }
         .coordinateSpace(name: "PlanForecastHubView.scroll")
         .background(Color(.systemGroupedBackground))
