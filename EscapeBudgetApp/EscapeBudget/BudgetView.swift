@@ -29,23 +29,25 @@ struct BudgetView: View {
     
     @State private var showingAddGroup = false
     @State private var newGroupName = ""
+    @State private var newGroupType: CategoryGroupType = .expense
+    @State private var showingBudgetActions = false
     @State private var editMode: EditMode = .inactive
     @State private var showingGroupSelection = false
     @State private var showingAddCategory = false
     @State private var selectedGroupForNewCategory: CategoryGroup?
     @State private var newCategoryName = ""
     @State private var newCategoryBudget = ""
-    @State private var selectedCategoryForEdit: Category?
+    @State private var selectedCategoryIDForEdit: SelectedCategoryID?
     @State private var movingCategory: Category?
     @State private var collapsedGroups: Set<ObjectIdentifier> = []
     @State private var showingBudgetSetupWizard = false
-    @State private var showingBudgetResetConfirm = false
 
     @State private var isBulkSelecting = false
     @State private var selectedCategoryIDs: Set<PersistentIdentifier> = []
     @State private var bulkSelectionType: CategoryGroupType?
     @State private var showingBulkMoveSheet = false
     @State private var showingSelectionTypeMismatchAlert = false
+    @State private var showingBulkDeleteConfirm = false
 
     enum GroupSortOption: String, CaseIterable {
         case custom
@@ -63,6 +65,10 @@ struct BudgetView: View {
             case .addedNewest: return "Added (Newest First)"
             }
         }
+    }
+
+    struct SelectedCategoryID: Identifiable {
+        let id: PersistentIdentifier
     }
 
     @State private var groupSortOption: GroupSortOption = .custom
@@ -137,8 +143,8 @@ struct BudgetView: View {
 
     private var monthChromeView: some View {
         MonthNavigationHeader(selectedDate: $selectedDate, isCompact: isMonthHeaderCompact)
-            .padding(.horizontal, AppTheme.Spacing.tight)
-            .padding(.vertical, isMonthHeaderCompact ? AppTheme.Spacing.compact : AppTheme.Spacing.tight)
+            .padding(.horizontal, AppDesign.Theme.Spacing.tight)
+            .padding(.vertical, isMonthHeaderCompact ? AppDesign.Theme.Spacing.compact : AppDesign.Theme.Spacing.tight)
             .background(
                 RoundedRectangle(cornerRadius: monthChromeCornerRadius, style: .continuous)
                     .fill(.ultraThinMaterial)
@@ -147,29 +153,38 @@ struct BudgetView: View {
                 RoundedRectangle(cornerRadius: monthChromeCornerRadius, style: .continuous)
                     .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
             )
-            .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.top, AppTheme.Spacing.micro)
-            .padding(.bottom, AppTheme.Spacing.xSmall)
+            .padding(.horizontal, AppDesign.Theme.Spacing.medium)
+            .padding(.top, AppDesign.Theme.Spacing.micro)
+            .padding(.bottom, AppDesign.Theme.Spacing.xSmall)
     }
     
     var body: some View {
+        budgetListView
+    }
+
+    private var baseList: some View {
         List {
-            if let topChrome {
-                topChrome
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
+            if topChrome != nil {
+                AppChromeListRow(topChrome: topChrome, scrollID: "BudgetView.scroll")
             }
             monthChromeView
                 .listRowInsets(EdgeInsets())
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
             budgetListContent
-            }
+        }
+    }
+
+    private var styledList: some View {
+        baseList
             .listStyle(.insetGrouped)
             .appListCompactSpacing()
             .appListTopInset()
             .environment(\.editMode, $editMode)
+    }
+
+    private var scrollTrackingList: some View {
+        styledList
             .coordinateSpace(name: "BudgetView.scroll")
             .background(ScrollOffsetEmitter(id: "BudgetView.scroll", emitLegacy: true))
             .task(id: selectedDate) {
@@ -179,73 +194,93 @@ struct BudgetView: View {
                 postBudgetAlertsIfNeeded(for: selectedDate, monthTransactions: monthTransactions, startOfMonth: startOfMonth)
             }
             .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
-                let shouldCompact = offset < -AppTheme.Layout.scrollCompactThreshold
+                let shouldCompact = offset < -AppDesign.Theme.Layout.scrollCompactThreshold
                 if shouldCompact != isMonthHeaderCompact {
                     withAnimation(.easeInOut(duration: 0.15)) {
                         isMonthHeaderCompact = shouldCompact
                     }
                 }
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button {
-                            do { try undoRedoManager.undo() } catch { }
-                        } label: {
-                            Label("Undo", systemImage: "arrow.uturn.backward")
+    }
+
+    @ToolbarContentBuilder
+    private var budgetToolbar: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Button {
+                showingBudgetActions = true
+            } label: {
+                Image(systemName: "ellipsis")
+                    .imageScale(.large)
+            }
+        }
+    }
+
+    private var budgetListWithToolbar: some View {
+        scrollTrackingList
+            .toolbar { budgetToolbar }
+    }
+
+    private var budgetListWithDialogs: some View {
+        budgetListWithToolbar
+            .confirmationDialog("Select Group for Category", isPresented: $showingGroupSelection) {
+                ForEach(categoryGroups.filter { $0.type != .transfer }) { group in
+                    Button(group.name) {
+                        selectedGroupForNewCategory = group
+                        showingAddCategory = true
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            }
+            .sheet(isPresented: $showingAddGroup) {
+                NavigationStack {
+                    Form {
+                        Section("Details") {
+                            TextField("Group Name", text: $newGroupName)
                         }
-                        .disabled(!undoRedoManager.canUndo)
 
-                        Button {
-                            do { try undoRedoManager.redo() } catch { }
-                        } label: {
-                            Label("Redo", systemImage: "arrow.uturn.forward")
-                        }
-                        .disabled(!undoRedoManager.canRedo)
-
-                        Divider()
-
-                        Button("Set Up Budget") {
-                            showingBudgetResetConfirm = true
-                        }
-
-                        Divider()
-
-                        Menu {
-                            ForEach(GroupSortOption.allCases, id: \.rawValue) { option in
-                                Button {
-                                    applyGroupSort(option)
-                                } label: {
-                                    if option == groupSortOption {
-                                        Label(option.title, systemImage: "checkmark")
-                                    } else {
-                                        Text(option.title)
-                                    }
-                                }
+                        Section("Type") {
+                            Picker("Group Type", selection: $newGroupType) {
+                                Text("Expense").tag(CategoryGroupType.expense)
+                                Text("Income").tag(CategoryGroupType.income)
                             }
-                        } label: {
-                            Label("Sort Groups", systemImage: "arrow.up.arrow.down")
+                            .pickerStyle(.segmented)
                         }
-
-                        Divider()
-
-                        Button("Expand All") {
-                            withAnimation {
-                                collapsedGroups.removeAll()
+                    }
+                    .navigationTitle("New Category Group")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Cancel") {
+                                newGroupName = ""
+                                newGroupType = .expense
+                                showingAddGroup = false
                             }
                         }
-                        .disabled(categoryGroups.isEmpty)
-
-                        Button("Collapse All") {
-                            withAnimation {
-                                collapsedGroups = Set(categoryGroups.map { ObjectIdentifier($0) })
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Add") {
+                                addGroup()
                             }
+                            .disabled(newGroupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         }
-                        .disabled(categoryGroups.isEmpty)
-
-                        Divider()
-
-                        Button(isBulkSelecting ? "Done Selecting" : "Bulk Select") {
+                    }
+                }
+            }
+            .sheet(isPresented: $showingBudgetActions) {
+                NavigationStack {
+                    BudgetActionsSheet(
+                        canUndo: undoRedoManager.canUndo,
+                        canRedo: undoRedoManager.canRedo,
+                        isBulkSelecting: isBulkSelecting,
+                        isReordering: editMode == .active,
+                        hasGroups: !categoryGroups.isEmpty,
+                        currentSort: groupSortOption,
+                        onUndo: { do { try undoRedoManager.undo() } catch { } },
+                        onRedo: { do { try undoRedoManager.redo() } catch { } },
+                        onSetUpBudget: { showingBudgetSetupWizard = true },
+                        onSort: { applyGroupSort($0) },
+                        onExpandAll: { withAnimation { collapsedGroups.removeAll() } },
+                        onCollapseAll: { withAnimation { collapsedGroups = Set(categoryGroups.map { ObjectIdentifier($0) }) } },
+                        onToggleBulkSelect: {
                             withAnimation {
                                 if isBulkSelecting {
                                     isBulkSelecting = false
@@ -258,63 +293,22 @@ struct BudgetView: View {
                                     bulkSelectionType = nil
                                 }
                             }
-                        }
-
-                        Divider()
-
-                        Button(action: {
+                        },
+                        onToggleReorder: {
                             withAnimation {
                                 editMode = editMode == .active ? .inactive : .active
                             }
-                        }) {
-                            Label(editMode == .active ? "Done Reordering" : "Reorder", systemImage: "arrow.up.arrow.down")
-                        }
-
-                        Divider()
-
-                        Button("Add Category Group") {
-                            showingAddGroup = true
-                        }
-
-                        Button("Add Category") {
-                            showingGroupSelection = true
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .imageScale(.large)
-                    }
-                }
-            }
-            .confirmationDialog("Select Group for Category", isPresented: $showingGroupSelection) {
-                ForEach(categoryGroups.filter { $0.type != .transfer }) { group in
-                    Button(group.name) {
-                        selectedGroupForNewCategory = group
-                        showingAddCategory = true
-                    }
-                }
-                Button("Cancel", role: .cancel) { }
-            }
-            .fullScreenCover(item: $selectedCategoryForEdit) { category in
-                CategoryEditSheet(category: category) {
-                    selectedCategoryForEdit = nil
-                }
-            }
-            .sheet(item: $movingCategory) { category in
-                MoveCategorySheet(category: category)
-            }
-            .sheet(isPresented: $showingBulkMoveSheet) {
-                if let bulkSelectionType {
-                    BulkMoveCategoriesSheet(
-                        categoryIDs: Array(selectedCategoryIDs),
-                        requiredType: bulkSelectionType
+                        },
+                        onAddGroup: { showingAddGroup = true },
+                        onAddCategory: { showingGroupSelection = true }
                     )
-                }
-            }
-            .alert("New Category Group", isPresented: $showingAddGroup) {
-                TextField("Group Name", text: $newGroupName)
-                Button("Cancel", role: .cancel) { }
-                Button("Add") {
-                    addGroup()
+                    .navigationTitle("Budget Actions")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") { showingBudgetActions = false }
+                        }
+                    }
                 }
             }
             .alert("New Category", isPresented: $showingAddCategory) {
@@ -333,24 +327,65 @@ struct BudgetView: View {
                     }
                 }
             }
-            .confirmationDialog(
-                "Set Up Budget",
-                isPresented: $showingBudgetResetConfirm,
-                titleVisibility: .visible
-            ) {
-                Button("Set Up Budget") { showingBudgetSetupWizard = true }
-                Button("Cancel", role: .cancel) { }
-            } message: {
-                Text("Use guided setup to rebuild your budget groups and categories.")
-            }
-            .sheet(isPresented: $showingBudgetSetupWizard) {
-                BudgetSetupWizardView(replaceExistingDefault: true)
-            }
             .alert("Selection", isPresented: $showingSelectionTypeMismatchAlert) {
                 Button("OK") { }
             } message: {
                 Text("You can only bulk select income or expense categories at a time.")
             }
+            .confirmationDialog(
+                "Delete selected categories?",
+                isPresented: $showingBulkDeleteConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    deleteSelectedCategories()
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("This will permanently remove the selected categories.")
+            }
+    }
+
+    private var budgetListWithSheets: some View {
+        budgetListWithDialogs
+            .sheet(item: $selectedCategoryIDForEdit, onDismiss: {
+                selectedCategoryIDForEdit = nil
+            }) { selectedID in
+                if let category = categoryForEdit(id: selectedID.id) {
+                    CategoryEditSheet(category: category) {
+                        selectedCategoryIDForEdit = nil
+                    }
+                } else {
+                    NavigationStack {
+                        ProgressView("Loading category…")
+                            .appSecondaryBodyText()
+                            .padding(AppDesign.Theme.Spacing.large)
+                            .navigationTitle("Edit Category")
+                            .navigationBarTitleDisplayMode(.inline)
+                    }
+                }
+            }
+            .sheet(item: $movingCategory) { category in
+                MoveCategorySheet(category: category)
+            }
+            .sheet(isPresented: $showingBulkMoveSheet) {
+                if let selectionType = bulkSelectionType {
+                    BulkMoveCategoriesSheet(
+                        categoryIDs: Array(selectedCategoryIDs),
+                        requiredType: selectionType
+                    ) {
+                        selectedCategoryIDs.removeAll()
+                        bulkSelectionType = nil
+                    }
+                }
+            }
+            .sheet(isPresented: $showingBudgetSetupWizard) {
+                BudgetSetupWizardView(replaceExistingDefault: true)
+            }
+    }
+
+    private var budgetListWithChrome: some View {
+        budgetListWithSheets
             .safeAreaInset(edge: .bottom) {
                 if isBulkSelecting {
                     bulkSelectionBar
@@ -370,7 +405,7 @@ struct BudgetView: View {
                         }
 
                         // Swipe left (next month)
-                        if value.translation.width < -AppTheme.Layout.swipeActionThreshold {
+                        if value.translation.width < -AppDesign.Theme.Layout.swipeActionThreshold {
                             if let nextMonth = calendar.date(byAdding: .month, value: 1, to: selectedDate) {
                                 withAnimation {
                                     selectedDate = nextMonth
@@ -378,7 +413,7 @@ struct BudgetView: View {
                             }
                         }
                         // Swipe right (previous month)
-                        else if value.translation.width > AppTheme.Layout.swipeActionThreshold {
+                        else if value.translation.width > AppDesign.Theme.Layout.swipeActionThreshold {
                             if let previousMonth = calendar.date(byAdding: .month, value: -1, to: selectedDate) {
                                 withAnimation {
                                     selectedDate = previousMonth
@@ -387,6 +422,10 @@ struct BudgetView: View {
                         }
                     }
             , including: .gesture)
+    }
+
+    private var budgetListView: some View {
+        budgetListWithChrome
     }
 
     private func postBudgetAlertsIfNeeded(for month: Date, monthTransactions: [Transaction], startOfMonth: Date) {
@@ -557,6 +596,10 @@ struct BudgetView: View {
         categoryGroups.filter { $0.type == .expense && matchesSearch($0) }
     }
 
+    private var incomeGroupsForList: [CategoryGroup] {
+        categoryGroups.filter { $0.type == .income && matchesSearch($0) }
+    }
+
     @ViewBuilder
     private var budgetListContent: some View {
         if isSearching, !hasAnySearchResults {
@@ -565,7 +608,9 @@ struct BudgetView: View {
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
         } else {
-            incomeGroupSection
+            ForEach(incomeGroupsForList) { group in
+                incomeGroupSection(group)
+            }
 
             ForEach(expenseGroupsForList) { group in
                 expenseGroupSection(group)
@@ -575,35 +620,37 @@ struct BudgetView: View {
     }
 
     @ViewBuilder
-    private var incomeGroupSection: some View {
-        if let incomeGroup = categoryGroups.first(where: { $0.type == .income }),
-           !incomeGroup.sortedCategories.isEmpty,
-           matchesSearch(incomeGroup) {
-            Section(
-                header: GroupHeaderView(
-                    group: incomeGroup,
-                    isCollapsed: isSearching ? false : isGroupCollapsed(incomeGroup),
-                    onToggleCollapse: { toggleGroupCollapse(incomeGroup) }
-                )
-                .foregroundStyle(AppColors.success(for: appColorMode))
-            ) {
-                if isSearching || !isGroupCollapsed(incomeGroup) {
-                    ForEach(filteredCategories(in: incomeGroup)) { category in
-                        categoryRow(for: category)
-                    }
-
-                    Button {
-                        selectedGroupForNewCategory = incomeGroup
-                        showingAddCategory = true
-                    } label: {
-                        Label("Add Income Source", systemImage: "plus.circle.fill")
-                            .foregroundStyle(AppColors.success(for: appColorMode))
-                            .font(AppTheme.Typography.secondaryBody)
-                            .fontWeight(.medium)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.vertical, AppTheme.Spacing.compact)
+    private func incomeGroupSection(_ incomeGroup: CategoryGroup) -> some View {
+        Section(
+            header: GroupHeaderView(
+                group: incomeGroup,
+                isCollapsed: isSearching ? false : isGroupCollapsed(incomeGroup),
+                onToggleCollapse: { toggleGroupCollapse(incomeGroup) },
+                showsSelectionActions: isBulkSelecting,
+                selectionCount: selectionCount(in: incomeGroup),
+                totalCount: selectableCategories(in: incomeGroup).count,
+                selectionEnabled: selectionControlsEnabled(for: incomeGroup),
+                onSelectAll: { selectAll(in: incomeGroup) },
+                onClear: { clearSelection(in: incomeGroup) }
+            )
+            .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
+        ) {
+            if isSearching || !isGroupCollapsed(incomeGroup) {
+                ForEach(filteredCategories(in: incomeGroup)) { category in
+                    categoryRow(for: category)
                 }
+
+                Button {
+                    selectedGroupForNewCategory = incomeGroup
+                    showingAddCategory = true
+                } label: {
+                    Label("Add Income Source", systemImage: "plus.circle.fill")
+                        .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
+                        .font(AppDesign.Theme.Typography.secondaryBody)
+                        .fontWeight(.medium)
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, AppDesign.Theme.Spacing.compact)
             }
         }
     }
@@ -614,7 +661,13 @@ struct BudgetView: View {
             header: GroupHeaderView(
                 group: group,
                 isCollapsed: isSearching ? false : isGroupCollapsed(group),
-                onToggleCollapse: { toggleGroupCollapse(group) }
+                onToggleCollapse: { toggleGroupCollapse(group) },
+                showsSelectionActions: isBulkSelecting,
+                selectionCount: selectionCount(in: group),
+                totalCount: selectableCategories(in: group).count,
+                selectionEnabled: selectionControlsEnabled(for: group),
+                onSelectAll: { selectAll(in: group) },
+                onClear: { clearSelection(in: group) }
             )
         ) {
             if isSearching || !isGroupCollapsed(group) {
@@ -630,12 +683,12 @@ struct BudgetView: View {
                     showingAddCategory = true
                 } label: {
                     Label("Add Budget Category", systemImage: "plus.circle.fill")
-                        .foregroundStyle(AppColors.tint(for: appColorMode))
-                        .font(AppTheme.Typography.secondaryBody)
+                        .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
+                        .font(AppDesign.Theme.Typography.secondaryBody)
                         .fontWeight(.medium)
                 }
                 .buttonStyle(.plain)
-                .padding(.vertical, AppTheme.Spacing.compact)
+                .padding(.vertical, AppDesign.Theme.Spacing.compact)
             }
         }
     }
@@ -654,7 +707,7 @@ struct BudgetView: View {
             if isBulkSelecting {
                 toggleSelection(for: category)
             } else {
-                selectedCategoryForEdit = category
+                selectedCategoryIDForEdit = SelectedCategoryID(id: category.persistentModelID)
             }
         }
 
@@ -670,7 +723,7 @@ struct BudgetView: View {
                     } label: {
                         Label("Move", systemImage: "folder")
                     }
-                    .tint(AppColors.tint(for: appColorMode))
+                    .tint(AppDesign.Colors.tint(for: appColorMode))
                 }
                 .swipeActions(edge: HorizontalEdge.trailing, allowsFullSwipe: true) {
                     Button(role: .destructive) {
@@ -679,24 +732,42 @@ struct BudgetView: View {
                         Label("Delete", systemImage: "trash")
                     }
                     Button {
-                        movingCategory = category
+                        selectedCategoryIDForEdit = SelectedCategoryID(id: category.persistentModelID)
                     } label: {
-                        Label("Move", systemImage: "folder")
+                        Label("Edit", systemImage: "pencil")
                     }
-                    .tint(AppColors.tint(for: appColorMode))
+                    .tint(AppDesign.Colors.tint(for: appColorMode))
                 }
                 .onLongPressGesture(minimumDuration: 0.35) {
                     Haptics.impact(.medium)
-                    selectedCategoryForEdit = category
+                    selectedCategoryIDForEdit = SelectedCategoryID(id: category.persistentModelID)
                 }
         )
+    }
+
+    private func categoryForEdit(id: PersistentIdentifier) -> Category? {
+        for group in categoryGroups {
+            if let match = group.categories?.first(where: { $0.persistentModelID == id }) {
+                return match
+            }
+        }
+        return nil
     }
 
     private var bulkSelectionBar: some View {
         VStack(spacing: 0) {
             Divider()
-            HStack(spacing: AppTheme.Spacing.tight) {
-                Button(selectedCategoryIDs.isEmpty ? "Select All" : "Clear") {
+            HStack(spacing: AppDesign.Theme.Spacing.tight) {
+                Button("Done") {
+                    withAnimation {
+                        isBulkSelecting = false
+                        selectedCategoryIDs.removeAll()
+                        bulkSelectionType = nil
+                    }
+                }
+                .appActionBarSecondary()
+
+                Button(selectedCategoryIDs.isEmpty ? "Select All" : "Clear All") {
                     withAnimation {
                         if selectedCategoryIDs.isEmpty {
                             selectAllVisibleCategories()
@@ -706,19 +777,94 @@ struct BudgetView: View {
                         }
                     }
                 }
+                .appActionBarSecondary()
 
                 Spacer()
 
-                Button("Move…") {
+                Button("Move (\(selectedCategoryIDs.count))") {
                     showingBulkMoveSheet = true
                 }
-                .fontWeight(.semibold)
+                .appActionBarPrimary()
                 .disabled(selectedCategoryIDs.isEmpty || bulkSelectionType == nil)
+
+                Button("Delete") {
+                    showingBulkDeleteConfirm = true
+                }
+                .appActionBarSecondary()
+                .disabled(selectedCategoryIDs.isEmpty)
             }
-            .padding(.horizontal, AppTheme.Spacing.medium)
-            .padding(.vertical, AppTheme.Spacing.tight)
+            .padding(.horizontal, AppDesign.Theme.Spacing.medium)
+            .padding(.vertical, AppDesign.Theme.Spacing.tight)
             .background(.thinMaterial)
         }
+    }
+
+    private func selectableCategories(in group: CategoryGroup) -> [Category] {
+        filteredCategories(in: group)
+    }
+
+    private func selectionCount(in group: CategoryGroup) -> Int {
+        selectableCategories(in: group)
+            .reduce(0) { count, category in
+                count + (selectedCategoryIDs.contains(category.persistentModelID) ? 1 : 0)
+            }
+    }
+
+    private func selectionControlsEnabled(for group: CategoryGroup) -> Bool {
+        let groupType = group.type
+        return bulkSelectionType == nil || bulkSelectionType == groupType
+    }
+
+    private func selectAll(in group: CategoryGroup) {
+        let categories = selectableCategories(in: group)
+        guard let first = categories.first else { return }
+
+        let type = first.group?.type ?? .expense
+        if let bulkSelectionType, bulkSelectionType != type {
+            showingSelectionTypeMismatchAlert = true
+            return
+        }
+
+        bulkSelectionType = type
+        for category in categories {
+            selectedCategoryIDs.insert(category.persistentModelID)
+        }
+    }
+
+    private func clearSelection(in group: CategoryGroup) {
+        let categories = selectableCategories(in: group)
+        for category in categories {
+            selectedCategoryIDs.remove(category.persistentModelID)
+        }
+        if selectedCategoryIDs.isEmpty {
+            bulkSelectionType = nil
+        }
+    }
+
+    private func deleteSelectedCategories() {
+        let idsToDelete = selectedCategoryIDs
+        guard !idsToDelete.isEmpty else { return }
+
+        withAnimation {
+            do {
+                let categories = idsToDelete.compactMap { modelContext.model(for: $0) as? Category }
+                for category in categories {
+                    try undoRedoManager.execute(
+                        DeleteCategoryCommand(modelContext: modelContext, category: category)
+                    )
+                }
+            } catch {
+                for id in idsToDelete {
+                    if let category = modelContext.model(for: id) as? Category {
+                        modelContext.delete(category)
+                    }
+                }
+                modelContext.safeSave(context: "BudgetView.deleteSelectedCategories.fallback")
+            }
+        }
+
+        selectedCategoryIDs.removeAll()
+        bulkSelectionType = nil
     }
 
     private func toggleSelection(for category: Category) {
@@ -746,10 +892,8 @@ struct BudgetView: View {
 
         var categoriesToSelect: [Category] = []
 
-        if let incomeGroup = categoryGroups.first(where: { $0.type == .income }),
-           !incomeGroup.sortedCategories.isEmpty,
-           matchesSearch(incomeGroup),
-           (isSearching || !isGroupCollapsed(incomeGroup)) {
+        for incomeGroup in incomeGroupsForList {
+            guard isSearching || !isGroupCollapsed(incomeGroup) else { continue }
             categoriesToSelect.append(contentsOf: filteredCategories(in: incomeGroup))
         }
 
@@ -782,16 +926,18 @@ struct BudgetView: View {
                         modelContext: modelContext,
                         name: trimmed,
                         order: maxOrder + 1,
-                        type: .expense
+                        type: newGroupType
                     )
                 )
             } catch {
                 // Fallback
-                let newGroup = CategoryGroup(name: trimmed, order: maxOrder + 1)
+                let newGroup = CategoryGroup(name: trimmed, order: maxOrder + 1, type: newGroupType)
                 modelContext.insert(newGroup)
                 modelContext.safeSave(context: "BudgetView.addGroup.fallback")
             }
             newGroupName = ""
+            newGroupType = .expense
+            showingAddGroup = false
         }
     }
     
@@ -902,8 +1048,15 @@ struct GroupHeaderView: View {
     let group: CategoryGroup
     let isCollapsed: Bool
     let onToggleCollapse: () -> Void
+    let showsSelectionActions: Bool
+    let selectionCount: Int
+    let totalCount: Int
+    let selectionEnabled: Bool
+    let onSelectAll: () -> Void
+    let onClear: () -> Void
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.appColorMode) private var appColorMode
     @AppStorage("currencyCode") private var currencyCode = "USD"
     
     @State private var showingRenameAlert = false
@@ -913,7 +1066,7 @@ struct GroupHeaderView: View {
     var body: some View {
         let totalAssigned = (group.categories ?? []).reduce(0) { $0 + $1.assigned }
         
-        HStack(spacing: AppTheme.Spacing.compact) {
+        HStack(spacing: AppDesign.Theme.Spacing.compact) {
             Button(action: onToggleCollapse) {
                 Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
                     .appCaptionText()
@@ -924,7 +1077,7 @@ struct GroupHeaderView: View {
             .buttonStyle(.plain)
             .accessibilityLabel(isCollapsed ? "Expand \(group.name)" : "Collapse \(group.name)")
             
-	        HStack(spacing: AppTheme.Spacing.xSmall) {
+	        HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
 	                Text(group.name)
 	                    .appSectionTitleText()
 	                    .foregroundStyle(.primary)
@@ -935,6 +1088,26 @@ struct GroupHeaderView: View {
 	        }
             
             Spacer()
+
+            if showsSelectionActions && totalCount > 0 {
+                if selectionCount > 0 {
+                    Text("\(selectionCount)/\(totalCount)")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                }
+
+                Button(selectionCount == totalCount ? "Clear" : "Select All") {
+                    if selectionCount == totalCount {
+                        onClear()
+                    } else {
+                        onSelectAll()
+                    }
+                }
+                .font(AppDesign.Theme.Typography.secondaryBody.weight(.semibold))
+                .foregroundStyle(selectionEnabled ? AppDesign.Colors.tint(for: appColorMode) : .secondary)
+                .disabled(!selectionEnabled)
+            }
+
             Menu {
                 Button {
                     newName = group.name
@@ -952,12 +1125,9 @@ struct GroupHeaderView: View {
                 Image(systemName: "ellipsis")
                     .appCaptionText()
                     .foregroundStyle(.secondary)
-                    .padding(AppTheme.Spacing.compact)
-                    .background(Color(.systemGray6))
-                    .clipShape(Circle())
             }
         }
-        .padding(.vertical, AppTheme.Spacing.micro)
+        .padding(.vertical, AppDesign.Theme.Spacing.micro)
         .alert("Rename Group", isPresented: $showingRenameAlert) {
             TextField("Group Name", text: $newName)
             Button("Cancel", role: .cancel) { }
@@ -1019,35 +1189,37 @@ struct BudgetCategoryRowView: View {
     }
 
     var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: AppTheme.Spacing.tight) {
-                // Category icon
-                Circle()
-                    .fill(AppColors.tint(for: appColorMode).opacity(0.1))
-                    .frame(width: 40, height: 40)
+        HStack(spacing: AppDesign.Theme.Spacing.tight) {
+            // Category icon
+            Circle()
+                .fill(AppDesign.Colors.tint(for: appColorMode).opacity(0.1))
+                .frame(width: 40, height: 40)
                     .overlay(
                         Text(category.icon ?? String(category.name.prefix(1)).uppercased())
-                            .font(.system(size: category.icon != nil ? 20 : 16, weight: .semibold))
-                            .foregroundStyle(AppColors.tint(for: appColorMode))
+                            .appDisplayText(
+                                category.icon != nil ? AppDesign.Theme.DisplaySize.large : AppDesign.Theme.DisplaySize.small,
+                                weight: .semibold
+                            )
+                            .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                     )
                 
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                     Text(category.name)
-                        .font(AppTheme.Typography.body)
+                        .font(AppDesign.Theme.Typography.body)
                         .fontWeight(.medium)
                         .foregroundStyle(.primary)
                     
                     if category.assigned == 0 && category.group?.type != .income {
                         Text("Needs Budget")
-                            .font(.caption2)
+                            .appCaption2Text()
                             .fontWeight(.medium)
-                            .foregroundStyle(AppColors.warning(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                     }
                 }
                 
                 Spacer()
                 
-	                VStack(alignment: .trailing, spacing: AppTheme.Spacing.hairline) {
+	                VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.hairline) {
 	                    Text(category.assigned, format: .currency(code: currencyCode))
 	                        .appSecondaryBodyText()
 	                        .foregroundStyle(.primary)
@@ -1057,19 +1229,19 @@ struct BudgetCategoryRowView: View {
                     if category.group?.type == .income {
                         if monthlyData.spent > 0 {
                             Text("Received: \(monthlyData.spent.formatted(.currency(code: currencyCode)))")
-                                .font(.caption2)
-                                .foregroundStyle(AppColors.success(for: appColorMode))
+                                .appCaption2Text()
+                                .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                         }
                     } else {
                         if category.assigned > 0 {
                             let remaining = monthlyData.remaining
                             Text("\(remaining >= 0 ? "Left" : "Over"): \(abs(remaining).formatted(.currency(code: currencyCode)))")
-                                .font(.caption2)
-                            .foregroundStyle(remaining >= 0 ? .secondary : AppColors.danger(for: appColorMode))
+                                .appCaption2Text()
+                            .foregroundStyle(remaining >= 0 ? .secondary : AppDesign.Colors.danger(for: appColorMode))
                         } else if monthlyData.spent > 0 {
                             Text("Spent: \(monthlyData.spent.formatted(.currency(code: currencyCode)))")
-                                .font(.caption2)
-                                .foregroundStyle(AppColors.danger(for: appColorMode))
+                                .appCaption2Text()
+                                .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                         }
                     }
                 }
@@ -1077,15 +1249,16 @@ struct BudgetCategoryRowView: View {
                 if showsSelection {
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                         .appTitleText()
-                        .foregroundStyle(isSelected ? AppColors.tint(for: appColorMode) : Color.secondary.opacity(0.35))
+                        .foregroundStyle(isSelected ? AppDesign.Colors.tint(for: appColorMode) : Color.secondary.opacity(0.35))
                 } else {
                     Image(systemName: "chevron.right")
                         .appCaptionText()
                         .foregroundStyle(.tertiary)
                 }
-            }
-            .padding(.vertical, AppTheme.Spacing.micro)
         }
+        .padding(.vertical, AppDesign.Theme.Spacing.micro)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: onTap)
     }
 }
 
@@ -1139,9 +1312,9 @@ struct CategoryTransactionsSheet: View {
         NavigationStack {
             VStack(spacing: 0) {
                 // Summary header
-                VStack(spacing: AppTheme.Spacing.medium) {
-                    HStack(spacing: AppTheme.Spacing.large) {
-                        VStack(spacing: AppTheme.Spacing.micro) {
+                VStack(spacing: AppDesign.Theme.Spacing.medium) {
+                    HStack(spacing: AppDesign.Theme.Spacing.large) {
+                        VStack(spacing: AppDesign.Theme.Spacing.micro) {
                             Text("Budget")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
@@ -1154,13 +1327,13 @@ struct CategoryTransactionsSheet: View {
                         Divider()
                             .frame(height: 40)
 
-                        VStack(spacing: AppTheme.Spacing.micro) {
+                        VStack(spacing: AppDesign.Theme.Spacing.micro) {
                             Text("Spent")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                             Text(totalSpent, format: .currency(code: currencyCode))
                                 .appTitleText()
-                                .foregroundStyle(AppColors.danger(for: appColorMode))
+                                .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.5)
                         }
@@ -1168,13 +1341,13 @@ struct CategoryTransactionsSheet: View {
                         Divider()
                             .frame(height: 40)
 
-                        VStack(spacing: AppTheme.Spacing.micro) {
+                        VStack(spacing: AppDesign.Theme.Spacing.micro) {
                             Text("Remaining")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                             Text(category.assigned - totalSpent, format: .currency(code: currencyCode))
                                 .appTitleText()
-                                .foregroundStyle((category.assigned - totalSpent) >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
+                                .foregroundStyle((category.assigned - totalSpent) >= 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.5)
                         }
@@ -1203,12 +1376,12 @@ struct CategoryTransactionsSheet: View {
                                 selectedTransaction = transaction
                             } label: {
                                 HStack {
-                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                                         Text(transaction.payee)
-                                            .font(AppTheme.Typography.body)
+                                            .font(AppDesign.Theme.Typography.body)
                                             .fontWeight(.medium)
 
-                                        HStack(spacing: AppTheme.Spacing.compact) {
+                                        HStack(spacing: AppDesign.Theme.Spacing.compact) {
                                             Text(transaction.date, format: .dateTime.month(.abbreviated).day())
                                                 .appCaptionText()
                                                 .foregroundStyle(.secondary)
@@ -1226,7 +1399,7 @@ struct CategoryTransactionsSheet: View {
 	                                    Text(transaction.amount, format: .currency(code: currencyCode))
 	                                        .appSecondaryBodyText()
 	                                        .fontWeight(.semibold)
-	                                        .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+	                                        .foregroundStyle(transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)
 	                                        .lineLimit(1)
 	                                        .minimumScaleFactor(0.5)
 
@@ -1237,7 +1410,7 @@ struct CategoryTransactionsSheet: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-                            .padding(.vertical, AppTheme.Spacing.micro)
+                            .padding(.vertical, AppDesign.Theme.Spacing.micro)
                         }
                     }
                     .sheet(item: $selectedTransaction) { transaction in
@@ -1301,7 +1474,7 @@ struct CategoryEditSheet: View {
                             .appCaptionText()
                             .foregroundStyle(.secondary)
                         TextField("Name", text: $name)
-                            .font(AppTheme.Typography.body)
+                            .font(AppDesign.Theme.Typography.body)
                     }
                     
                     VStack(alignment: .leading) {
@@ -1360,7 +1533,7 @@ struct CategoryEditSheet: View {
                             Button(action: { showingEmojiPicker = true }) {
                                 Image(systemName: "plus.circle.fill")
                                     .appTitleText()
-                                    .foregroundStyle(AppColors.tint(for: appColorMode))
+                                    .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                             }
                         }
                     }
@@ -1572,20 +1745,20 @@ struct EmojiPickerSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+                LazyVStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.large) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
                         TextField("Search (e.g., groceries, rent, travel)", text: $searchText)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .textFieldStyle(.roundedBorder)
-                            .padding(.horizontal)
+                            .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
 
-	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-	                            Text("Any emoji")
-	                                .appSectionTitleText()
-	                                .padding(.horizontal)
+	                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
+                            Text("Any emoji")
+                                .appSectionTitleText()
+                                .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
 
-                            HStack(spacing: AppTheme.Spacing.small) {
+                            HStack(spacing: AppDesign.Theme.Spacing.small) {
                                 TextField("Type or paste an emoji", text: $customEmojiText)
                                     .textFieldStyle(.roundedBorder)
                                     .focused($customEmojiFocused)
@@ -1602,9 +1775,9 @@ struct EmojiPickerSheet: View {
                                         dismiss()
                                     } label: {
                                         Text(candidate)
-                                            .font(.system(size: 28))
+                                            .appDisplayText(AppDesign.Theme.DisplaySize.xxLarge, weight: .regular)
                                             .frame(width: 44, height: 44)
-                                            .background(AppColors.tint(for: appColorMode).opacity(0.15))
+                                            .background(AppDesign.Colors.tint(for: appColorMode).opacity(0.15))
                                             .clipShape(Circle())
                                     }
                                     .buttonStyle(.plain)
@@ -1622,57 +1795,57 @@ struct EmojiPickerSheet: View {
                                     .accessibilityLabel("Open emoji keyboard")
                                 }
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
                         }
                     }
 
                     if !suggestedEmojis.isEmpty {
-	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-	                            Text("Suggested")
-	                                .appSectionTitleText()
-	                                .padding(.horizontal)
+	                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
+                            Text("Suggested")
+                                .appSectionTitleText()
+                                .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
 
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 45))], spacing: AppTheme.Spacing.small) {
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 45))], spacing: AppDesign.Theme.Spacing.small) {
                                 ForEach(suggestedEmojis, id: \.self) { emoji in
                                     Button {
                                         selectedEmoji = emoji
                                         dismiss()
                                     } label: {
                                         Text(emoji)
-                                            .font(.system(size: 32))
+                                            .appDisplayText(AppDesign.Theme.DisplaySize.xxxLarge, weight: .regular)
                                             .frame(width: 45, height: 45)
-                                            .background(selectedEmoji == emoji ? AppColors.tint(for: appColorMode).opacity(0.2) : Color.clear)
+                                            .background(selectedEmoji == emoji ? AppDesign.Colors.tint(for: appColorMode).opacity(0.2) : Color.clear)
                                             .clipShape(Circle())
                                     }
                                     .buttonStyle(.plain)
                                 }
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
                         }
                     }
 
 	                    ForEach(filteredCategories, id: \.0) { category in
-	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-	                            Text(category.0)
-	                                .appSectionTitleText()
-	                                .padding(.horizontal)
+	                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
+                            Text(category.0)
+                                .appSectionTitleText()
+                                .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
                             
-                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 45))], spacing: AppTheme.Spacing.small) {
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 45))], spacing: AppDesign.Theme.Spacing.small) {
                                 ForEach(category.1, id: \.self) { emoji in
                                     Button(action: {
                                         selectedEmoji = emoji
                                         dismiss()
                                     }) {
                                         Text(emoji)
-                                            .font(.system(size: 32))
+                                            .appDisplayText(AppDesign.Theme.DisplaySize.xxxLarge, weight: .regular)
                                             .frame(width: 45, height: 45)
-                                            .background(selectedEmoji == emoji ? AppColors.tint(for: appColorMode).opacity(0.2) : Color.clear)
+                                            .background(selectedEmoji == emoji ? AppDesign.Colors.tint(for: appColorMode).opacity(0.2) : Color.clear)
                                             .clipShape(Circle())
                                     }
                                     .buttonStyle(.plain)
                                 }
                             }
-                            .padding(.horizontal)
+                            .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
                         }
                     }
                     
@@ -1682,15 +1855,15 @@ struct EmojiPickerSheet: View {
                         dismiss()
                     }) {
                         Label("Remove Icon", systemImage: "trash")
-                            .foregroundStyle(AppColors.danger(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(Color(.systemGray6))
-                            .cornerRadius(AppTheme.Radius.button)
+                            .cornerRadius(AppDesign.Theme.Radius.button)
                     }
                     .padding()
                 }
-                .padding(.vertical)
+                .padding(.vertical, AppDesign.Theme.Spacing.medium)
             }
             .navigationTitle("Select Icon")
             .navigationBarTitleDisplayMode(.inline)
@@ -1723,6 +1896,106 @@ struct EmojiPickerSheet: View {
                 return (title, keep)
             }
             .filter { title, _ in title.lowercased().contains(lower) || EmojiSuggester.matchesCategoryTitle(lower, title: title) }
+    }
+}
+
+private struct BudgetActionsSheet: View {
+    let canUndo: Bool
+    let canRedo: Bool
+    let isBulkSelecting: Bool
+    let isReordering: Bool
+    let hasGroups: Bool
+    let currentSort: BudgetView.GroupSortOption
+    let onUndo: () -> Void
+    let onRedo: () -> Void
+    let onSetUpBudget: () -> Void
+    let onSort: (BudgetView.GroupSortOption) -> Void
+    let onExpandAll: () -> Void
+    let onCollapseAll: () -> Void
+    let onToggleBulkSelect: () -> Void
+    let onToggleReorder: () -> Void
+    let onAddGroup: () -> Void
+    let onAddCategory: () -> Void
+
+    var body: some View {
+        List {
+            Section("Budget") {
+                Button("Set Up Budget") {
+                    onSetUpBudget()
+                }
+            }
+
+            Section("Groups") {
+                NavigationLink {
+                    List {
+                        ForEach(BudgetView.GroupSortOption.allCases, id: \.rawValue) { option in
+                            Button {
+                                onSort(option)
+                            } label: {
+                                HStack {
+                                    Text(option.title)
+                                    Spacer()
+                                    if option == currentSort {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .navigationTitle("Sort Groups")
+                    .navigationBarTitleDisplayMode(.inline)
+                } label: {
+                    Label("Sort Groups", systemImage: "arrow.up.arrow.down")
+                }
+
+                Button("Expand All") {
+                    onExpandAll()
+                }
+                .disabled(!hasGroups)
+
+                Button("Collapse All") {
+                    onCollapseAll()
+                }
+                .disabled(!hasGroups)
+            }
+
+            Section("Selection") {
+                Button(isBulkSelecting ? "Done Selecting" : "Bulk Select") {
+                    onToggleBulkSelect()
+                }
+
+                Button(isReordering ? "Done Reordering" : "Reorder") {
+                    onToggleReorder()
+                }
+            }
+
+            Section("Create") {
+                Button("Add Category Group") {
+                    onAddGroup()
+                }
+
+                Button("Add Category") {
+                    onAddCategory()
+                }
+            }
+
+            Section("History") {
+                Button {
+                    onUndo()
+                } label: {
+                    Label("Undo", systemImage: "arrow.uturn.backward")
+                }
+                .disabled(!canUndo)
+
+                Button {
+                    onRedo()
+                } label: {
+                    Label("Redo", systemImage: "arrow.uturn.forward")
+                }
+                .disabled(!canRedo)
+            }
+        }
     }
 }
 

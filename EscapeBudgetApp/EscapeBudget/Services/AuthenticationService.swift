@@ -1,6 +1,7 @@
 import Foundation
 import LocalAuthentication
 import Combine
+import CryptoKit
 
 /// Manages app authentication state and biometric authentication.
 @MainActor
@@ -24,6 +25,19 @@ final class AuthenticationService: ObservableObject {
         }
     }
 
+    /// Whether app passcode authentication is enabled
+    @Published var isPasscodeEnabled: Bool = false {
+        didSet {
+            if oldValue != isPasscodeEnabled {
+                _ = KeychainService.shared.setBool(isPasscodeEnabled, forKey: .passcodeEnabled)
+                if !isPasscodeEnabled {
+                    _ = KeychainService.shared.remove(forKey: .passcodeHash)
+                    isBiometricsEnabled = false
+                }
+            }
+        }
+    }
+
     /// The type of biometric available on the device
     @Published private(set) var biometricType: BiometricType = .none
 
@@ -36,16 +50,17 @@ final class AuthenticationService: ObservableObject {
     private init() {
         // Load biometric setting from Keychain
         isBiometricsEnabled = KeychainService.shared.getBool(forKey: .biometricsEnabled) ?? false
+        isPasscodeEnabled = KeychainService.shared.getBool(forKey: .passcodeEnabled) ?? false
 
         // Determine biometric type
         detectBiometricType()
 
         // If biometrics not enabled, unlock immediately
-        if !isBiometricsEnabled {
+        if !isBiometricsEnabled && !isPasscodeEnabled {
             isLocked = false
         } else {
             // If biometrics enabled, flag that we should auto-authenticate on first appearance
-            shouldAutoAuthenticate = true
+            shouldAutoAuthenticate = isBiometricsEnabled
         }
 
         // Log app launch
@@ -61,7 +76,7 @@ final class AuthenticationService: ObservableObject {
 
         guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) else {
             // Biometrics not available, fall back to passcode
-            return await authenticateWithPasscode()
+            return await authenticateWithDevicePasscode()
         }
 
         let reason = "Unlock Escape Budget to access your financial data"
@@ -73,7 +88,7 @@ final class AuthenticationService: ObservableObject {
             )
 
             if success {
-                handleAuthenticationSuccess()
+                handleAuthenticationSuccess(method: biometricType.displayName)
             } else {
                 handleAuthenticationFailure(method: biometricType.displayName)
             }
@@ -82,10 +97,11 @@ final class AuthenticationService: ObservableObject {
         } catch {
             handleAuthenticationFailure(method: biometricType.displayName)
 
-            // If biometric failed, try passcode as fallback
+            // If biometric failed, try device passcode only if app passcode isn't enabled
             if let laError = error as? LAError,
-               laError.code == .userFallback || laError.code == .biometryLockout {
-                return await authenticateWithPasscode()
+               laError.code == .userFallback || laError.code == .biometryLockout,
+               !isPasscodeEnabled {
+                return await authenticateWithDevicePasscode()
             }
 
             return false
@@ -93,7 +109,7 @@ final class AuthenticationService: ObservableObject {
     }
 
     /// Authenticates using device passcode as fallback
-    func authenticateWithPasscode() async -> Bool {
+    func authenticateWithDevicePasscode() async -> Bool {
         let context = LAContext()
 
         let reason = "Enter your passcode to unlock Escape Budget"
@@ -105,7 +121,7 @@ final class AuthenticationService: ObservableObject {
             )
 
             if success {
-                handleAuthenticationSuccess()
+                handleAuthenticationSuccess(method: "passcode")
             } else {
                 handleAuthenticationFailure(method: "passcode")
             }
@@ -117,14 +133,46 @@ final class AuthenticationService: ObservableObject {
         }
     }
 
+    /// Verifies the app passcode
+    func verifyAppPasscode(_ code: String) -> Bool {
+        guard isPasscodeEnabled else { return false }
+        guard let storedHash = KeychainService.shared.getString(forKey: .passcodeHash) else { return false }
+
+        if hashPasscode(code) == storedHash {
+            handleAuthenticationSuccess(method: "passcode")
+            return true
+        }
+
+        handleAuthenticationFailure(method: "passcode")
+        return false
+    }
+
+    /// Sets the app passcode (4+ digits recommended)
+    func setPasscode(_ code: String) -> Bool {
+        let hash = hashPasscode(code)
+        let stored = KeychainService.shared.setString(hash, forKey: .passcodeHash)
+        if stored {
+            isPasscodeEnabled = true
+            isLocked = false
+            lastAuthenticatedAt = Date()
+        }
+        return stored
+    }
+
+    /// Disables the app passcode
+    func disablePasscode() {
+        isPasscodeEnabled = false
+        isLocked = false
+    }
+
     /// Called when app enters background
     func appDidEnterBackground() {
         SecurityLogger.shared.logAppBackground()
 
         // When biometric lock is enabled, require authentication every time the app returns.
-        if isBiometricsEnabled {
+        if isBiometricsEnabled || isPasscodeEnabled {
             isLocked = true
-            shouldAutoAuthenticate = true
+            shouldAutoAuthenticate = isBiometricsEnabled
         }
     }
 
@@ -133,17 +181,23 @@ final class AuthenticationService: ObservableObject {
         SecurityLogger.shared.logAppForeground()
 
         guard isBiometricsEnabled else {
-            isLocked = false
+            if isPasscodeEnabled {
+                isLocked = true
+            } else {
+                isLocked = false
+            }
+            shouldAutoAuthenticate = false
             return
         }
 
         // Always require authentication after returning from background.
         isLocked = true
-        shouldAutoAuthenticate = true
+        shouldAutoAuthenticate = isBiometricsEnabled
     }
 
     /// Enables biometric authentication after successful verification
     func enableBiometrics() async -> Bool {
+        guard isPasscodeEnabled else { return false }
         let context = LAContext()
         var error: NSError?
 
@@ -174,7 +228,7 @@ final class AuthenticationService: ObservableObject {
     /// Disables biometric authentication
     func disableBiometrics() {
         isBiometricsEnabled = false
-        isLocked = false
+        isLocked = isPasscodeEnabled
     }
 
     /// Resets the auto-authentication flag
@@ -226,11 +280,11 @@ final class AuthenticationService: ObservableObject {
         }
     }
 
-    private func handleAuthenticationSuccess() {
+    private func handleAuthenticationSuccess(method: String) {
         isLocked = false
         lastAuthenticatedAt = Date()
         shouldAutoAuthenticate = false
-        SecurityLogger.shared.logAuthenticationAttempt(success: true, method: biometricType.displayName)
+        SecurityLogger.shared.logAuthenticationAttempt(success: true, method: method)
 
         // Reset failure count
         _ = KeychainService.shared.remove(forKey: .authFailureCount)
@@ -239,6 +293,12 @@ final class AuthenticationService: ObservableObject {
     private func handleAuthenticationFailure(method: String) {
         SecurityLogger.shared.logAuthenticationAttempt(success: false, method: method)
         // Note: For a full implementation, you'd track failure count and implement lockout
+    }
+
+    private func hashPasscode(_ code: String) -> String {
+        let data = Data(code.utf8)
+        let digest = SHA256.hash(data: data)
+        return digest.map { String(format: "%02x", $0) }.joined()
     }
 }
 

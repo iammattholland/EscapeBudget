@@ -21,9 +21,9 @@ struct PayeeTransactionsSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                VStack(spacing: AppTheme.Spacing.medium) {
-                    HStack(spacing: AppTheme.Spacing.large) {
-                        VStack(spacing: AppTheme.Spacing.micro) {
+                VStack(spacing: AppDesign.Theme.Spacing.medium) {
+                    HStack(spacing: AppDesign.Theme.Spacing.large) {
+                        VStack(spacing: AppDesign.Theme.Spacing.micro) {
                             Text("Transactions")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
@@ -36,13 +36,13 @@ struct PayeeTransactionsSheet: View {
                         Divider()
                             .frame(height: 40)
 
-                        VStack(spacing: AppTheme.Spacing.micro) {
+                        VStack(spacing: AppDesign.Theme.Spacing.micro) {
                             Text("Spent")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                             Text(totalSpent, format: .currency(code: currencyCode))
                                 .appTitleText()
-                                .foregroundStyle(AppColors.danger(for: appColorMode))
+                                .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.5)
                         }
@@ -70,12 +70,12 @@ struct PayeeTransactionsSheet: View {
                                 selectedTransaction = transaction
                             } label: {
                                 HStack {
-                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                                         Text(transaction.payee)
-                                            .font(AppTheme.Typography.body)
+                                            .font(AppDesign.Theme.Typography.body)
                                             .fontWeight(.medium)
 
-                                        HStack(spacing: AppTheme.Spacing.compact) {
+                                        HStack(spacing: AppDesign.Theme.Spacing.compact) {
                                             Text(transaction.date, format: .dateTime.month(.abbreviated).day())
                                                 .appCaptionText()
                                                 .foregroundStyle(.secondary)
@@ -93,7 +93,7 @@ struct PayeeTransactionsSheet: View {
                                     Text(transaction.amount, format: .currency(code: currencyCode))
                                         .appSecondaryBodyText()
                                         .fontWeight(.semibold)
-                                        .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                                        .foregroundStyle(transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)
                                         .lineLimit(1)
                                         .minimumScaleFactor(0.5)
 
@@ -104,7 +104,7 @@ struct PayeeTransactionsSheet: View {
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-                            .padding(.vertical, AppTheme.Spacing.micro)
+                            .padding(.vertical, AppDesign.Theme.Spacing.micro)
                         }
                     }
                     .sheet(item: $selectedTransaction) { transaction in

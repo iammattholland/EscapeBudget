@@ -33,12 +33,12 @@ struct SpendingChallengesView: View {
         List {
             // Header
             Section {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                    HStack(spacing: AppTheme.Spacing.tight) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
+                    HStack(spacing: AppDesign.Theme.Spacing.tight) {
                         Image(systemName: "flag.checkered")
-                            .font(.system(size: 24, weight: .semibold))
+                            .appDisplayText(AppDesign.Theme.DisplaySize.xLarge, weight: .semibold)
                             .foregroundStyle(.secondary)
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                             Text("Spending Challenges")
                                 .appSectionTitleText()
                             Text("Build better habits with verifiable goals")
@@ -48,13 +48,13 @@ struct SpendingChallengesView: View {
                     }
 
                     // Stats row
-                    HStack(spacing: AppTheme.Spacing.medium) {
+                    HStack(spacing: AppDesign.Theme.Spacing.medium) {
                         StatPill(value: "\(activeChallenges.count)", label: "Active")
                         StatPill(value: "\(completedChallenges.filter { $0.status == .completed }.count)", label: "Completed")
                         StatPill(value: "\(currentStreak)", label: "Streak")
                     }
                 }
-                .padding(.vertical, AppTheme.Spacing.micro)
+                .padding(.vertical, AppDesign.Theme.Spacing.micro)
             }
 
             // Create Custom Challenge button
@@ -62,12 +62,12 @@ struct SpendingChallengesView: View {
                 Button {
                     showingCustomBuilder = true
                 } label: {
-                    HStack(spacing: AppTheme.Spacing.tight) {
+                    HStack(spacing: AppDesign.Theme.Spacing.tight) {
                         Image(systemName: "plus.circle.fill")
-                            .font(.title2)
+                            .appTitle2Text()
                             .foregroundStyle(.tint)
 
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                             Text("Create Custom Challenge")
                                 .appSectionTitleText()
                                 .foregroundStyle(.primary)
@@ -80,11 +80,11 @@ struct SpendingChallengesView: View {
 
                         Image(systemName: "chevron.right")
                             .foregroundStyle(.tertiary)
-                            .font(.caption)
+                            .appCaptionText()
                     }
                 }
                 .buttonStyle(.plain)
-                .padding(.vertical, AppTheme.Spacing.xSmall)
+                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
             }
 
             // Tab picker
@@ -277,18 +277,18 @@ private struct StatPill: View {
     let label: String
 
     var body: some View {
-        VStack(spacing: AppTheme.Spacing.micro) {
+        VStack(spacing: AppDesign.Theme.Spacing.micro) {
             Text(value)
-                .font(.title2)
+                .appTitle2Text()
                 .fontWeight(.bold)
             Text(label)
                 .appCaptionText()
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, AppTheme.Spacing.small)
+        .padding(.vertical, AppDesign.Theme.Spacing.small)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact, style: .continuous)
                 .fill(Color(.tertiarySystemGroupedBackground))
         )
     }
@@ -301,24 +301,24 @@ private struct ActiveChallengeRow: View {
 
     private var progressColor: Color {
         if result.passed {
-            return AppColors.success(for: appColorMode)
+            return AppDesign.Colors.success(for: appColorMode)
         } else if result.progress > 0.5 {
-            return AppColors.warning(for: appColorMode)
+            return AppDesign.Colors.warning(for: appColorMode)
         } else if result.progress > 0 {
-            return AppColors.warning(for: appColorMode)
+            return AppDesign.Colors.warning(for: appColorMode)
         } else {
-            return AppColors.danger(for: appColorMode)
+            return AppDesign.Colors.danger(for: appColorMode)
         }
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
             HStack {
                 Image(systemName: challenge.displayIcon)
                     .foregroundStyle(progressColor)
-                    .font(.title3)
+                    .appTitle3Text()
 
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                     Text(challenge.displayTitle)
                         .appSectionTitleText()
                     Text("\(challenge.daysRemaining) days remaining")
@@ -328,9 +328,9 @@ private struct ActiveChallengeRow: View {
 
                 Spacer()
 
-                VStack(alignment: .trailing, spacing: AppTheme.Spacing.micro) {
+                VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.micro) {
                     Text("\(Int(result.progress * 100))%")
-                        .font(.headline)
+                        .appHeadlineText()
                         .foregroundStyle(progressColor)
                     Text(result.message)
                         .appCaptionText()
@@ -342,7 +342,7 @@ private struct ActiveChallengeRow: View {
             ProgressView(value: result.progress)
                 .tint(progressColor)
         }
-        .padding(.vertical, AppTheme.Spacing.xSmall)
+        .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
     }
 }
 
@@ -353,21 +353,21 @@ private struct AvailableChallengeRow: View {
 
     private var difficultyColor: Color {
         switch type.difficulty {
-        case .easy: return AppColors.success(for: appColorMode)
-        case .medium: return AppColors.warning(for: appColorMode)
-        case .hard: return AppColors.danger(for: appColorMode)
+        case .easy: return AppDesign.Colors.success(for: appColorMode)
+        case .medium: return AppDesign.Colors.warning(for: appColorMode)
+        case .hard: return AppDesign.Colors.danger(for: appColorMode)
         }
     }
 
     var body: some View {
         Button(action: onStart) {
-            HStack(spacing: AppTheme.Spacing.tight) {
+            HStack(spacing: AppDesign.Theme.Spacing.tight) {
                 Image(systemName: type.icon)
                     .foregroundStyle(.secondary)
-                    .font(.title3)
+                    .appTitle3Text()
                     .frame(width: 32)
 
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                     HStack {
                         Text(type.title)
                             .appSectionTitleText()
@@ -377,10 +377,10 @@ private struct AvailableChallengeRow: View {
                             .appCaptionText()
                             .fontWeight(.medium)
                             .foregroundStyle(difficultyColor)
-                            .padding(.horizontal, AppTheme.Spacing.xSmall)
+                            .padding(.horizontal, AppDesign.Theme.Spacing.xSmall)
                             .padding(.vertical, 2)
                             .background(
-                                RoundedRectangle(cornerRadius: AppTheme.Radius.mini, style: .continuous)
+                                RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.mini, style: .continuous)
                                     .fill(difficultyColor.opacity(0.15))
                             )
                     }
@@ -394,11 +394,11 @@ private struct AvailableChallengeRow: View {
 
                 Image(systemName: "chevron.right")
                     .foregroundStyle(.tertiary)
-                    .font(.caption)
+                    .appCaptionText()
             }
         }
         .buttonStyle(.plain)
-        .padding(.vertical, AppTheme.Spacing.xSmall)
+        .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
     }
 }
 
@@ -408,8 +408,8 @@ private struct CompletedChallengeRow: View {
 
     private var statusColor: Color {
         challenge.status == .completed
-            ? AppColors.success(for: appColorMode)
-            : AppColors.danger(for: appColorMode)
+            ? AppDesign.Colors.success(for: appColorMode)
+            : AppDesign.Colors.danger(for: appColorMode)
     }
 
     private var statusIcon: String {
@@ -417,12 +417,12 @@ private struct CompletedChallengeRow: View {
     }
 
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.tight) {
+        HStack(spacing: AppDesign.Theme.Spacing.tight) {
             Image(systemName: statusIcon)
                 .foregroundStyle(statusColor)
-                .font(.title3)
+                .appTitle3Text()
 
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                 Text(challenge.displayTitle)
                     .appSectionTitleText()
                 if let completedDate = challenge.completedDate {
@@ -439,7 +439,7 @@ private struct CompletedChallengeRow: View {
                 .fontWeight(.medium)
                 .foregroundStyle(statusColor)
         }
-        .padding(.vertical, AppTheme.Spacing.xSmall)
+        .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
     }
 }
 
@@ -476,9 +476,9 @@ private struct StartChallengeSheet: View {
                 Section {
                     HStack {
                         Image(systemName: challengeType.icon)
-                            .font(.largeTitle)
+                            .appLargeTitleText()
                             .foregroundStyle(.secondary)
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                             Text(challengeType.title)
                                 .appSectionTitleText()
                             Text(challengeType.description)
@@ -486,7 +486,7 @@ private struct StartChallengeSheet: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    .padding(.vertical, AppTheme.Spacing.small)
+                    .padding(.vertical, AppDesign.Theme.Spacing.small)
                 }
 
                 Section("Duration") {
@@ -692,11 +692,11 @@ private struct CustomChallengeForm: View {
 
     private var headerSection: some View {
         Section {
-            HStack(spacing: AppTheme.Spacing.tight) {
+            HStack(spacing: AppDesign.Theme.Spacing.tight) {
                 Image(systemName: "star.circle.fill")
-                    .font(.largeTitle)
+                    .appLargeTitleText()
                     .foregroundStyle(.tint)
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                     Text("Custom Challenge")
                         .appSectionTitleText()
                     Text("Create your own spending goal")
@@ -704,7 +704,7 @@ private struct CustomChallengeForm: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .padding(.vertical, AppTheme.Spacing.small)
+            .padding(.vertical, AppDesign.Theme.Spacing.small)
         }
     }
 
@@ -790,7 +790,7 @@ private struct CustomChallengeForm: View {
         Section("Duration") {
             Stepper("\(duration) days", value: $duration, in: 1...90)
 
-            HStack(spacing: AppTheme.Spacing.small) {
+            HStack(spacing: AppDesign.Theme.Spacing.small) {
                 DurationButton(label: "1 Week", days: 7, selected: duration == 7) { duration = 7 }
                 DurationButton(label: "2 Weeks", days: 14, selected: duration == 14) { duration = 14 }
                 DurationButton(label: "1 Month", days: 30, selected: duration == 30) { duration = 30 }
@@ -833,10 +833,10 @@ private struct DurationButton: View {
             Text(label)
                 .appCaptionText()
                 .fontWeight(selected ? .semibold : .regular)
-                .padding(.horizontal, AppTheme.Spacing.small)
-                .padding(.vertical, AppTheme.Spacing.xSmall)
+                .padding(.horizontal, AppDesign.Theme.Spacing.small)
+                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
                 .background(
-                    RoundedRectangle(cornerRadius: AppTheme.Radius.tag, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.tag, style: .continuous)
                         .fill(selected ? Color.accentColor.opacity(0.15) : Color(.tertiarySystemGroupedBackground))
                 )
                 .foregroundStyle(selected ? Color.accentColor : Color.secondary)

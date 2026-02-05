@@ -13,6 +13,7 @@ struct EscapeBudgetBackup: Codable {
         var userAppearance: String?
         var appIconMode: String?
         var appColorMode: String?
+        var iCloudSyncEnabled: Bool?
         var showTransactionTags: Bool?
         var budgetAlerts: Bool?
         var billReminders: Bool?
@@ -22,14 +23,28 @@ struct EscapeBudgetBackup: Codable {
         var backupRestoreNotifications: Bool?
         var ruleAppliedNotifications: Bool?
         var badgeAchievementNotifications: Bool?
+        var showSensitiveNotificationContent: Bool?
         var billReminderDays: Int?
         var appLanguage: String?
         var weekStartDay: String?
         var relockAfterBackground: Bool?
+        var normalizePayeeOnImport: Bool?
+        var applyAutoRulesOnImport: Bool?
+        var detectDuplicatesOnImport: Bool?
+        var suggestTransfersOnImport: Bool?
+        var saveProcessingHistory: Bool?
+        var cashflowHorizonDays: Int?
+        var cashflowIncludeIncome: Bool?
+        var cashflowMonthlyIncome: Double?
+        var cashflowIncludeChequing: Bool?
+        var cashflowIncludeSavings: Bool?
+        var cashflowIncludeOtherCash: Bool?
         var retirement: RetirementSettings?
     }
 
     struct RetirementSettings: Codable {
+        var isConfigured: Bool?
+        var scenario: String?
         var currentAge: Int?
         var targetAge: Int?
         var includeInvestmentAccounts: Bool?
@@ -507,6 +522,7 @@ enum EscapeBudgetBackupService {
             userAppearance: defaults.string(forKey: "userAppearance"),
             appIconMode: defaults.string(forKey: "appIconMode"),
             appColorMode: defaults.string(forKey: "appColorMode"),
+            iCloudSyncEnabled: defaults.object(forKey: "sync.icloud.enabled") as? Bool,
             showTransactionTags: defaults.object(forKey: "showTransactionTags") as? Bool,
             budgetAlerts: defaults.object(forKey: "budgetAlerts") as? Bool,
             billReminders: defaults.object(forKey: "billReminders") as? Bool,
@@ -516,11 +532,25 @@ enum EscapeBudgetBackupService {
             backupRestoreNotifications: defaults.object(forKey: "notifications.backupRestore") as? Bool,
             ruleAppliedNotifications: defaults.object(forKey: "notifications.ruleApplied") as? Bool,
             badgeAchievementNotifications: defaults.object(forKey: "notifications.badges") as? Bool,
+            showSensitiveNotificationContent: defaults.object(forKey: "notifications.showSensitiveContent") as? Bool,
             billReminderDays: defaults.object(forKey: "billReminderDays") as? Int,
             appLanguage: defaults.string(forKey: "appLanguage"),
             weekStartDay: defaults.string(forKey: "weekStartDay"),
             relockAfterBackground: defaults.object(forKey: "security.relockAfterBackground") as? Bool,
+            normalizePayeeOnImport: defaults.object(forKey: "transactions.normalizePayeeOnImport") as? Bool,
+            applyAutoRulesOnImport: defaults.object(forKey: "transactions.applyAutoRulesOnImport") as? Bool,
+            detectDuplicatesOnImport: defaults.object(forKey: "transactions.detectDuplicatesOnImport") as? Bool,
+            suggestTransfersOnImport: defaults.object(forKey: "transactions.suggestTransfersOnImport") as? Bool,
+            saveProcessingHistory: defaults.object(forKey: "transactions.saveProcessingHistory") as? Bool,
+            cashflowHorizonDays: defaults.object(forKey: "cashflow.horizonDays") as? Int,
+            cashflowIncludeIncome: defaults.object(forKey: "cashflow.includeIncome") as? Bool,
+            cashflowMonthlyIncome: defaults.object(forKey: "cashflow.monthlyIncome") as? Double,
+            cashflowIncludeChequing: defaults.object(forKey: "cashflow.includeChequing") as? Bool,
+            cashflowIncludeSavings: defaults.object(forKey: "cashflow.includeSavings") as? Bool,
+            cashflowIncludeOtherCash: defaults.object(forKey: "cashflow.includeOtherCash") as? Bool,
             retirement: EscapeBudgetBackup.RetirementSettings(
+                isConfigured: defaults.object(forKey: "retirement.isConfigured") as? Bool,
+                scenario: defaults.string(forKey: "retirement.scenario"),
                 currentAge: defaults.object(forKey: "retirement.currentAge") as? Int,
                 targetAge: defaults.object(forKey: "retirement.targetAge") as? Int,
                 includeInvestmentAccounts: defaults.object(forKey: "retirement.includeInvestmentAccounts") as? Bool,
@@ -873,6 +903,7 @@ enum EscapeBudgetBackupService {
         if let userAppearance = settings.userAppearance { defaults.set(userAppearance, forKey: "userAppearance") }
         if let appIconMode = settings.appIconMode { defaults.set(appIconMode, forKey: "appIconMode") }
         if let appColorMode = settings.appColorMode { defaults.set(appColorMode, forKey: "appColorMode") }
+        if let iCloudSyncEnabled = settings.iCloudSyncEnabled { defaults.set(iCloudSyncEnabled, forKey: "sync.icloud.enabled") }
         if let showTransactionTags = settings.showTransactionTags { defaults.set(showTransactionTags, forKey: "showTransactionTags") }
         if let budgetAlerts = settings.budgetAlerts { defaults.set(budgetAlerts, forKey: "budgetAlerts") }
         if let billReminders = settings.billReminders { defaults.set(billReminders, forKey: "billReminders") }
@@ -882,12 +913,26 @@ enum EscapeBudgetBackupService {
         if let v = settings.backupRestoreNotifications { defaults.set(v, forKey: "notifications.backupRestore") }
         if let v = settings.ruleAppliedNotifications { defaults.set(v, forKey: "notifications.ruleApplied") }
         if let v = settings.badgeAchievementNotifications { defaults.set(v, forKey: "notifications.badges") }
+        if let v = settings.showSensitiveNotificationContent { defaults.set(v, forKey: "notifications.showSensitiveContent") }
         if let billReminderDays = settings.billReminderDays { defaults.set(billReminderDays, forKey: "billReminderDays") }
         if let appLanguage = settings.appLanguage { defaults.set(appLanguage, forKey: "appLanguage") }
         if let weekStartDay = settings.weekStartDay { defaults.set(weekStartDay, forKey: "weekStartDay") }
         if let relockAfterBackground = settings.relockAfterBackground { defaults.set(relockAfterBackground, forKey: "security.relockAfterBackground") }
+        if let v = settings.normalizePayeeOnImport { defaults.set(v, forKey: "transactions.normalizePayeeOnImport") }
+        if let v = settings.applyAutoRulesOnImport { defaults.set(v, forKey: "transactions.applyAutoRulesOnImport") }
+        if let v = settings.detectDuplicatesOnImport { defaults.set(v, forKey: "transactions.detectDuplicatesOnImport") }
+        if let v = settings.suggestTransfersOnImport { defaults.set(v, forKey: "transactions.suggestTransfersOnImport") }
+        if let v = settings.saveProcessingHistory { defaults.set(v, forKey: "transactions.saveProcessingHistory") }
+        if let v = settings.cashflowHorizonDays { defaults.set(v, forKey: "cashflow.horizonDays") }
+        if let v = settings.cashflowIncludeIncome { defaults.set(v, forKey: "cashflow.includeIncome") }
+        if let v = settings.cashflowMonthlyIncome { defaults.set(v, forKey: "cashflow.monthlyIncome") }
+        if let v = settings.cashflowIncludeChequing { defaults.set(v, forKey: "cashflow.includeChequing") }
+        if let v = settings.cashflowIncludeSavings { defaults.set(v, forKey: "cashflow.includeSavings") }
+        if let v = settings.cashflowIncludeOtherCash { defaults.set(v, forKey: "cashflow.includeOtherCash") }
 
         if let retirement = settings.retirement {
+            if let v = retirement.isConfigured { defaults.set(v, forKey: "retirement.isConfigured") }
+            if let v = retirement.scenario { defaults.set(v, forKey: "retirement.scenario") }
             if let currentAge = retirement.currentAge { defaults.set(currentAge, forKey: "retirement.currentAge") }
             if let targetAge = retirement.targetAge { defaults.set(targetAge, forKey: "retirement.targetAge") }
             if let v = retirement.includeInvestmentAccounts { defaults.set(v, forKey: "retirement.includeInvestmentAccounts") }

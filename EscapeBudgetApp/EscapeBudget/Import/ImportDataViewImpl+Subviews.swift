@@ -30,14 +30,14 @@ struct ImportProcessingOptionsSheet: View {
     var body: some View {
         Form {
 	            Section {
-	                VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+	                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
 	                    Text("Import Processing")
 	                        .appSectionTitleText()
 	                    Text("Choose what Escape Budget should do during this import. You can use these options once, or set them as your default for future imports.")
 	                        .appSecondaryBodyText()
 	                        .foregroundStyle(.secondary)
 	                }
-	                .padding(.vertical, AppTheme.Spacing.micro)
+	                .padding(.vertical, AppDesign.Theme.Spacing.micro)
 	            }
 
 	            Section {
@@ -126,13 +126,13 @@ struct ColumnMappingRowView: View {
                         .appCaptionText()
                         .foregroundStyle(isMapped ? .white : .secondary)
                 }
-	                .padding(.vertical, AppTheme.Spacing.xSmall)
-	                .padding(.horizontal, AppTheme.Spacing.small)
-	                .background(isMapped ? AppColors.tint(for: appColorMode) : Color(.systemGray5))
-	                .cornerRadius(AppTheme.Radius.xSmall)
+	                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
+	                .padding(.horizontal, AppDesign.Theme.Spacing.small)
+	                .background(isMapped ? AppDesign.Colors.tint(for: appColorMode) : Color(.systemGray5))
+	                .cornerRadius(AppDesign.Theme.Radius.xSmall)
 	            }
 	        }
-	        .padding(.vertical, AppTheme.Spacing.micro)
+	        .padding(.vertical, AppDesign.Theme.Spacing.micro)
 	    }
     
     func setMapping(_ val: String) {
@@ -166,7 +166,7 @@ struct PreviewTransactionRow: View {
 	            }
             Spacer()
             Text(transaction.amount, format: .currency(code: currencyCode))
-                .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                .foregroundStyle(transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)
         }
     }
 }

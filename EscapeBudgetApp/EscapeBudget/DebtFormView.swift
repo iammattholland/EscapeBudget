@@ -87,11 +87,11 @@ struct DebtFormView: View {
 
                     if useLinkedAccount && selectedAccount != nil {
                         LabeledContent("Current Balance") {
-                            HStack(spacing: AppTheme.Spacing.xSmall) {
+                            HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                                 Text(abs(selectedAccount?.balance ?? 0), format: .currency(code: currencyCode))
                                     .foregroundStyle(.secondary)
                                 Image(systemName: "arrow.triangle.2.circlepath")
-                                    .font(.caption)
+                                    .appCaptionText()
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -136,7 +136,7 @@ struct DebtFormView: View {
                 }
 
                 Section("Color") {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: AppTheme.Spacing.compact) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 5), spacing: AppDesign.Theme.Spacing.compact) {
                         ForEach(colorOptions, id: \.self) { hex in
                             Circle()
                                 .fill(Color(hex: hex) ?? .red)
@@ -150,7 +150,7 @@ struct DebtFormView: View {
                                 }
                         }
                     }
-                    .padding(.vertical, AppTheme.Spacing.compact)
+                    .padding(.vertical, AppDesign.Theme.Spacing.compact)
                 }
 
                 if let projection = payoffProjection {
@@ -169,7 +169,7 @@ struct DebtFormView: View {
                             Spacer()
                             Text(projection.totalInterestPaid, format: .currency(code: currencyCode))
                                 .fontWeight(.medium)
-                                .foregroundStyle(AppColors.danger(for: appColorMode))
+                                .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                         }
 
                         HStack {
@@ -178,7 +178,7 @@ struct DebtFormView: View {
                             Spacer()
                             Text(projection.payoffDate, format: .dateTime.month().year())
                                 .fontWeight(.medium)
-                                .foregroundStyle(AppColors.success(for: appColorMode))
+                                .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                         }
                     }
                 }

@@ -38,12 +38,12 @@ struct ApplyRuleRetroactiveView: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(AppColors.danger(for: appColorMode))
+                        .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                 }
             }
 
             Section {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                     Text("Rule")
                         .appCaptionText()
                         .foregroundStyle(.secondary)
@@ -54,11 +54,11 @@ struct ApplyRuleRetroactiveView: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
-                .padding(.vertical, AppTheme.Spacing.micro)
+                .padding(.vertical, AppDesign.Theme.Spacing.micro)
             }
 
             Section {
-                HStack(spacing: AppTheme.Spacing.tight) {
+                HStack(spacing: AppDesign.Theme.Spacing.tight) {
                     Button("Select All") {
                         selectedIDs = Set(matchingTransactions.map(\.persistentModelID))
                     }
@@ -90,16 +90,16 @@ struct ApplyRuleRetroactiveView: View {
                         Button {
                             toggle(tx)
                         } label: {
-                            HStack(spacing: AppTheme.Spacing.tight) {
+                            HStack(spacing: AppDesign.Theme.Spacing.tight) {
                                 Image(systemName: selectedIDs.contains(tx.persistentModelID) ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(selectedIDs.contains(tx.persistentModelID) ? AppColors.tint(for: appColorMode) : Color.secondary)
+                                    .foregroundStyle(selectedIDs.contains(tx.persistentModelID) ? AppDesign.Colors.tint(for: appColorMode) : Color.secondary)
 
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                                     Text(tx.payee)
                                         .appSectionTitleText()
                                         .foregroundStyle(.primary)
                                         .lineLimit(1)
-                                    HStack(spacing: AppTheme.Spacing.xSmall) {
+                                    HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                                         Text(tx.account?.name ?? "No Account")
                                         Text("•")
                                         Text(tx.date, format: .dateTime.year().month().day())
@@ -110,7 +110,7 @@ struct ApplyRuleRetroactiveView: View {
 
                                 Spacer()
 
-                                VStack(alignment: .trailing, spacing: AppTheme.Spacing.hairline) {
+                                VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.hairline) {
                                     Text(tx.amount, format: .currency(code: currencyCode))
                                         .monospacedDigit()
                                         .foregroundStyle(.primary)

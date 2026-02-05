@@ -29,20 +29,20 @@ struct TopChromeTabs<Selection: Hashable>: View {
                     }
                 } label: {
                     Text(tab.title)
-                        .font(AppTheme.Typography.tabLabel)
+                        .font(AppDesign.Theme.Typography.tabLabel)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                         .allowsTightening(true)
                         .foregroundStyle(selection == tab.id ? .primary : .secondary)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppTheme.Spacing.compact)
+                        .padding(.vertical, AppDesign.Theme.Spacing.compact)
                         .contentShape(Rectangle())
                         .background {
                             if selection == tab.id {
-                                RoundedRectangle(cornerRadius: AppTheme.Radius.tabsSelection, style: .continuous)
+                                RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.tabsSelection, style: .continuous)
                                     .fill(Color(.tertiarySystemFill))
                                     .matchedGeometryEffect(id: "TopChromeTabs.selection", in: namespace)
-                                    .padding(AppTheme.Spacing.hairline)
+                                    .padding(AppDesign.Theme.Spacing.hairline)
                             }
                         }
                 }
@@ -50,14 +50,14 @@ struct TopChromeTabs<Selection: Hashable>: View {
                 .accessibilityAddTraits(selection == tab.id ? [.isSelected] : [])
             }
         }
-        .padding(AppTheme.Spacing.hairline)
+        .padding(AppDesign.Theme.Spacing.hairline)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.tabsOuter, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.tabsOuter, style: .continuous)
                 .fill(Color(.secondarySystemFill))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.tabsOuter, style: .continuous)
-                .strokeBorder(Color.primary.opacity(AppTheme.Stroke.subtleOpacity), lineWidth: AppTheme.Stroke.subtle)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.tabsOuter, style: .continuous)
+                .strokeBorder(Color.primary.opacity(AppDesign.Theme.Stroke.subtleOpacity), lineWidth: AppDesign.Theme.Stroke.subtle)
         )
         .topChromeSegmentedStyle(isCompact: isCompact)
     }

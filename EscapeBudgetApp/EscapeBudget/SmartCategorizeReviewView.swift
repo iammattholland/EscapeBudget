@@ -84,12 +84,12 @@ struct SmartCategorizeReviewView: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(AppColors.danger(for: appColorMode))
+                        .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                 }
             }
 
             Section {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                     HStack {
                         Image(systemName: "sparkles")
                             .foregroundStyle(.yellow)
@@ -109,7 +109,7 @@ struct SmartCategorizeReviewView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.vertical, AppTheme.Spacing.micro)
+                .padding(.vertical, AppDesign.Theme.Spacing.micro)
             }
 
             ForEach(visibleSuggestions) { group in
@@ -130,11 +130,11 @@ struct SmartCategorizeReviewView: View {
     @ViewBuilder
     private func suggestionRow(for group: BulkCategorizationSuggester.SuggestionGroup) -> some View {
         Section {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                 // Payee and transaction count
                 HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                        HStack(spacing: AppTheme.Spacing.xSmall) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                        HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                             Text(group.displayPayee)
                                 .appSectionTitleText()
 
@@ -145,7 +145,7 @@ struct SmartCategorizeReviewView: View {
                             }
                         }
 
-                        HStack(spacing: AppTheme.Spacing.micro) {
+                        HStack(spacing: AppDesign.Theme.Spacing.micro) {
                             Text("\(group.transactions.count) transaction\(group.transactions.count == 1 ? "" : "s")")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
@@ -155,9 +155,9 @@ struct SmartCategorizeReviewView: View {
                                     .appCaptionText()
                                     .foregroundStyle(.secondary)
 
-                                HStack(spacing: AppTheme.Spacing.hairline) {
+                                HStack(spacing: AppDesign.Theme.Spacing.hairline) {
                                     Image(systemName: "chart.bar.fill")
-                                        .font(.caption2)
+                                        .appCaption2Text()
                                     Text("\(Int(group.confidence * 100))%")
                                         .appCaptionText()
                                 }
@@ -203,7 +203,7 @@ struct SmartCategorizeReviewView: View {
                     }
                     .buttonStyle(.plain)
                 } else if let suggested = group.suggestedCategory {
-                    HStack(spacing: AppTheme.Spacing.tight) {
+                    HStack(spacing: AppDesign.Theme.Spacing.tight) {
                         Button {
                             selectedCategories[group.id] = suggested
                         } label: {
@@ -217,9 +217,9 @@ struct SmartCategorizeReviewView: View {
                                     .appSecondaryBodyText()
                                     .fontWeight(.semibold)
                                     .foregroundStyle(.white)
-                                    .padding(.horizontal, AppTheme.Spacing.tight)
-                                    .padding(.vertical, AppTheme.Spacing.xSmall)
-                                    .background(AppColors.tint(for: appColorMode), in: Capsule())
+                                    .padding(.horizontal, AppDesign.Theme.Spacing.tight)
+                                    .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
+                                    .background(AppDesign.Colors.tint(for: appColorMode), in: Capsule())
                             }
                         }
                         .buttonStyle(.plain)
@@ -231,7 +231,7 @@ struct SmartCategorizeReviewView: View {
                     } label: {
                         Text("Change")
                             .appCaptionText()
-                            .foregroundStyle(AppColors.tint(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                     }
                 } else {
                     Button {
@@ -279,7 +279,7 @@ struct SmartCategorizeReviewView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.vertical, AppTheme.Spacing.micro)
+            .padding(.vertical, AppDesign.Theme.Spacing.micro)
         }
     }
 
@@ -426,7 +426,7 @@ private struct SmartCategorizeGroupDetailView: View {
         List {
             Section {
                 HStack {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                         Text(group.displayPayee)
                             .appSectionTitleText()
                         Text("\(selectedIDs.count) selected")
@@ -451,14 +451,14 @@ private struct SmartCategorizeGroupDetailView: View {
                             selectedIDs.insert(transaction.persistentModelID)
                         }
                     } label: {
-                        HStack(spacing: AppTheme.Spacing.tight) {
+                        HStack(spacing: AppDesign.Theme.Spacing.tight) {
                             Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                                 .foregroundStyle(isSelected ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
 
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.nano) {
+                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.nano) {
                                 Text(transaction.payee)
                                     .foregroundStyle(.primary)
-                                HStack(spacing: AppTheme.Spacing.xSmall) {
+                                HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                                     Text(transaction.date, format: .dateTime.month(.abbreviated).day().year())
                                     if let accountName = transaction.account?.name, !accountName.isEmpty {
                                         Text("•")
@@ -492,7 +492,7 @@ private struct SmartCategorizeGroupDetailView: View {
                         selectedIDs = []
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Image(systemName: "ellipsis")
                 }
             }
         }

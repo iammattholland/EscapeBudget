@@ -38,6 +38,11 @@ final class Transaction: DemoDataTrackable {
     @Relationship(deleteRule: .cascade, inverse: \ReceiptImage.transaction)
     var receipt: ReceiptImage?
 
+    /// For unmatched transfers: the account this transfer is intended for, even if we don't have the paired transaction yet.
+    /// This is for record-keeping only and doesn't affect account balances.
+    @Relationship(inverse: \Account.intendedTransferTransactions)
+    var intendedTransferAccount: Account?
+
     var status: TransactionStatus {
         get { TransactionStatus(rawValue: statusRawValue) ?? .uncleared }
         set { statusRawValue = newValue.rawValue }

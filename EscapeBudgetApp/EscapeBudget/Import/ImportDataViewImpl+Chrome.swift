@@ -6,21 +6,21 @@ import UIKit
 @MainActor
 extension ImportDataViewImpl {
     var wizardStepIndicator: some View {
-        HStack(spacing: AppTheme.Spacing.small) {
+        HStack(spacing: AppDesign.Theme.Spacing.small) {
             ForEach(WizardStep.allCases, id: \.rawValue) { step in
-                HStack(spacing: AppTheme.Spacing.compact) {
+                HStack(spacing: AppDesign.Theme.Spacing.compact) {
                     ZStack {
                         Circle()
-                            .fill(step.rawValue <= currentWizardStep.rawValue ? AppColors.tint(for: appColorMode) : Color.gray.opacity(0.3))
+                            .fill(step.rawValue <= currentWizardStep.rawValue ? AppDesign.Colors.tint(for: appColorMode) : Color.gray.opacity(0.3))
                             .frame(width: 26, height: 26)
 
                         if step.rawValue < currentWizardStep.rawValue {
                             Image(systemName: "checkmark")
-                                .font(.caption.bold())
+                                .appCaptionStrongText()
                                 .foregroundStyle(.white)
                         } else {
                             Text("\(step.rawValue + 1)")
-                                .font(.caption.bold())
+                                .appCaptionStrongText()
                                 .foregroundStyle(step.rawValue <= currentWizardStep.rawValue ? .white : .gray)
                         }
                     }
@@ -41,8 +41,8 @@ extension ImportDataViewImpl {
             }
         }
         .animation(.spring(response: 0.28, dampingFraction: 0.86), value: currentWizardStep)
-        .padding(.horizontal)
-        .padding(.vertical, AppTheme.Spacing.small)
+        .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
+        .padding(.vertical, AppDesign.Theme.Spacing.small)
     }
     
     func cancelBackgroundWork() {
@@ -99,8 +99,8 @@ extension ImportDataViewImpl {
                 Color.black.opacity(0.35)
                     .ignoresSafeArea()
 
-                VStack(spacing: AppTheme.Spacing.cardGap) {
-	                    VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                VStack(spacing: AppDesign.Theme.Spacing.cardGap) {
+	                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
 	                        Text(progress.title)
 	                            .appSectionTitleText()
 
@@ -110,7 +110,7 @@ extension ImportDataViewImpl {
 	                    }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
                         if let fractionComplete {
                             ProgressView(value: fractionComplete)
                         } else {
@@ -119,7 +119,7 @@ extension ImportDataViewImpl {
 
                         HStack(alignment: .firstTextBaseline) {
                             Text(progress.message)
-                                .font(AppTheme.Typography.secondaryBody)
+                                .font(AppDesign.Theme.Typography.secondaryBody)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(2)
 
@@ -143,20 +143,20 @@ extension ImportDataViewImpl {
                         Button("Cancel Import", role: .destructive) {
                             onCancel()
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.glass)
                     }
                 }
-                .padding(AppTheme.Spacing.screenHorizontal)
+                .padding(AppDesign.Theme.Spacing.screenHorizontal)
                 .frame(maxWidth: 420)
                 .background(
-                    RoundedRectangle(cornerRadius: AppTheme.Radius.overlay, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.overlay, style: .continuous)
                         .fill(Color(.secondarySystemGroupedBackground))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: AppTheme.Radius.overlay, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.overlay, style: .continuous)
                         .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
                 )
-                .padding(.horizontal, AppTheme.Spacing.large)
+                .padding(.horizontal, AppDesign.Theme.Spacing.large)
             }
         }
     }

@@ -111,7 +111,7 @@ private struct PlanForecastHubView: View {
         let combinedTopChrome: AnyView? = {
             let tabsView = AnyView(forecastTabs)
             if let topChrome {
-                return AnyView(VStack(spacing: AppTheme.Spacing.compact) {
+                return AnyView(VStack(spacing: AppDesign.Theme.Layout.topChromeContentGap) {
                     topChrome
                     tabsView
                 })

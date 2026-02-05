@@ -77,7 +77,7 @@ struct UndoRedoStatusView: View {
     @Environment(\.undoRedoManager) private var undoRedoManager
 
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.medium) {
+        HStack(spacing: AppDesign.Theme.Spacing.medium) {
             if undoRedoManager.canUndo {
                 Label {
                     Text(undoRedoManager.undoDescription ?? "Undo available")
@@ -111,6 +111,6 @@ struct UndoRedoStatusView: View {
         }
         .padding()
         .background(Color(.secondarySystemBackground))
-        .cornerRadius(AppTheme.Radius.compact)
+        .cornerRadius(AppDesign.Theme.Radius.compact)
     }
 }

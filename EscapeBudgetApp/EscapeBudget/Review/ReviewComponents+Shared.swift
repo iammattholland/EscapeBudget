@@ -23,12 +23,12 @@ struct ReviewCalloutBar: View {
     var isVertical: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
             Text(title)
                 .appSectionTitleText()
 
             if isVertical {
-                VStack(spacing: AppTheme.Spacing.small) {
+                VStack(spacing: AppDesign.Theme.Spacing.small) {
                     ForEach(items) { item in
                         if let action = item.action {
                             Button(action: action) {
@@ -52,10 +52,10 @@ struct ReviewCalloutBar: View {
                         }
                     }
                 }
-                .padding(.vertical, AppTheme.Spacing.micro)
+                .padding(.vertical, AppDesign.Theme.Spacing.micro)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: AppTheme.Spacing.small) {
+                    HStack(spacing: AppDesign.Theme.Spacing.small) {
                         ForEach(items) { item in
                             if let action = item.action {
                                 Button(action: action) {
@@ -77,7 +77,7 @@ struct ReviewCalloutBar: View {
                             }
                         }
                     }
-                    .padding(.vertical, AppTheme.Spacing.micro)
+                    .padding(.vertical, AppDesign.Theme.Spacing.micro)
                 }
             }
         }
@@ -92,11 +92,11 @@ private struct ReviewCalloutChip: View {
     var isFullWidth: Bool = false
 
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.compact) {
+        HStack(spacing: AppDesign.Theme.Spacing.compact) {
             Image(systemName: systemImage)
                 .foregroundStyle(tint)
 
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                 Text(title)
                     .appCaptionText()
                     .fontWeight(.semibold)
@@ -113,16 +113,16 @@ private struct ReviewCalloutChip: View {
 
             Spacer(minLength: 0)
         }
-        .padding(.vertical, AppTheme.Spacing.compact)
-        .padding(.horizontal, AppTheme.Spacing.small)
+        .padding(.vertical, AppDesign.Theme.Spacing.compact)
+        .padding(.horizontal, AppDesign.Theme.Spacing.small)
         .frame(maxWidth: isFullWidth ? .infinity : nil, alignment: .leading)
         .frame(minWidth: isFullWidth ? nil : 150)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact, style: .continuous)
                 .fill(Color(.systemBackground))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
         )
     }

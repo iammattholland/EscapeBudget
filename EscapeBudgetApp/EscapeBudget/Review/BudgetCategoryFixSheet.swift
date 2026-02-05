@@ -20,7 +20,7 @@ struct BudgetCategoryFixSheet: View {
     }
 
     private var statusTint: Color {
-        remaining >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode)
+        remaining >= 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode)
     }
 
     var body: some View {
@@ -37,7 +37,7 @@ struct BudgetCategoryFixSheet: View {
                         Text("Spent")
                         Spacer()
                         Text(spent, format: .currency(code: currencyCode))
-                            .foregroundStyle(AppColors.danger(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                             .monospacedDigit()
                     }
                     HStack {
@@ -63,11 +63,11 @@ struct BudgetCategoryFixSheet: View {
                             assignedInput = "\(buffered)"
                         }
                     }
-                    .font(.subheadline)
+                    .appSecondaryBodyText()
 
                     if let errorMessage {
                         Text(errorMessage)
-                            .foregroundStyle(AppColors.danger(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                             .appCaptionText()
                     }
                 }

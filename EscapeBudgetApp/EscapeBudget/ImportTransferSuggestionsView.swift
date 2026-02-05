@@ -60,11 +60,11 @@ struct ImportTransferSuggestionsView: View {
                             if isSelected { selectedIDs.remove(suggestion.id) }
                             else { selectedIDs.insert(suggestion.id) }
                         } label: {
-                            HStack(spacing: AppTheme.Spacing.tight) {
+                            HStack(spacing: AppDesign.Theme.Spacing.tight) {
                                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                                     .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
 
-	                            VStack(alignment: .leading, spacing: AppTheme.Spacing.nano) {
+	                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.nano) {
 	                                if let outflow = transactionLookup(suggestion.outflowID),
 	                                   let inflow = transactionLookup(suggestion.inflowID) {
                                         Text("\(accountNameFor(outflow)) → \(accountNameFor(inflow))")
@@ -84,7 +84,7 @@ struct ImportTransferSuggestionsView: View {
 
                                 Spacer()
 
-                                VStack(alignment: .trailing, spacing: AppTheme.Spacing.hairline) {
+                                VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.hairline) {
                                     if let outflow = transactionLookup(suggestion.outflowID) {
                                         Text(abs(outflow.amount), format: .currency(code: currencyCode))
                                             .appSecondaryBodyText()
@@ -92,12 +92,12 @@ struct ImportTransferSuggestionsView: View {
                                             .monospacedDigit()
                                     }
                                     Text("\(Int((suggestion.score * 100).rounded()))%")
-                                        .font(.caption2)
+                                        .appCaption2Text()
                                         .foregroundStyle(.secondary)
                                         .monospacedDigit()
                                 }
                             }
-                            .padding(.vertical, AppTheme.Spacing.micro)
+                            .padding(.vertical, AppDesign.Theme.Spacing.micro)
                         }
                         .buttonStyle(.plain)
                     }

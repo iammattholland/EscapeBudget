@@ -4,6 +4,7 @@ This project uses a small, code-first design system to keep spacing, typography,
 
 Primary source of truth:
 - `EscapeBudget/DesignSystem.swift` (`AppTheme` + shared view modifiers)
+- `EscapeBudget/DesignTokens.swift` (`AppDesign` facade for theme + colors)
 - `EscapeBudget/ViewModifiers.swift` (`topChromeSegmentedStyle`, `withAppLogo`)
 - `EscapeBudget/Components/TopChromeTabs.swift`
 
@@ -17,7 +18,7 @@ Secondary (performance + organization):
 - Easy to evolve styles by changing tokens in one place.
 
 ## Tokens (Design Tokens)
-Use tokens from `AppTheme` instead of hard-coded values.
+Use tokens from `AppTheme` (or the facade `AppDesign.Theme`) instead of hard-coded values.
 
 - **Typography**: `AppTheme.Typography.*`
 - **Spacing**: `AppTheme.Spacing.*`
@@ -66,7 +67,7 @@ Common spacing rules of thumb:
 
 ## Colors
 - Prefer `.foregroundStyle(...)` and `.background(...)` with semantic styles over `.foregroundColor(...)`.
-- For app-tinted semantic colors that respect `AppColorMode`, use `AppColors.*(for: appColorMode)` (tint/success/warning/danger).
+- For app-tinted semantic colors that respect `AppColorMode`, use `AppColors.*(for: appColorMode)` or `AppDesign.Colors.*(for: appColorMode)` (tint/success/warning/danger).
 
 ## Common Surfaces
 Prefer these modifiers instead of manually building a rounded background + stroke.
@@ -114,6 +115,7 @@ Prefer semantic text helpers over raw `.font(...)` when the text is playing a co
 - Secondary body copy/subtitles: `.appSecondaryBodyText()` (.subheadline)
 - Captions/labels: `.appCaptionText()` (.caption)
 - Fine print/timestamps: `.appFootnoteText()` (.footnote)
+ - Display/hero numbers: `.appDisplayText(AppTheme.DisplaySize.*)`
 
 For common "title + subtitle" stacks, prefer:
 - `AppSectionHeader(title:subtitle:)`

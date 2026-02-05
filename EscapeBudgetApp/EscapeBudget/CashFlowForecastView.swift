@@ -227,20 +227,16 @@ struct CashFlowForecastView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: AppTheme.Spacing.cardGap) {
-                ScrollOffsetReader(coordinateSpace: "PlanForecastHubView.scroll", id: "PlanForecastHubView.scroll")
-                if let topChrome {
-                    topChrome
-                }
-                LazyVStack(spacing: AppTheme.Spacing.cardGap) {
+            AppChromeStack(topChrome: topChrome, scrollID: "PlanForecastHubView.scroll") {
+                LazyVStack(spacing: AppDesign.Theme.Spacing.cardGap) {
                     summaryRow
                     chartCard
                     assumptionsCard
                     accountsCard
                     eventsCard
                 }
-                .padding(.horizontal, AppTheme.Spacing.medium)
-                .padding(.vertical, AppTheme.Spacing.tight)
+                .padding(.horizontal, AppDesign.Theme.Spacing.medium)
+                .padding(.vertical, AppDesign.Theme.Spacing.tight)
             }
         }
         .coordinateSpace(name: "PlanForecastHubView.scroll")
@@ -292,24 +288,24 @@ struct CashFlowForecastView: View {
     }
 
     private var summaryRow: some View {
-        HStack(spacing: AppTheme.Spacing.tight) {
+        HStack(spacing: AppDesign.Theme.Spacing.tight) {
             MetricCard(
                 title: "Start",
                 value: startingCash,
                 currencyCode: currencyCode,
-                tint: AppColors.tint(for: appColorMode)
+                tint: AppDesign.Colors.tint(for: appColorMode)
             )
             MetricCard(
                 title: "End (\(horizonDays)d)",
                 value: totals.projectedEnd,
                 currencyCode: currencyCode,
-                tint: totals.projectedEnd >= startingCash ? AppColors.success(for: appColorMode) : AppColors.warning(for: appColorMode)
+                tint: totals.projectedEnd >= startingCash ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.warning(for: appColorMode)
             )
         }
     }
 
 	    private var chartCard: some View {
-	        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
 	            HStack {
 	                Text("Cash Flow Forecast")
 	                    .appSectionTitleText()
@@ -330,7 +326,7 @@ struct CashFlowForecastView: View {
                     description: Text("Add recurring bills or planned purchases to see your projected balance.")
                 )
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, AppTheme.Spacing.relaxed)
+                .padding(.vertical, AppDesign.Theme.Spacing.relaxed)
             } else {
                 Chart(balanceSeries) { point in
                     LineMark(
@@ -338,7 +334,7 @@ struct CashFlowForecastView: View {
                         y: .value("Balance", point.balance)
                     )
                     .interpolationMethod(.catmullRom)
-                    .foregroundStyle(AppColors.tint(for: appColorMode))
+                    .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
 
                     AreaMark(
                         x: .value("Date", point.date),
@@ -348,8 +344,8 @@ struct CashFlowForecastView: View {
                     .foregroundStyle(
                         LinearGradient(
                             colors: [
-                                AppColors.tint(for: appColorMode).opacity(0.22),
-                                AppColors.tint(for: appColorMode).opacity(0.02)
+                                AppDesign.Colors.tint(for: appColorMode).opacity(0.22),
+                                AppDesign.Colors.tint(for: appColorMode).opacity(0.02)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -363,7 +359,7 @@ struct CashFlowForecastView: View {
                         AxisValueLabel {
                             if let number = value.as(Double.self) {
                                 Text(number, format: .currency(code: currencyCode))
-                                    .font(.caption2)
+                                    .appCaption2Text()
                             }
                         }
                     }
@@ -373,17 +369,17 @@ struct CashFlowForecastView: View {
                         AxisGridLine()
                         AxisTick()
                         AxisValueLabel(format: .dateTime.month().day(), centered: true)
-                            .font(.caption2)
+                            .font(AppDesign.Theme.Typography.caption2)
                     }
                 }
                 .frame(height: 220)
 
-                HStack(spacing: AppTheme.Spacing.tight) {
-                    MetricPill(label: "In", value: totals.inflows, currencyCode: currencyCode, tint: AppColors.success(for: appColorMode))
-                    MetricPill(label: "Out", value: totals.outflows, currencyCode: currencyCode, tint: AppColors.danger(for: appColorMode))
-                    MetricPill(label: "Lowest", value: totals.lowest, currencyCode: currencyCode, tint: AppColors.warning(for: appColorMode))
+                HStack(spacing: AppDesign.Theme.Spacing.tight) {
+                    MetricPill(label: "In", value: totals.inflows, currencyCode: currencyCode, tint: AppDesign.Colors.success(for: appColorMode))
+                    MetricPill(label: "Out", value: totals.outflows, currencyCode: currencyCode, tint: AppDesign.Colors.danger(for: appColorMode))
+                    MetricPill(label: "Lowest", value: totals.lowest, currencyCode: currencyCode, tint: AppDesign.Colors.warning(for: appColorMode))
                 }
-                .padding(.top, AppTheme.Spacing.hairline)
+                .padding(.top, AppDesign.Theme.Spacing.hairline)
 
                 Text("This forecast uses your current cash balances plus upcoming recurring bills and planned purchases. Income is an estimate (optional).")
                     .appCaptionText()
@@ -394,14 +390,14 @@ struct CashFlowForecastView: View {
     }
 
 	    private var assumptionsCard: some View {
-	        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
 	            Text("Assumptions")
 	                .appSectionTitleText()
 
 	            Toggle("Include income estimate", isOn: $includeIncome)
 
             if includeIncome {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                     Text("Estimated monthly income")
                         .appCaptionText()
                         .foregroundStyle(.secondary)
@@ -422,7 +418,7 @@ struct CashFlowForecastView: View {
     }
 
 	    private var accountsCard: some View {
-	        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
 	            Text("Starting Cash")
 	                .appSectionTitleText()
 
@@ -443,7 +439,7 @@ struct CashFlowForecastView: View {
 	                        Text(account.balance, format: .currency(code: currencyCode))
 	                            .foregroundStyle(.secondary)
 	                    }
-	                    .font(AppTheme.Typography.secondaryBody)
+	                    .font(AppDesign.Theme.Typography.secondaryBody)
 	                }
 	            }
 	        }
@@ -451,7 +447,7 @@ struct CashFlowForecastView: View {
 	    }
 
 	    private var eventsCard: some View {
-	        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
 	            HStack {
 	                Text("Upcoming Events")
 	                    .appSectionTitleText()
@@ -467,7 +463,7 @@ struct CashFlowForecastView: View {
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(forecastEvents.prefix(24)) { event in
-                    HStack(alignment: .top, spacing: AppTheme.Spacing.small) {
+                    HStack(alignment: .top, spacing: AppDesign.Theme.Spacing.small) {
                         Circle()
                             .fill(color(for: event.kind).opacity(0.18))
                             .frame(width: 30, height: 30)
@@ -477,19 +473,19 @@ struct CashFlowForecastView: View {
                                     .foregroundStyle(color(for: event.kind))
                             )
 
-	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+	                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
 	                            Text(event.title)
 	                                .appSecondaryBodyText()
 	                                .fontWeight(.medium)
 
-                            HStack(spacing: AppTheme.Spacing.xSmall) {
+                            HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                                 Text(event.date, format: .dateTime.month(.abbreviated).day().year())
                                 if let subtitle = event.subtitle {
                                     Text("•")
                                     Text(subtitle)
                                 }
                             }
-                            .font(.caption2)
+                            .appCaption2Text()
                             .foregroundStyle(.secondary)
                         }
 
@@ -498,17 +494,17 @@ struct CashFlowForecastView: View {
 	                        Text(event.amount, format: .currency(code: currencyCode))
 	                            .appSecondaryBodyText()
 	                            .fontWeight(.semibold)
-	                            .foregroundStyle(event.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+	                            .foregroundStyle(event.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)
 	                            .monospacedDigit()
 	                    }
-                    .padding(.vertical, AppTheme.Spacing.micro)
+                    .padding(.vertical, AppDesign.Theme.Spacing.micro)
                 }
 
                 if forecastEvents.count > 24 {
                     Text("Showing the next 24 events.")
-                        .font(.caption2)
+                        .appCaption2Text()
                         .foregroundStyle(.secondary)
-                        .padding(.top, AppTheme.Spacing.hairline)
+                        .padding(.top, AppDesign.Theme.Spacing.hairline)
                 }
             }
         }
@@ -525,9 +521,9 @@ struct CashFlowForecastView: View {
 
     private func color(for kind: ForecastEvent.Kind) -> Color {
         switch kind {
-        case .income: return AppColors.success(for: appColorMode)
-        case .bill: return AppColors.warning(for: appColorMode)
-        case .planned: return AppColors.tint(for: appColorMode)
+        case .income: return AppDesign.Colors.success(for: appColorMode)
+        case .bill: return AppDesign.Colors.warning(for: appColorMode)
+        case .planned: return AppDesign.Colors.tint(for: appColorMode)
         }
     }
 }
@@ -539,7 +535,7 @@ private struct MetricCard: View {
     let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
             Text(title)
                 .appCaptionText()
                 .foregroundStyle(.secondary)
@@ -562,9 +558,9 @@ private struct MetricPill: View {
     let tint: Color
 
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.xSmall) {
+        HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
             Text(label)
-                .font(.caption2)
+                .appCaption2Text()
                 .foregroundStyle(.secondary)
             Text(value, format: .currency(code: currencyCode))
                 .appCaptionText()
@@ -572,8 +568,8 @@ private struct MetricPill: View {
                 .foregroundStyle(.primary)
                 .monospacedDigit()
         }
-        .padding(.vertical, AppTheme.Spacing.xSmall)
-        .padding(.horizontal, AppTheme.Spacing.small)
+        .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
+        .padding(.horizontal, AppDesign.Theme.Spacing.small)
         .background(tint.opacity(0.12))
         .clipShape(Capsule())
     }

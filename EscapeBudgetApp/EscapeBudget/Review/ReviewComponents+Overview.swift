@@ -581,11 +581,8 @@ private struct MonthlyNetWorthPoint: Identifiable {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: AppTheme.Spacing.cardGap) {
-                ScrollOffsetReader(coordinateSpace: "ReportsOverviewView.scroll", id: "ReportsOverviewView.scroll")
-                topChromeView
-
-                VStack(spacing: AppTheme.Spacing.cardGap) {
+            AppChromeStack(topChrome: AnyView(topChromeView), scrollID: "ReportsOverviewView.scroll") {
+                VStack(spacing: AppDesign.Theme.Spacing.cardGap) {
                     BudgetReviewSectionCard {
                         OverviewHealthCard(
                             score: healthScore,
@@ -682,8 +679,8 @@ private struct MonthlyNetWorthPoint: Identifiable {
                         OverviewDeepDiveLinks(selectedDate: $selectedDate)
                     }
                 }
-                .padding(.horizontal, AppTheme.Spacing.medium)
-                .padding(.vertical, AppTheme.Spacing.tight)
+                .padding(.horizontal, AppDesign.Theme.Spacing.medium)
+                .padding(.vertical, AppDesign.Theme.Spacing.tight)
             }
         }
         .background(Color(.systemGroupedBackground))
@@ -698,7 +695,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
         )
         .coordinateSpace(name: "ReportsOverviewView.scroll")
         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
-            let shouldCompact = offset < -AppTheme.Layout.scrollCompactThreshold
+            let shouldCompact = offset < -AppDesign.Theme.Layout.scrollCompactThreshold
             if shouldCompact != isRangeHeaderCompact {
                 withAnimation(.easeInOut(duration: 0.15)) {
                     isRangeHeaderCompact = shouldCompact
@@ -975,9 +972,9 @@ private struct OverviewHealthCard: View {
 
     private var scoreColor: Color {
         switch score {
-        case 0..<45: return AppColors.danger(for: appColorMode)
-        case 45..<70: return AppColors.warning(for: appColorMode)
-        default: return AppColors.success(for: appColorMode)
+        case 0..<45: return AppDesign.Colors.danger(for: appColorMode)
+        case 45..<70: return AppDesign.Colors.warning(for: appColorMode)
+        default: return AppDesign.Colors.success(for: appColorMode)
         }
     }
 
@@ -990,9 +987,9 @@ private struct OverviewHealthCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.cardGap) {
-	            HStack(alignment: .top, spacing: AppTheme.Spacing.tight) {
-	                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.cardGap) {
+	            HStack(alignment: .top, spacing: AppDesign.Theme.Spacing.tight) {
+	                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                    Text("Financial Health")
 	                        .appSectionTitleText()
 
@@ -1006,14 +1003,14 @@ private struct OverviewHealthCard: View {
                 BudgetReviewRingProgress(progress: Double(score) / 100.0, color: scoreColor)
             }
 
-            HStack(spacing: AppTheme.Spacing.small) {
+            HStack(spacing: AppDesign.Theme.Spacing.small) {
                 Button(action: onTapIncome) {
                     OverviewStatChip(
                         icon: "arrow.down.circle.fill",
                         label: "Income",
                         value: income,
                         currencyCode: currencyCode,
-                        tint: AppColors.success(for: appColorMode)
+                        tint: AppDesign.Colors.success(for: appColorMode)
                     )
                 }
                 .buttonStyle(.plain)
@@ -1024,7 +1021,7 @@ private struct OverviewHealthCard: View {
                         label: "Expenses",
                         value: expenses,
                         currencyCode: currencyCode,
-                        tint: AppColors.danger(for: appColorMode)
+                        tint: AppDesign.Colors.danger(for: appColorMode)
                     )
                 }
                 .buttonStyle(.plain)
@@ -1036,13 +1033,13 @@ private struct OverviewHealthCard: View {
                     valueText: "\(Int(max(-1, min(1, savingsRate)) * 100))%",
                     progress: max(0, min(1, savingsRate)),
                     tint: savingsRate >= 0.10
-                        ? AppColors.success(for: appColorMode)
-                        : (savingsRate >= 0 ? AppColors.warning(for: appColorMode) : AppColors.danger(for: appColorMode))
+                        ? AppDesign.Colors.success(for: appColorMode)
+                        : (savingsRate >= 0 ? AppDesign.Colors.warning(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
                 )
             }
 
 	            if !insights.isEmpty {
-	                VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+	                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
 	                    Text("Insights")
 	                        .appSecondaryBodyText()
 	                        .fontWeight(.semibold)
@@ -1190,7 +1187,7 @@ private struct IncomeExpenseDetailSheet: View {
             List {
 	                Section {
 	                    HStack(alignment: .firstTextBaseline) {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                             Text(titleOverride ?? detail.title)
                                 .appSectionTitleText()
 
@@ -1204,12 +1201,12 @@ private struct IncomeExpenseDetailSheet: View {
 	                        Text(total, format: .currency(code: currencyCode))
 	                            .appSectionTitleText()
 	                            .fontWeight(.semibold)
-	                            .foregroundStyle(detail == .income ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
+	                            .foregroundStyle(detail == .income ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
                             .monospacedDigit()
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
                     }
-                    .padding(.vertical, AppTheme.Spacing.micro)
+                    .padding(.vertical, AppDesign.Theme.Spacing.micro)
                 }
 
                 if filteredTransactions.isEmpty {
@@ -1243,7 +1240,7 @@ private struct IncomeExpenseDetailSheet: View {
                         showingFilters = true
                     } label: {
                         Label("Filter", systemImage: hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                            .foregroundStyle(hasActiveFilters ? AppColors.tint(for: appColorMode) : .primary)
+                            .foregroundStyle(hasActiveFilters ? AppDesign.Colors.tint(for: appColorMode) : .primary)
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -1318,47 +1315,47 @@ struct OverviewTransactionRow: View {
     @Environment(\.appColorMode) private var appColorMode
 
     private var amountColor: Color {
-        if transaction.amount >= 0 { return AppColors.success(for: appColorMode) }
-        return emphasizeOutflow ? AppColors.danger(for: appColorMode) : .primary
+        if transaction.amount >= 0 { return AppDesign.Colors.success(for: appColorMode) }
+        return emphasizeOutflow ? AppDesign.Colors.danger(for: appColorMode) : .primary
     }
 
     var body: some View {
-	        HStack(spacing: AppTheme.Spacing.tight) {
-	            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+	        HStack(spacing: AppDesign.Theme.Spacing.tight) {
+	            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                Text(transaction.payee)
 	                    .appSecondaryBodyText()
 	                    .fontWeight(.medium)
 	                    .foregroundStyle(.primary)
 	                    .lineLimit(1)
 
-                HStack(spacing: AppTheme.Spacing.compact) {
+                HStack(spacing: AppDesign.Theme.Spacing.compact) {
                     Text(transaction.date, format: .dateTime.month(.abbreviated).day())
                         .appCaptionText()
                         .foregroundStyle(.secondary)
 
                     if transaction.isTransfer {
                         Text("Transfer")
-                            .font(.caption2)
-                            .padding(.horizontal, AppTheme.Spacing.xSmall)
-                            .padding(.vertical, AppTheme.Spacing.hairline)
-                            .background(Capsule().fill(AppColors.tint(for: appColorMode).opacity(0.1)))
-                            .foregroundStyle(AppColors.tint(for: appColorMode))
+                            .appCaption2Text()
+                            .padding(.horizontal, AppDesign.Theme.Spacing.xSmall)
+                            .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+                            .background(Capsule().fill(AppDesign.Colors.tint(for: appColorMode).opacity(0.1)))
+                            .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                             .lineLimit(1)
                     } else if let category = transaction.category {
                         Text(category.name)
-                            .font(.caption2)
-                            .padding(.horizontal, AppTheme.Spacing.xSmall)
-                            .padding(.vertical, AppTheme.Spacing.hairline)
+                            .appCaption2Text()
+                            .padding(.horizontal, AppDesign.Theme.Spacing.xSmall)
+                            .padding(.vertical, AppDesign.Theme.Spacing.hairline)
                             .background(Capsule().fill(Color.secondary.opacity(0.1)))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                     } else {
                         Text("Uncategorized")
-                            .font(.caption2)
-                            .padding(.horizontal, AppTheme.Spacing.xSmall)
-                            .padding(.vertical, AppTheme.Spacing.hairline)
-                            .background(Capsule().fill(AppColors.warning(for: appColorMode).opacity(0.12)))
-                            .foregroundStyle(AppColors.warning(for: appColorMode))
+                            .appCaption2Text()
+                            .padding(.horizontal, AppDesign.Theme.Spacing.xSmall)
+                            .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+                            .background(Capsule().fill(AppDesign.Colors.warning(for: appColorMode).opacity(0.12)))
+                            .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                             .lineLimit(1)
                     }
                 }
@@ -1374,7 +1371,7 @@ struct OverviewTransactionRow: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
         }
-        .padding(.vertical, AppTheme.Spacing.micro)
+        .padding(.vertical, AppDesign.Theme.Spacing.micro)
     }
 }
 
@@ -1420,13 +1417,13 @@ private struct OverviewNetWorthCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.cardGap) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.cardGap) {
 	            HStack(alignment: .firstTextBaseline) {
-	                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-	                    Text("Net Worth")
-	                        .appSectionTitleText()
-	                    Text(netWorth, format: .currency(code: currencyCode))
-	                        .font(.system(size: 32, weight: .bold))
+	                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                    Text("Net Worth")
+                        .appSectionTitleText()
+                    Text(netWorth, format: .currency(code: currencyCode))
+                        .appDisplayText(AppDesign.Theme.DisplaySize.xxxLarge, weight: .bold)
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
@@ -1437,23 +1434,23 @@ private struct OverviewNetWorthCard: View {
 
             LazyVGrid(
                 columns: [
-                    GridItem(.flexible(), spacing: AppTheme.Spacing.small),
-                    GridItem(.flexible(), spacing: AppTheme.Spacing.small),
-                    GridItem(.flexible(), spacing: AppTheme.Spacing.small)
+                    GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small),
+                    GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small),
+                    GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small)
                 ],
-                spacing: AppTheme.Spacing.small
+                spacing: AppDesign.Theme.Spacing.small
             ) {
                 OverviewMetricTile(
                     title: "Assets",
                     valueText: assets.formatted(.currency(code: currencyCode)),
                     icon: "building.columns.fill",
-                    tint: AppColors.tint(for: appColorMode)
+                    tint: AppDesign.Colors.tint(for: appColorMode)
                 )
                 OverviewMetricTile(
                     title: "Debt",
                     valueText: debt.formatted(.currency(code: currencyCode)),
                     icon: "creditcard.fill",
-                    tint: AppColors.warning(for: appColorMode)
+                    tint: AppDesign.Colors.warning(for: appColorMode)
                 )
                 OverviewMetricTile(
                     title: "Accounts",
@@ -1470,7 +1467,7 @@ private struct OverviewNetWorthCard: View {
                         y: .value("Net Worth", Double(truncating: point.value as NSNumber))
                     )
                     .interpolationMethod(.catmullRom)
-                    .foregroundStyle(AppColors.tint(for: appColorMode))
+                    .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                     .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                 }
                 .chartOverlay { proxy in
@@ -1510,7 +1507,7 @@ private struct OverviewNetWorthCard: View {
                                 .zIndex(1)
 
                                 Circle()
-                                    .fill(AppColors.tint(for: appColorMode))
+                                    .fill(AppDesign.Colors.tint(for: appColorMode))
                                     .frame(width: 8, height: 8)
                                     .overlay(
                                         Circle()
@@ -1519,23 +1516,23 @@ private struct OverviewNetWorthCard: View {
                                     .position(x: x, y: y)
                                     .zIndex(2)
 
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                                     Text(selectedPoint.monthStart, format: .dateTime.month(.abbreviated).year())
-                                        .font(.caption2)
+                                        .appCaption2Text()
                                         .foregroundStyle(.secondary)
                                     Text(selectedPoint.value, format: .currency(code: currencyCode))
                                         .appCaptionText()
                                         .fontWeight(.semibold)
                                         .monospacedDigit()
                                 }
-                                .padding(.horizontal, AppTheme.Spacing.compact)
-                                .padding(.vertical, AppTheme.Spacing.xSmall)
+                                .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+                                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
                                 .background(
-                                    RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
+                                    RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button, style: .continuous)
                                         .fill(Color(.systemBackground))
                                 )
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
+                                    RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button, style: .continuous)
                                         .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
                                 )
                                 .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 4)
@@ -1561,7 +1558,7 @@ private struct OverviewNetWorthCard: View {
                         AxisValueLabel {
                             if let y = value.as(Double.self) {
                                 Text(compactCurrencyLabel(y))
-                                    .font(.caption2)
+                                    .appCaption2Text()
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.75)
@@ -1570,7 +1567,7 @@ private struct OverviewNetWorthCard: View {
                     }
                 }
                 .frame(height: 200)
-                .padding(.top, AppTheme.Spacing.hairline)
+                .padding(.top, AppDesign.Theme.Spacing.hairline)
                 .onAppear {
                     selectedMonth = series.last?.monthStart
                 }
@@ -1590,26 +1587,26 @@ private struct OverviewCashFlowCard: View {
     @Environment(\.appColorMode) private var appColorMode
 
     private var netColor: Color {
-        netChange >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode)
+        netChange >= 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode)
     }
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: AppTheme.Spacing.cardGap) {
+	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.cardGap) {
 	            Text("Cash Flow")
 	                .appSectionTitleText()
 
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: AppTheme.Spacing.small), GridItem(.flexible(), spacing: AppTheme.Spacing.small)], spacing: AppTheme.Spacing.small) {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small), GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small)], spacing: AppDesign.Theme.Spacing.small) {
                 OverviewValueTile(
                     title: "Income",
                     value: income,
                     currencyCode: currencyCode,
-                    tint: AppColors.success(for: appColorMode)
+                    tint: AppDesign.Colors.success(for: appColorMode)
                 )
                 OverviewValueTile(
                     title: "Expenses",
                     value: expenses,
                     currencyCode: currencyCode,
-                    tint: AppColors.danger(for: appColorMode)
+                    tint: AppDesign.Colors.danger(for: appColorMode)
                 )
                 OverviewValueTile(
                     title: "Net Change",
@@ -1631,8 +1628,8 @@ private struct OverviewCashFlowCard: View {
                     valueText: savingsRate >= 0 ? "Positive" : "Negative",
                     progress: max(0, min(1, savingsRate)),
                     tint: savingsRate >= 0.10
-                        ? AppColors.success(for: appColorMode)
-                        : (savingsRate >= 0 ? AppColors.warning(for: appColorMode) : AppColors.danger(for: appColorMode))
+                        ? AppDesign.Colors.success(for: appColorMode)
+                        : (savingsRate >= 0 ? AppDesign.Colors.warning(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
                 )
             }
 
@@ -1654,19 +1651,19 @@ private struct OverviewBudgetHealthCard: View {
     let overBudgetCategories: [(category: Category, overBy: Decimal)]
 
     private var utilizationColor: Color {
-        guard let utilization else { return AppColors.tint(for: appColorMode) }
+        guard let utilization else { return AppDesign.Colors.tint(for: appColorMode) }
         // Green up to 75%, orange 76-99%, red 100%+
         if utilization <= 0.75 {
-            return AppColors.success(for: appColorMode)
+            return AppDesign.Colors.success(for: appColorMode)
         } else if utilization < 1.0 {
-            return AppColors.warning(for: appColorMode)
+            return AppDesign.Colors.warning(for: appColorMode)
         } else {
-            return AppColors.danger(for: appColorMode)
+            return AppDesign.Colors.danger(for: appColorMode)
         }
     }
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: AppTheme.Spacing.cardGap) {
+	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.cardGap) {
 	            HStack(alignment: .firstTextBaseline) {
 	                Text("Budget Health")
 	                    .appSectionTitleText()
@@ -1688,7 +1685,7 @@ private struct OverviewBudgetHealthCard: View {
                     description: Text("Assign amounts to categories to see budget health here.")
                 )
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, AppTheme.Spacing.xSmall)
+                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
             } else {
                 OverviewInlineMeter(
                     title: "Spent vs Assigned",
@@ -1697,7 +1694,7 @@ private struct OverviewBudgetHealthCard: View {
                     tint: utilizationColor
                 )
 
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: AppTheme.Spacing.small), GridItem(.flexible(), spacing: AppTheme.Spacing.small)], spacing: AppTheme.Spacing.small) {
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small), GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small)], spacing: AppDesign.Theme.Spacing.small) {
                     OverviewValueTile(
                         title: "Assigned",
                         value: assigned,
@@ -1708,12 +1705,12 @@ private struct OverviewBudgetHealthCard: View {
                         title: "Left",
                         value: remaining,
                         currencyCode: currencyCode,
-                        tint: remaining >= 0 ? .secondary : AppColors.danger(for: appColorMode)
+                        tint: remaining >= 0 ? .secondary : AppDesign.Colors.danger(for: appColorMode)
                     )
                 }
 
 	                if !overBudgetCategories.isEmpty {
-	                    VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+	                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
 	                        Text("Over Budget")
 	                            .appSecondaryBodyText()
 	                            .fontWeight(.semibold)
@@ -1725,7 +1722,7 @@ private struct OverviewBudgetHealthCard: View {
                                     .lineLimit(1)
                                 Spacer()
                                 Text("+\(item.overBy.formatted(.currency(code: currencyCode)))")
-                                    .foregroundStyle(AppColors.danger(for: appColorMode))
+                                    .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                                     .monospacedDigit()
                             }
                             .appCaptionText()
@@ -1744,7 +1741,7 @@ private struct OverviewTopSpendingCard: View {
     @Environment(\.appColorMode) private var appColorMode
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: AppTheme.Spacing.cardGap) {
+	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.cardGap) {
 	            HStack(alignment: .firstTextBaseline) {
 	                Text("Top Spending")
 	                    .appSectionTitleText()
@@ -1766,12 +1763,12 @@ private struct OverviewTopSpendingCard: View {
                     description: Text("Add transactions to see what categories drive your spending.")
                 )
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, AppTheme.Spacing.xSmall)
+                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
             } else {
-                VStack(spacing: AppTheme.Spacing.small) {
+                VStack(spacing: AppDesign.Theme.Spacing.small) {
                     ForEach(items, id: \.name) { item in
                         let pct = totalSpending > 0 ? Double(truncating: (item.total / totalSpending) as NSNumber) : 0
-	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+	                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
 	                            HStack {
 	                                Text(item.name)
 	                                    .appSecondaryBodyText()
@@ -1786,7 +1783,7 @@ private struct OverviewTopSpendingCard: View {
                             }
 
                             ProgressView(value: pct)
-                                .tint(AppColors.danger(for: appColorMode))
+                                .tint(AppDesign.Colors.danger(for: appColorMode))
                         }
                     }
                 }
@@ -1811,7 +1808,7 @@ private struct OverviewCategorizationCard: View {
     }
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: AppTheme.Spacing.cardGap) {
+	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.cardGap) {
 	            Text("Categorization")
 	                .appSectionTitleText()
 
@@ -1819,10 +1816,10 @@ private struct OverviewCategorizationCard: View {
                 title: "Categorized Spend",
                 valueText: "\(Int(pctCategorized * 100))% categorized",
                 progress: pctCategorized,
-                tint: uncategorizedCount > 0 ? AppColors.warning(for: appColorMode) : AppColors.success(for: appColorMode)
+                tint: uncategorizedCount > 0 ? AppDesign.Colors.warning(for: appColorMode) : AppDesign.Colors.success(for: appColorMode)
             )
 
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: AppTheme.Spacing.small), GridItem(.flexible(), spacing: AppTheme.Spacing.small)], spacing: AppTheme.Spacing.small) {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small), GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small)], spacing: AppDesign.Theme.Spacing.small) {
                 OverviewValueTile(
                     title: "Categorized",
                     value: categorizedAmount,
@@ -1833,7 +1830,7 @@ private struct OverviewCategorizationCard: View {
                     title: "Uncategorized",
                     value: uncategorizedAmount,
                     currencyCode: currencyCode,
-                    tint: uncategorizedCount > 0 ? AppColors.warning(for: appColorMode) : .secondary
+                    tint: uncategorizedCount > 0 ? AppDesign.Colors.warning(for: appColorMode) : .secondary
                 )
             }
 
@@ -1851,7 +1848,7 @@ private struct OverviewGoalsCard: View {
     @Environment(\.appColorMode) private var appColorMode
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: AppTheme.Spacing.cardGap) {
+	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.cardGap) {
 	            HStack(alignment: .firstTextBaseline) {
 	                Text("Savings Goals")
 	                    .appSectionTitleText()
@@ -1866,13 +1863,13 @@ private struct OverviewGoalsCard: View {
                 }
             }
 
-            VStack(spacing: AppTheme.Spacing.tight) {
+            VStack(spacing: AppDesign.Theme.Spacing.tight) {
                 ForEach(goals, id: \.persistentModelID) { goal in
                     let progress = min(1, max(0, goal.progressPercentage / 100))
-                    let fallback = AppColors.tint(for: appColorMode)
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                    let fallback = AppDesign.Colors.tint(for: appColorMode)
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                         HStack {
-                            HStack(spacing: AppTheme.Spacing.compact) {
+                            HStack(spacing: AppDesign.Theme.Spacing.compact) {
 	                                Circle()
 	                                    .fill(Color(hex: goal.colorHex) ?? fallback)
 	                                    .frame(width: 10, height: 10)
@@ -1897,7 +1894,7 @@ private struct OverviewGoalsCard: View {
 
                         if let targetDate = goal.targetDate {
                             Text("Target: \(targetDate.formatted(date: .abbreviated, time: .omitted))")
-                                .font(.caption2)
+                                .appCaption2Text()
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -1915,7 +1912,7 @@ private struct OverviewHighlightsCard: View {
     @Environment(\.appColorMode) private var appColorMode
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: AppTheme.Spacing.cardGap) {
+	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.cardGap) {
 	            Text("Highlights")
 	                .appSectionTitleText()
 
@@ -1931,7 +1928,7 @@ private struct OverviewHighlightsCard: View {
                     title: "Largest Expense",
                     value: abs(largestExpense.amount).formatted(.currency(code: currencyCode)),
                     subtitle: largestExpense.payee,
-                    tint: AppColors.danger(for: appColorMode)
+                    tint: AppDesign.Colors.danger(for: appColorMode)
                 )
             }
 
@@ -1941,7 +1938,7 @@ private struct OverviewHighlightsCard: View {
                     title: "Largest Income",
                     value: largestIncome.amount.formatted(.currency(code: currencyCode)),
                     subtitle: largestIncome.payee,
-                    tint: AppColors.success(for: appColorMode)
+                    tint: AppDesign.Colors.success(for: appColorMode)
                 )
             }
         }
@@ -1952,11 +1949,11 @@ private struct OverviewDeepDiveLinks: View {
     @Binding var selectedDate: Date
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
 	            Text("Deep Dive")
 	                .appSectionTitleText()
 
-            VStack(spacing: AppTheme.Spacing.small) {
+            VStack(spacing: AppDesign.Theme.Spacing.small) {
                 NavigationLink {
                     BudgetPerformanceStandaloneView(selectedDate: $selectedDate)
                 } label: {
@@ -2021,7 +2018,7 @@ private struct ReportsSpendingStandaloneView: View {
             topChrome: { AnyView(topChromeView) }
         )
         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
-            let shouldCompact = offset < -AppTheme.Layout.scrollCompactThreshold
+            let shouldCompact = offset < -AppDesign.Theme.Layout.scrollCompactThreshold
             if shouldCompact != isHeaderCompact {
                 withAnimation(.easeInOut(duration: 0.15)) {
                     isHeaderCompact = shouldCompact
@@ -2067,7 +2064,7 @@ private struct ReportsIncomeStandaloneView: View {
             topChrome: { AnyView(topChromeView) }
         )
         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
-            let shouldCompact = offset < -AppTheme.Layout.scrollCompactThreshold
+            let shouldCompact = offset < -AppDesign.Theme.Layout.scrollCompactThreshold
             if shouldCompact != isHeaderCompact {
                 withAnimation(.easeInOut(duration: 0.15)) {
                     isHeaderCompact = shouldCompact
@@ -2109,7 +2106,7 @@ private struct BudgetPerformanceStandaloneView: View {
             topChrome: { AnyView(topChromeView) }
         )
         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
-            let shouldCompact = offset < -AppTheme.Layout.scrollCompactThreshold
+            let shouldCompact = offset < -AppDesign.Theme.Layout.scrollCompactThreshold
             if shouldCompact != isHeaderCompact {
                 withAnimation(.easeInOut(duration: 0.15)) {
                     isHeaderCompact = shouldCompact
@@ -2142,8 +2139,8 @@ struct OverviewMetricTile: View {
     let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-            HStack(spacing: AppTheme.Spacing.compact) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
+            HStack(spacing: AppDesign.Theme.Spacing.compact) {
                 Image(systemName: icon)
                     .foregroundStyle(tint)
                 Text(title)
@@ -2152,21 +2149,21 @@ struct OverviewMetricTile: View {
             }
 
             Text(valueText)
-                .font(AppTheme.Typography.secondaryBody)
+                .font(AppDesign.Theme.Typography.secondaryBody)
                 .fontWeight(.semibold)
                 .foregroundStyle(.primary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
         }
-        .padding(AppTheme.Spacing.small)
+        .padding(AppDesign.Theme.Spacing.small)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact, style: .continuous)
                 .fill(Color(.systemBackground))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
         )
     }
@@ -2179,27 +2176,27 @@ struct OverviewValueTile: View {
     let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
             Text(title)
                 .appCaptionText()
                 .foregroundStyle(.secondary)
 
             Text(value, format: .currency(code: currencyCode))
-                .font(AppTheme.Typography.secondaryBody)
+                .font(AppDesign.Theme.Typography.secondaryBody)
                 .fontWeight(.semibold)
                 .foregroundStyle(tint)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
         }
-        .padding(AppTheme.Spacing.small)
+        .padding(AppDesign.Theme.Spacing.small)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact, style: .continuous)
                 .fill(Color(.systemBackground))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
         )
     }
@@ -2212,7 +2209,7 @@ struct OverviewInlineMeter: View {
     let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
             HStack {
                 Text(title)
                     .appCaptionText()
@@ -2237,13 +2234,13 @@ private struct OverviewInsightRow: View {
     @Environment(\.appColorMode) private var appColorMode
 
 	    var body: some View {
-	        HStack(alignment: .top, spacing: AppTheme.Spacing.small) {
+	        HStack(alignment: .top, spacing: AppDesign.Theme.Spacing.small) {
                 Image(systemName: model.icon)
                     .foregroundStyle(iconTint)
                     .appCaptionText()
-                    .padding(.top, AppTheme.Spacing.pixel)
+                    .padding(.top, AppDesign.Theme.Spacing.pixel)
 
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                     Text(model.title)
                         .appSecondaryBodyText()
                         .foregroundStyle(.primary)
@@ -2265,19 +2262,19 @@ private struct OverviewInsightRow: View {
                     Button(title) {
                         onAction(action)
                     }
-                    .font(.subheadline.weight(.semibold))
-                    .buttonStyle(.bordered)
+                    .appSecondaryBodyStrongText()
+                    .buttonStyle(.glass)
                     .controlSize(.small)
                     .accessibilityIdentifier("overviewInsight.action.\(model.id)")
                 }
         }
-        .padding(AppTheme.Spacing.small)
+        .padding(AppDesign.Theme.Spacing.small)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact, style: .continuous)
                 .fill(Color(.systemBackground))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
         )
         .accessibilityElement(children: .contain)
@@ -2287,11 +2284,11 @@ private struct OverviewInsightRow: View {
     private var iconTint: Color {
         switch model.severity {
         case .info:
-            return AppColors.tint(for: appColorMode)
+            return AppDesign.Colors.tint(for: appColorMode)
         case .warning:
-            return AppColors.warning(for: appColorMode)
+            return AppDesign.Colors.warning(for: appColorMode)
         case .alert:
-            return AppColors.danger(for: appColorMode)
+            return AppDesign.Colors.danger(for: appColorMode)
         }
     }
 }
@@ -2304,12 +2301,12 @@ struct OverviewStatChip: View {
     let tint: Color
 
 	    var body: some View {
-	        HStack(spacing: AppTheme.Spacing.small) {
+	        HStack(spacing: AppDesign.Theme.Spacing.small) {
 	            Image(systemName: icon)
 	                .foregroundStyle(tint)
-	                .font(AppTheme.Typography.sectionTitle)
+	                .font(AppDesign.Theme.Typography.sectionTitle)
 
-	            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+	            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                 Text(label)
                     .appCaptionText()
                     .foregroundStyle(.secondary)
@@ -2324,14 +2321,14 @@ struct OverviewStatChip: View {
 
             Spacer(minLength: 0)
         }
-        .padding(AppTheme.Spacing.small)
+        .padding(AppDesign.Theme.Spacing.small)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous)
                 .fill(Color(.systemBackground))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
         )
     }
@@ -2345,8 +2342,8 @@ struct OverviewInfoRow: View {
     var tint: Color = .secondary
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-            HStack(spacing: AppTheme.Spacing.tight) {
+	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
+            HStack(spacing: AppDesign.Theme.Spacing.tight) {
                 Image(systemName: icon)
                     .foregroundStyle(tint)
                     .frame(width: 22)
@@ -2372,16 +2369,16 @@ struct OverviewInfoRow: View {
                     .appCaptionText()
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
-                    .padding(.leading, AppTheme.Spacing.indentMedium)
+                    .padding(.leading, AppDesign.Theme.Spacing.indentMedium)
             }
         }
-        .padding(AppTheme.Spacing.small)
+        .padding(AppDesign.Theme.Spacing.small)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact, style: .continuous)
                 .fill(Color(.systemBackground))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
         )
     }
@@ -2394,17 +2391,17 @@ struct OverviewLinkRow: View {
     @Environment(\.appColorMode) private var appColorMode
 
 	    var body: some View {
-            HStack(spacing: AppTheme.Spacing.tight) {
+            HStack(spacing: AppDesign.Theme.Spacing.tight) {
             ZStack {
-                RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
-                    .fill(AppColors.tint(for: appColorMode).opacity(0.12))
+                RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact, style: .continuous)
+                    .fill(AppDesign.Colors.tint(for: appColorMode).opacity(0.12))
                 Image(systemName: icon)
-                    .foregroundStyle(AppColors.tint(for: appColorMode))
-                    .font(AppTheme.Typography.sectionTitle)
+                    .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
+                    .font(AppDesign.Theme.Typography.sectionTitle)
             }
             .frame(width: 40, height: 40)
 
-	            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+	            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
 	                Text(title)
 	                    .appSecondaryBodyText()
 	                    .fontWeight(.semibold)
@@ -2421,13 +2418,13 @@ struct OverviewLinkRow: View {
                 .foregroundStyle(.secondary)
                 .appCaptionText()
         }
-        .padding(AppTheme.Spacing.small)
+        .padding(AppDesign.Theme.Spacing.small)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous)
                 .fill(Color(.systemBackground))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
         )
     }

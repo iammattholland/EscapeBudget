@@ -63,7 +63,7 @@ struct ManageView: View {
     }
 
     private var manageTopChrome: some View {
-        VStack(spacing: AppTheme.Spacing.compact) {
+        VStack(spacing: AppDesign.Theme.Spacing.compact) {
             TopChromeTabs(
                 selection: $manageNavigator.selectedSection,
                 tabs: ManageSection.allCases.map { .init(id: $0, title: $0.rawValue) }
@@ -85,7 +85,7 @@ struct ManageView: View {
                     .topMenuBarStyle(isCompact: true)
             }
         }
-        .padding(.top, AppTheme.Spacing.xSmall)
+        .padding(.top, AppDesign.Theme.Spacing.xSmall)
     }
 
     @ViewBuilder
@@ -138,11 +138,8 @@ struct ManageBudgetView: View {
                 BudgetView(searchText: $searchText, topChrome: topChrome)
             } else {
                 List {
-                    if let topChrome {
-                        topChrome
-                            .listRowInsets(EdgeInsets())
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
+                    if topChrome != nil {
+                        AppChromeListRow(topChrome: topChrome, scrollID: "BudgetView.scroll")
                     }
                     EmptyDataCard(
                         systemImage: "chart.pie.fill",
@@ -178,18 +175,18 @@ private struct ManageBudgetHeroCard: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
             MonthNavigationHeader(selectedDate: $selectedDate)
 
-            HStack(spacing: AppTheme.Spacing.tight) {
+            HStack(spacing: AppDesign.Theme.Spacing.tight) {
                 ManageBudgetMetric(title: "Budgeted", value: totalAssigned, currencyCode: currencyCode, tint: .primary)
                 ManageBudgetMetric(title: "Spent", value: totalSpent, currencyCode: currencyCode, tint: .secondary)
-                ManageBudgetMetric(title: "Left", value: totalRemaining, currencyCode: currencyCode, tint: totalRemaining >= 0 ? .secondary : AppColors.danger(for: appColorMode))
+                ManageBudgetMetric(title: "Left", value: totalRemaining, currencyCode: currencyCode, tint: totalRemaining >= 0 ? .secondary : AppDesign.Colors.danger(for: appColorMode))
             }
         }
-        .padding(AppTheme.Spacing.screenHorizontal)
+        .padding(AppDesign.Theme.Spacing.screenHorizontal)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.pill, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.pill, style: .continuous)
                 .fill(LinearGradient(
                     colors: [Color(.systemBackground), Color(.secondarySystemBackground)],
                     startPoint: .topLeading,
@@ -197,7 +194,7 @@ private struct ManageBudgetHeroCard: View {
                 ))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.pill, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.pill, style: .continuous)
                 .stroke(Color.primary.opacity(0.05), lineWidth: 1)
         )
     }
@@ -210,9 +207,9 @@ private struct ManageBudgetMetric: View {
     let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
             Text(title.uppercased())
-                .font(.caption2)
+                .appCaption2Text()
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
             Text(value, format: .currency(code: currencyCode))
@@ -224,7 +221,7 @@ private struct ManageBudgetMetric: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.card, style: .continuous)
                 .fill(tint.opacity(0.08))
         )
     }
@@ -237,23 +234,23 @@ private struct ManageBudgetInsightsCard: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
             Text("Budget Health")
-                .font(AppTheme.Typography.sectionTitle)
+                .font(AppDesign.Theme.Typography.sectionTitle)
 
-            HStack(spacing: AppTheme.Spacing.tight) {
+            HStack(spacing: AppDesign.Theme.Spacing.tight) {
                 InsightPill(
                     title: "Needs Budget",
                     detail: needsBudgetCount == 0 ? "All set" : "\(needsBudgetCount) categories",
                     icon: "exclamationmark.triangle.fill",
-                    tint: needsBudgetCount == 0 ? AppColors.success(for: appColorMode) : AppColors.warning(for: appColorMode)
+                    tint: needsBudgetCount == 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.warning(for: appColorMode)
                 )
 
                 InsightPill(
                     title: "Coverage",
                     detail: coverageText,
                     icon: "shield.lefthalf.filled",
-                    tint: AppColors.tint(for: appColorMode)
+                    tint: AppDesign.Colors.tint(for: appColorMode)
                 )
 
                 InsightPill(
@@ -280,19 +277,19 @@ private struct InsightPill: View {
     let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
             Label(title, systemImage: icon)
-                .font(AppTheme.Typography.captionStrong)
+                .font(AppDesign.Theme.Typography.captionStrong)
                 .foregroundStyle(tint)
 
             Text(detail)
-                .font(AppTheme.Typography.secondaryBody)
+                .font(AppDesign.Theme.Typography.secondaryBody)
                 .foregroundStyle(.primary)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.card, style: .continuous)
                 .fill(tint.opacity(0.08))
         )
     }
@@ -306,17 +303,17 @@ private struct BudgetQuickActionsRow: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
             Text("Quick Actions")
-                .font(AppTheme.Typography.sectionTitle)
+                .font(AppDesign.Theme.Typography.sectionTitle)
 
-            HStack(spacing: AppTheme.Spacing.tight) {
-                QuickActionButton(title: "Add Group", icon: "folder.badge.plus", tint: AppColors.tint(for: appColorMode), action: onAddGroup)
+            HStack(spacing: AppDesign.Theme.Spacing.tight) {
+                QuickActionButton(title: "Add Group", icon: "folder.badge.plus", tint: AppDesign.Colors.tint(for: appColorMode), action: onAddGroup)
                 QuickActionButton(title: "Add Category", icon: "plus.square.dashed", tint: .purple, action: onAddCategory)
             }
 
-            HStack(spacing: AppTheme.Spacing.tight) {
-                QuickActionButton(title: "Guided Setup", icon: "wand.and.sparkles", tint: AppColors.warning(for: appColorMode), action: onGuidedSetup)
+            HStack(spacing: AppDesign.Theme.Spacing.tight) {
+                QuickActionButton(title: "Guided Setup", icon: "wand.and.sparkles", tint: AppDesign.Colors.warning(for: appColorMode), action: onGuidedSetup)
                 QuickActionButton(title: "Advanced Editor", icon: "square.and.pencil", tint: .gray, action: onAdvancedManager)
             }
         }
@@ -334,14 +331,14 @@ private struct QuickActionButton: View {
         Button(action: action) {
             HStack {
                 Image(systemName: icon)
-                    .font(AppTheme.Typography.sectionTitle)
+                    .font(AppDesign.Theme.Typography.sectionTitle)
                 Text(title)
                     .fontWeight(.semibold)
             }
             .padding()
             .frame(maxWidth: .infinity)
             .background(
-                RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+                RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.card, style: .continuous)
                     .fill(tint.opacity(0.12))
             )
         }
@@ -371,11 +368,11 @@ private struct BudgetGroupCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
             HStack {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                     Text(group.name)
-                        .font(AppTheme.Typography.sectionTitle)
+                        .font(AppDesign.Theme.Typography.sectionTitle)
                     Text(summaryText)
                         .appCaptionText()
                         .foregroundStyle(.secondary)
@@ -385,13 +382,13 @@ private struct BudgetGroupCard: View {
 
                 Button(action: onToggleCollapse) {
                     Image(systemName: isCollapsed ? "chevron.down" : "chevron.up")
-                        .font(AppTheme.Typography.sectionTitle)
+                        .font(AppDesign.Theme.Typography.sectionTitle)
                         .foregroundStyle(.secondary)
                 }
             }
 
             if !isCollapsed {
-                VStack(spacing: AppTheme.Spacing.small) {
+                VStack(spacing: AppDesign.Theme.Spacing.small) {
                     ForEach(categories) { category in
                         BudgetCategoryRowView(
                             category: category,
@@ -404,7 +401,7 @@ private struct BudgetGroupCard: View {
 
                     Button(action: onAddCategory) {
                         Label("Add category", systemImage: "plus.circle.fill")
-                            .font(AppTheme.Typography.secondaryBody)
+                            .font(AppDesign.Theme.Typography.secondaryBody)
                             .fontWeight(.medium)
                     }
                     .buttonStyle(.plain)
@@ -442,36 +439,36 @@ private struct BudgetEmptyStateCard: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(spacing: AppTheme.Spacing.medium) {
+        VStack(spacing: AppDesign.Theme.Spacing.medium) {
             Image(systemName: "chart.pie.fill")
                 .appIconXLarge()
-                .foregroundStyle(AppColors.tint(for: appColorMode))
+                .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
 
             Text("Craft Your Budget")
                 .appTitleText()
                 .fontWeight(.bold)
 
             Text("Design groups, set targets, and keep spending aligned with your goals. Guided setup walks you through everything.")
-                .font(AppTheme.Typography.body)
+                .font(AppDesign.Theme.Typography.body)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
             Button(action: action) {
                 Text("Set Up Budget")
                     .fontWeight(.semibold)
-                    .padding(.horizontal, AppTheme.Spacing.xLarge)
-                    .padding(.vertical, AppTheme.Spacing.tight)
+                    .padding(.horizontal, AppDesign.Theme.Spacing.xLarge)
+                    .padding(.vertical, AppDesign.Theme.Spacing.tight)
                     .frame(maxWidth: .infinity)
             }
             .appPrimaryCTA()
         }
-        .padding(AppTheme.Spacing.xxLarge)
+        .padding(AppDesign.Theme.Spacing.xxLarge)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.pillLarge, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.pillLarge, style: .continuous)
                 .fill(Color(.systemBackground))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.pillLarge, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.pillLarge, style: .continuous)
                 .stroke(Color.primary.opacity(0.05), lineWidth: 1)
         )
     }
@@ -486,21 +483,21 @@ private struct ManageBudgetHighlightsView: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.relaxed) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.relaxed) {
             Text("What to expect")
                 .appSectionTitleText()
 
             ForEach(highlights, id: \.0) { highlight in
-                HStack(spacing: AppTheme.Spacing.tight) {
+                HStack(spacing: AppDesign.Theme.Spacing.tight) {
                     Circle()
-                        .fill(AppColors.tint(for: appColorMode).opacity(0.12))
+                        .fill(AppDesign.Colors.tint(for: appColorMode).opacity(0.12))
                         .frame(width: 44, height: 44)
                         .overlay(
                             Image(systemName: highlight.0)
-                                .foregroundStyle(AppColors.tint(for: appColorMode))
+                                .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                         )
 
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                         Text(highlight.1)
                             .appSecondaryBodyText()
                             .fontWeight(.semibold)
@@ -511,13 +508,13 @@ private struct ManageBudgetHighlightsView: View {
                 }
             }
         }
-        .padding(AppTheme.Spacing.insetLarge)
+        .padding(AppDesign.Theme.Spacing.insetLarge)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.pill, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.pill, style: .continuous)
                 .fill(Color(.systemBackground))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.pill, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.pill, style: .continuous)
                 .stroke(Color.primary.opacity(0.05), lineWidth: 1)
         )
     }
@@ -588,133 +585,177 @@ struct BudgetSetupWizardView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.xLarge) {
-                ProgressView(value: progressValue)
-                    .tint(AppColors.tint(for: appColorMode))
-
-                switch step {
-                case .intro:
-                    BudgetSetupIntro()
-                case .templates:
-                    BudgetTemplateSelectionView(
-                        templates: templates,
-                        customTemplates: customTemplates,
-                        selectedTemplateIDs: $selectedTemplateIDs,
-                        selectedCategoryIDs: $selectedCategoryIDs,
-                        onAddCustomGroup: { showingAddCustomGroup = true }
-                    )
-                case .income:
-                    BudgetIncomeSourcesView(incomeSources: $incomeSources)
-                case .assign:
-                    BudgetAssignmentView(
-                        groups: selectedGroups,
-                        budgetInputs: $budgetInputs,
-                        currencyCode: displayCurrencyCode,
-                        showingSuggestedAmounts: $showingSuggestedAmounts
-                    )
-                case .review:
-                    BudgetSetupReview(groups: selectedGroups, budgetInputs: budgetInputs, currencyCode: displayCurrencyCode)
-                }
-
-                if step == .review, hasExistingExpenseBudget {
-                    Toggle(isOn: $replaceExistingBudget) {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
-                            Text("Replace existing budget")
-                                .appSecondaryBodyText()
-                                .fontWeight(.semibold)
-                            Text("Deletes current expense groups and categories before creating the new plan.")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                        }
+            wizardContent
+                .navigationTitle("Budget Setup")
+                .navigationBarTitleDisplayMode(.inline)
+                .globalKeyboardDoneToolbar()
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Close") { dismiss() }
                     }
-                    .tint(AppColors.warning(for: appColorMode))
                 }
+                .sheet(isPresented: $showingAddCustomGroup) {
+                    CustomGroupEditor(
+                        group: editingCustomGroup,
+                        onSave: { newGroup in
+                            let template = BudgetTemplateGroup(
+                                id: UUID(),
+                                name: newGroup.name,
+                                categories: newGroup.categories.map { BudgetTemplateCategory(id: UUID(), name: $0, suggestedAmount: 0) }
+                            )
+                            customTemplates.append(template)
+                            editingCustomGroup = EditableCustomGroup()
+                            showingAddCustomGroup = false
+                        },
+                        onCancel: {
+                            editingCustomGroup = EditableCustomGroup()
+                            showingAddCustomGroup = false
+                        }
+                    )
+                }
+                .alert("Almost there", isPresented: Binding<Bool>(
+                    get: { creationError != nil },
+                    set: { _ in creationError = nil }
+                )) {
+                    Button("OK", role: .cancel) { creationError = nil }
+                } message: {
+                    Text(creationError ?? "")
+                }
+        }
+    }
+
+    private var wizardContent: some View {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xLarge) {
+            ProgressView(value: progressValue)
+                .tint(AppDesign.Colors.tint(for: appColorMode))
+
+            wizardStepContent
+
+            if step == .review, hasExistingExpenseBudget {
+                replaceBudgetToggle
+            }
+
+            Spacer()
+
+            wizardFooter
+        }
+        .padding(AppDesign.Theme.Spacing.xLarge)
+    }
+
+    @ViewBuilder
+    private var wizardStepContent: some View {
+        switch step {
+        case .intro:
+            BudgetSetupIntro()
+            if hasExistingExpenseBudget {
+                existingBudgetWarning
+            }
+        case .templates:
+            BudgetTemplateSelectionView(
+                templates: templates,
+                customTemplates: customTemplates,
+                selectedTemplateIDs: $selectedTemplateIDs,
+                selectedCategoryIDs: $selectedCategoryIDs,
+                onAddCustomGroup: { showingAddCustomGroup = true }
+            )
+        case .income:
+            BudgetIncomeSourcesView(incomeSources: $incomeSources)
+        case .assign:
+            BudgetAssignmentView(
+                groups: selectedGroups,
+                budgetInputs: $budgetInputs,
+                currencyCode: displayCurrencyCode,
+                showingSuggestedAmounts: $showingSuggestedAmounts
+            )
+        case .review:
+            BudgetSetupReview(groups: selectedGroups, budgetInputs: budgetInputs, currencyCode: displayCurrencyCode)
+        }
+    }
+
+    private var existingBudgetWarning: some View {
+        HStack(alignment: .top, spacing: AppDesign.Theme.Spacing.small) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
+                Text("This can replace your existing budget")
+                    .appSecondaryBodyText()
+                    .fontWeight(.semibold)
+                Text("By default, guided setup replaces your current expense groups and categories. You can turn this off on the Review step.")
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(AppDesign.Theme.Spacing.medium)
+        .background(
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous)
+                .fill(AppDesign.Colors.warning(for: appColorMode).opacity(0.12))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous)
+                .stroke(AppDesign.Colors.warning(for: appColorMode).opacity(0.35), lineWidth: 1)
+        )
+    }
+
+    private var replaceBudgetToggle: some View {
+        Toggle(isOn: $replaceExistingBudget) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
+                Text("Replace existing budget")
+                    .appSecondaryBodyText()
+                    .fontWeight(.semibold)
+                Text("Deletes current expense groups and categories before creating the new plan.")
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .tint(AppDesign.Colors.warning(for: appColorMode))
+    }
+
+    private var wizardFooter: some View {
+        HStack {
+            Button("Back") {
+                goBack()
+            }
+            .disabled(step == .intro)
+
+            Spacer()
+
+            if step == .templates {
+                Button("Select All") {
+                    selectAllBudgetGroups()
+                }
+                .appSecondaryCTA()
 
                 Spacer()
+            }
 
-                HStack {
-                    Button("Back") {
-                        goBack()
+            if step == .assign {
+                Button {
+                    showingSuggestedAmounts = true
+                } label: {
+                    HStack {
+                        Image(systemName: "wand.and.stars")
+                            .font(AppDesign.Theme.Typography.sectionTitle)
+                        Text("Assign Suggested")
+                            .fontWeight(.semibold)
                     }
-                    .disabled(step == .intro)
-
-                    Spacer()
-
-                    if step == .templates {
-                        Button("Select All") {
-                            selectAllBudgetGroups()
-                        }
-                        .appSecondaryCTA()
-
-                        Spacer()
-                    }
-
-                    if step == .assign {
-                        Button {
-                            showingSuggestedAmounts = true
-                        } label: {
-                            HStack {
-                                Image(systemName: "wand.and.stars")
-                                    .font(AppTheme.Typography.sectionTitle)
-                                Text("Assign Suggested")
-                                    .fontWeight(.semibold)
-                            }
-                            .padding(.horizontal, AppTheme.Spacing.cardPadding)
-                            .padding(.vertical, AppTheme.Spacing.small)
-                            .background(
-                                RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
-                                    .fill(AppColors.tint(for: appColorMode).opacity(0.12))
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(AppColors.tint(for: appColorMode))
-
-                        Spacer()
-                    }
-
-                    Button(nextButtonTitle) {
-                        goForward()
-                    }
-                    .appPrimaryCTA()
-                    .disabled(nextDisabled)
+                    .padding(.horizontal, AppDesign.Theme.Spacing.cardPadding)
+                    .padding(.vertical, AppDesign.Theme.Spacing.small)
+                    .background(
+                        RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous)
+                            .fill(AppDesign.Colors.tint(for: appColorMode).opacity(0.12))
+                    )
                 }
+                .buttonStyle(.plain)
+                .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
+
+                Spacer()
             }
-            .padding(AppTheme.Spacing.xLarge)
-            .navigationTitle("Budget Setup")
-            .navigationBarTitleDisplayMode(.inline)
-            .globalKeyboardDoneToolbar()
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
-                }
+
+            Button(nextButtonTitle) {
+                goForward()
             }
-            .sheet(isPresented: $showingAddCustomGroup) {
-                CustomGroupEditor(
-                    group: editingCustomGroup,
-                    onSave: { newGroup in
-                        let template = BudgetTemplateGroup(
-                            id: UUID(),
-                            name: newGroup.name,
-                            categories: newGroup.categories.map { BudgetTemplateCategory(id: UUID(), name: $0, suggestedAmount: 0) }
-                        )
-                        customTemplates.append(template)
-                        editingCustomGroup = EditableCustomGroup()
-                        showingAddCustomGroup = false
-                    },
-                    onCancel: {
-                        editingCustomGroup = EditableCustomGroup()
-                        showingAddCustomGroup = false
-                    }
-                )
-            }
-            .alert("Almost there", isPresented: Binding<Bool>(
-                get: { creationError != nil },
-                set: { _ in creationError = nil }
-            )) {
-                Button("OK", role: .cancel) { creationError = nil }
-            } message: {
-                Text(creationError ?? "")
-            }
+            .appPrimaryCTA()
+            .disabled(nextDisabled)
         }
     }
 
@@ -892,19 +933,19 @@ private struct BudgetIncomeSourcesView: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
             Text("Income sources")
                 .appTitleText()
 
             Text("Add your income categories (optional). They'll appear under Manage Budget once created.")
-                .font(AppTheme.Typography.body)
+                .font(AppDesign.Theme.Typography.body)
                 .foregroundStyle(.secondary)
 
-            VStack(spacing: AppTheme.Spacing.tight) {
+            VStack(spacing: AppDesign.Theme.Spacing.tight) {
                 ForEach(incomeSources.indices, id: \.self) { index in
-                    HStack(spacing: AppTheme.Spacing.small) {
+                    HStack(spacing: AppDesign.Theme.Spacing.small) {
                         Image(systemName: "arrow.down.left.circle.fill")
-                            .foregroundStyle(AppColors.success(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
 
                         TextField("Eg. Paycheck", text: binding(for: index))
                             .textFieldStyle(.plain)
@@ -919,9 +960,9 @@ private struct BudgetIncomeSourcesView: View {
                             .buttonStyle(.plain)
                         }
                     }
-                    .padding(AppTheme.Spacing.tight)
+                    .padding(AppDesign.Theme.Spacing.tight)
                     .background(Color(.systemGray6))
-                    .cornerRadius(AppTheme.Radius.small)
+                    .cornerRadius(AppDesign.Theme.Radius.small)
                 }
 
                 Button {
@@ -946,21 +987,21 @@ private struct BudgetIncomeSourcesView: View {
 
 private struct BudgetSetupIntro: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
             Text("Let's build your budget")
-                .font(.largeTitle)
+                .appLargeTitleText()
                 .fontWeight(.bold)
 
             Text("We'll suggest popular groups, let you fine-tune categories, and capture the numbers that matter most.")
-                .font(AppTheme.Typography.body)
+                .font(AppDesign.Theme.Typography.body)
                 .foregroundStyle(.secondary)
 
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                 Label("Curated templates with smart defaults", systemImage: "wand.and.stars")
                 Label("Enter your amounts once", systemImage: "rectangle.and.pencil.and.ellipsis")
                 Label("Edit or add custom groups anytime", systemImage: "slider.horizontal.3")
             }
-            .font(AppTheme.Typography.secondaryBody)
+            .font(AppDesign.Theme.Typography.secondaryBody)
         }
     }
 }
@@ -974,12 +1015,12 @@ private struct BudgetTemplateSelectionView: View {
     @State private var expandedGroupIDs: Set<UUID> = []
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
             Text("Choose budget groups")
                 .appTitleText()
 
             ScrollView {
-                VStack(spacing: AppTheme.Spacing.tight) {
+                VStack(spacing: AppDesign.Theme.Spacing.tight) {
                     ForEach(templates) { template in
                         BudgetTemplateCard(
                             template: template,
@@ -1010,7 +1051,7 @@ private struct BudgetTemplateSelectionView: View {
                     }
 
                     if !customTemplates.isEmpty {
-                        Divider().padding(.vertical, AppTheme.Spacing.compact)
+                        Divider().padding(.vertical, AppDesign.Theme.Spacing.compact)
                         ForEach(customTemplates) { template in
                             BudgetTemplateCard(
                                 template: template,
@@ -1055,7 +1096,7 @@ private struct BudgetTemplateCard: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
             HStack {
                 Text(template.name)
                     .appSectionTitleText()
@@ -1071,13 +1112,13 @@ private struct BudgetTemplateCard: View {
                     } label: {
                         Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                             .appTitleText()
-                            .foregroundStyle(isSelected ? AppColors.tint(for: appColorMode) : .secondary)
+                            .foregroundStyle(isSelected ? AppDesign.Colors.tint(for: appColorMode) : .secondary)
                     }
                     .buttonStyle(.plain)
                 }
             }
 
-            HStack(spacing: AppTheme.Spacing.small) {
+            HStack(spacing: AppDesign.Theme.Spacing.small) {
                 Text("\(selectedCount) of \(template.categories.count) categories")
                     .appCaptionText()
                     .foregroundStyle(.secondary)
@@ -1089,7 +1130,7 @@ private struct BudgetTemplateCard: View {
                         withAnimation(.snappy) { isExpanded.toggle() }
                     } label: {
                         Image(systemName: "chevron.down")
-                            .font(.caption.weight(.semibold))
+                            .appCaptionStrongText()
                             .foregroundStyle(.secondary)
                             .rotationEffect(.degrees(isExpanded ? 180 : 0))
                     }
@@ -1098,7 +1139,7 @@ private struct BudgetTemplateCard: View {
             }
 
             if isExpanded && !isCustom {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                     ForEach(template.categories) { category in
                         Toggle(isOn: Binding(
                             get: { selectedCategoryIDs.contains(category.id) },
@@ -1119,21 +1160,21 @@ private struct BudgetTemplateCard: View {
                             Text(category.name)
                                 .appSecondaryBodyText()
                         }
-                        .tint(AppColors.tint(for: appColorMode))
+                        .tint(AppDesign.Colors.tint(for: appColorMode))
                     }
                 }
-                .padding(.top, AppTheme.Spacing.micro)
+                .padding(.top, AppDesign.Theme.Spacing.micro)
             }
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.medium, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.medium, style: .continuous)
                 .fill(Color(.systemBackground))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.medium, style: .continuous)
-                .stroke(isSelected ? AppColors.tint(for: appColorMode) : Color.primary.opacity(0.05), lineWidth: isSelected ? 2 : 1)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.medium, style: .continuous)
+                .stroke(isSelected ? AppDesign.Colors.tint(for: appColorMode) : Color.primary.opacity(0.05), lineWidth: isSelected ? 2 : 1)
         )
     }
 
@@ -1159,13 +1200,13 @@ private struct BudgetAssignmentView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
             Text("Assign monthly amounts")
                 .appTitleText()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
                         Text("Budget amounts")
                             .appSectionTitleText()
 
@@ -1174,7 +1215,7 @@ private struct BudgetAssignmentView: View {
                             .foregroundStyle(.secondary)
 
                         ForEach(groups) { group in
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                                 HStack {
                                     Text(group.name)
                                         .appSecondaryBodyText()
@@ -1189,17 +1230,17 @@ private struct BudgetAssignmentView: View {
                                 }
 
                                 ForEach(group.categories) { category in
-                                    HStack(spacing: AppTheme.Spacing.tight) {
+                                    HStack(spacing: AppDesign.Theme.Spacing.tight) {
                                         Text(category.name)
                                             .appSecondaryBodyText()
 
                                         Spacer()
 
-                                        HStack(spacing: AppTheme.Spacing.micro) {
+                                        HStack(spacing: AppDesign.Theme.Spacing.micro) {
                                             Text(currencySymbol)
                                                 .appCaptionText()
                                                 .foregroundStyle(.secondary)
-                                                .padding(.leading, AppTheme.Spacing.compact)
+                                                .padding(.leading, AppDesign.Theme.Spacing.compact)
 
                                             TextField(
                                                 "0",
@@ -1213,27 +1254,27 @@ private struct BudgetAssignmentView: View {
                                             .multilineTextAlignment(.trailing)
                                         }
                                         .frame(width: 100)
-                                        .padding(.vertical, AppTheme.Spacing.compact)
-                                        .padding(.trailing, AppTheme.Spacing.compact)
+                                        .padding(.vertical, AppDesign.Theme.Spacing.compact)
+                                        .padding(.trailing, AppDesign.Theme.Spacing.compact)
                                         .background(Color(.systemGray6))
-                                        .cornerRadius(AppTheme.Radius.xSmall)
+                                        .cornerRadius(AppDesign.Theme.Radius.xSmall)
                                     }
                                 }
                             }
                             .padding()
                             .background(
-                                RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
+                                RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous)
                                     .fill(Color(.secondarySystemBackground))
                             )
                         }
                     }
                     .padding()
                     .background(
-                        RoundedRectangle(cornerRadius: AppTheme.Radius.medium, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.medium, style: .continuous)
                             .fill(Color(.systemBackground))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: AppTheme.Radius.medium, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.medium, style: .continuous)
                             .stroke(Color.primary.opacity(0.05), lineWidth: 1)
                     )
                 }
@@ -1319,9 +1360,9 @@ private struct BudgetSuggestionView: View {
 	var body: some View {
 		NavigationStack {
 			ScrollView {
-				VStack(alignment: .leading, spacing: AppTheme.Spacing.xLarge) {
+				VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xLarge) {
                     // Income Input Section
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                         Text("Monthly Net Income")
                             .appSectionTitleText()
 
@@ -1329,41 +1370,41 @@ private struct BudgetSuggestionView: View {
                             .appCaptionText()
                             .foregroundStyle(.secondary)
 
-                        HStack(spacing: AppTheme.Spacing.compact) {
+                        HStack(spacing: AppDesign.Theme.Spacing.compact) {
                             Text(currencySymbol)
-                                .font(AppTheme.Typography.body)
+                                .font(AppDesign.Theme.Typography.body)
                                 .foregroundStyle(.secondary)
-                                .padding(.leading, AppTheme.Spacing.tight)
+                                .padding(.leading, AppDesign.Theme.Spacing.tight)
 
                             TextField("0", text: $monthlyIncomeInput)
                                 .keyboardType(.decimalPad)
-                                .font(AppTheme.Typography.body)
+                                .font(AppDesign.Theme.Typography.body)
                                 .onChange(of: monthlyIncomeInput) { _, _ in
                                     calculateSuggestions()
                                 }
                         }
-                        .padding(.vertical, AppTheme.Spacing.cardPadding)
-                        .padding(.trailing, AppTheme.Spacing.tight)
+                        .padding(.vertical, AppDesign.Theme.Spacing.cardPadding)
+                        .padding(.trailing, AppDesign.Theme.Spacing.tight)
                         .background(Color(.systemGray6))
-                        .cornerRadius(AppTheme.Radius.compact)
+                        .cornerRadius(AppDesign.Theme.Radius.compact)
                     }
                     .padding()
                     .background(
-                        RoundedRectangle(cornerRadius: AppTheme.Radius.medium, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.medium, style: .continuous)
                             .fill(Color(.systemBackground))
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: AppTheme.Radius.medium, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.medium, style: .continuous)
                             .stroke(Color.primary.opacity(0.05), lineWidth: 1)
                     )
 
                     // Summary Card
                     if monthlyIncome > 0 {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
                             Text("Budget Summary")
                                 .appSectionTitleText()
 
-                            HStack(spacing: AppTheme.Spacing.tight) {
+                            HStack(spacing: AppDesign.Theme.Spacing.tight) {
                                 SummaryMetric(
                                     title: "Total Budget",
                                     value: totalBudgeted,
@@ -1375,11 +1416,11 @@ private struct BudgetSuggestionView: View {
                                     title: "Savings",
                                     value: savingsAmount,
                                     currencyCode: currencyCode,
-                                    tint: savingsAmount >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode)
+                                    tint: savingsAmount >= 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode)
                                 )
                             }
 
-	                            VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+	                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
 	                                HStack {
 	                                    Text("Savings Rate")
 	                                        .appSecondaryBodyText()
@@ -1412,22 +1453,22 @@ private struct BudgetSuggestionView: View {
 	                                    .appCaptionText()
 	                                    .foregroundStyle(.secondary)
 	                            }
-	                            .padding(.top, AppTheme.Spacing.micro)
+	                            .padding(.top, AppDesign.Theme.Spacing.micro)
 	                        }
 	                        .padding()
 	                        .background(
-	                            RoundedRectangle(cornerRadius: AppTheme.Radius.medium, style: .continuous)
+	                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.medium, style: .continuous)
 	                                .fill(Color(.systemBackground))
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: AppTheme.Radius.medium, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.medium, style: .continuous)
                                 .stroke(savingsRateColor.opacity(0.2), lineWidth: 2)
                         )
                     }
 
                     // Suggested Amounts
                     if !suggestedAmounts.isEmpty {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
                             Text("Suggested Budget Allocation")
                                 .appSectionTitleText()
 
@@ -1436,7 +1477,7 @@ private struct BudgetSuggestionView: View {
                                 .foregroundStyle(.secondary)
 
                             ForEach(groups) { group in
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                                     HStack {
                                         Text(group.name)
                                             .appSecondaryBodyText()
@@ -1451,17 +1492,17 @@ private struct BudgetSuggestionView: View {
                                     }
 
                                     ForEach(group.categories) { category in
-                                        HStack(spacing: AppTheme.Spacing.tight) {
+                                        HStack(spacing: AppDesign.Theme.Spacing.tight) {
                                             Text(category.name)
                                                 .appSecondaryBodyText()
 
                                             Spacer()
 
-                                            HStack(spacing: AppTheme.Spacing.micro) {
+                                            HStack(spacing: AppDesign.Theme.Spacing.micro) {
                                                 Text(currencySymbol)
                                                     .appCaptionText()
                                                     .foregroundStyle(.secondary)
-                                                    .padding(.leading, AppTheme.Spacing.compact)
+                                                    .padding(.leading, AppDesign.Theme.Spacing.compact)
 
                                                 TextField(
                                                     "0",
@@ -1491,27 +1532,27 @@ private struct BudgetSuggestionView: View {
                                                 .multilineTextAlignment(.trailing)
                                             }
                                             .frame(width: 100)
-                                            .padding(.vertical, AppTheme.Spacing.compact)
-                                            .padding(.trailing, AppTheme.Spacing.compact)
+                                            .padding(.vertical, AppDesign.Theme.Spacing.compact)
+                                            .padding(.trailing, AppDesign.Theme.Spacing.compact)
                                             .background(Color(.systemGray6))
-                                            .cornerRadius(AppTheme.Radius.xSmall)
+                                            .cornerRadius(AppDesign.Theme.Radius.xSmall)
                                         }
                                     }
                                 }
                                 .padding()
                                 .background(
-                                    RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
+                                    RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous)
                                         .fill(Color(.secondarySystemBackground))
                                 )
                             }
                         }
                         .padding()
                         .background(
-                            RoundedRectangle(cornerRadius: AppTheme.Radius.medium, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.medium, style: .continuous)
                                 .fill(Color(.systemBackground))
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: AppTheme.Radius.medium, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.medium, style: .continuous)
                                 .stroke(Color.primary.opacity(0.05), lineWidth: 1)
                         )
                     }
@@ -1539,11 +1580,11 @@ private struct BudgetSuggestionView: View {
 
     private var savingsRateColor: Color {
         if savingsRate >= 20 {
-            return AppColors.success(for: appColorMode)
+            return AppDesign.Colors.success(for: appColorMode)
         } else if savingsRate >= 10 {
-            return AppColors.warning(for: appColorMode)
+            return AppDesign.Colors.warning(for: appColorMode)
         } else {
-            return AppColors.danger(for: appColorMode)
+            return AppDesign.Colors.danger(for: appColorMode)
         }
     }
 
@@ -1738,9 +1779,9 @@ private struct SummaryMetric: View {
     let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
             Text(title.uppercased())
-                .font(AppTheme.Typography.caption)
+                .font(AppDesign.Theme.Typography.caption)
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
             Text(value, format: .currency(code: currencyCode))
@@ -1753,7 +1794,7 @@ private struct SummaryMetric: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous)
                 .fill(tint.opacity(0.08))
         )
     }
@@ -1772,14 +1813,14 @@ private struct BudgetSetupReview: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
             Text("Review plan")
                 .appTitleText()
 
             ScrollView {
-                VStack(spacing: AppTheme.Spacing.tight) {
+                VStack(spacing: AppDesign.Theme.Spacing.tight) {
                     ForEach(groups) { group in
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                             Text(group.name)
                                 .appSectionTitleText()
 
@@ -1796,7 +1837,7 @@ private struct BudgetSetupReview: View {
                         .padding()
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(
-                            RoundedRectangle(cornerRadius: AppTheme.Radius.medium, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.medium, style: .continuous)
                                 .fill(Color(.systemBackground))
                         )
                     }

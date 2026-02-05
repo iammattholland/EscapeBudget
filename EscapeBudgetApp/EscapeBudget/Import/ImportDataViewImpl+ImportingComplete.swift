@@ -6,7 +6,7 @@ import UIKit
 @MainActor
 extension ImportDataViewImpl {
 	    var importingView: some View {
-	        VStack(spacing: AppTheme.Spacing.xLarge) {
+	        VStack(spacing: AppDesign.Theme.Spacing.xLarge) {
 	            if let progress = importProgress {
 	                if let totalRaw = progress.total {
 	                    let total = max(totalRaw, 1)
@@ -36,21 +36,21 @@ extension ImportDataViewImpl {
     
 		    var completeView: some View {
             ScrollView {
-	            VStack(spacing: AppTheme.Spacing.xLarge) {
+	            VStack(spacing: AppDesign.Theme.Spacing.xLarge) {
 	                Image(systemName: "checkmark.circle.fill")
 	                    .appIcon(size: 80)
-	                    .foregroundStyle(AppColors.success(for: appColorMode))
+	                    .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                 
                 Text("Import Complete!")
-                    .font(.title)
+                    .appTitle1Text()
                     .fontWeight(.bold)
                 
                 Text("Successfully imported \(importedCount) transactions.")
-                    .font(AppTheme.Typography.body)
+                    .font(AppDesign.Theme.Typography.body)
                     .foregroundStyle(.secondary)
 
                     if let result = importProcessingResult {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
 	                            HStack {
 	                                Text("What happened")
 	                                    .appSectionTitleText()
@@ -63,7 +63,7 @@ extension ImportDataViewImpl {
                                 }
                             }
 
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                                 if result.summary.payeesNormalizedCount > 0 {
                                     summaryLine("Payees cleaned", value: "\(result.summary.payeesNormalizedCount)")
                                 }
@@ -83,25 +83,25 @@ extension ImportDataViewImpl {
                             Button {
                                 showingImportProcessingReview = true
                             } label: {
-                                HStack(spacing: AppTheme.Spacing.compact) {
+                                HStack(spacing: AppDesign.Theme.Spacing.compact) {
                                     Image(systemName: "list.bullet.rectangle")
                                     Text(result.summary.changedCount > 0 ? "Review Changes" : "Review")
                                 }
                                 .frame(maxWidth: .infinity)
                             }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(.glass)
                             .disabled(result.summary.changedCount == 0 && result.summary.transferSuggestionsInvolvingProcessed == 0)
                         }
-                        .padding(AppTheme.Spacing.cardPadding)
+                        .padding(AppDesign.Theme.Spacing.cardPadding)
                         .background(
-                            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous)
                                 .fill(Color(.secondarySystemGroupedBackground))
                         )
                         .overlay(
-                            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous)
                                 .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
                         )
-                        .padding(.horizontal, AppTheme.Spacing.relaxed)
+                        .padding(.horizontal, AppDesign.Theme.Spacing.relaxed)
                     }
 	                
 	                Button("Done") {
@@ -109,11 +109,11 @@ extension ImportDataViewImpl {
                         navigator.manageNavigator.selectedSection = .transactions
 	                    dismiss()
 	                }
-	                .buttonStyle(.borderedProminent)
+	                .buttonStyle(.glass)
 	                .controlSize(.large)
 	            }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, AppTheme.Spacing.modalVertical)
+                .padding(.vertical, AppDesign.Theme.Spacing.modalVertical)
             }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemGroupedBackground))

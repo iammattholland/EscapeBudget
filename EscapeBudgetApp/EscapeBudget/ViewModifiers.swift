@@ -27,16 +27,16 @@ extension View {
 
     func topChromeSegmentedStyle(isCompact: Bool = false) -> some View {
         self
-            .padding(.horizontal, isCompact ? AppTheme.Spacing.tight : AppTheme.Spacing.chromePaddingHorizontal)
-            .padding(.vertical, isCompact ? AppTheme.Spacing.chromePaddingVerticalCompact : AppTheme.Spacing.chromePaddingVertical)
+            .padding(.horizontal, isCompact ? AppDesign.Theme.Spacing.tight : AppDesign.Theme.Spacing.chromePaddingHorizontal)
+            .padding(.vertical, isCompact ? AppDesign.Theme.Spacing.chromePaddingVerticalCompact : AppDesign.Theme.Spacing.chromePaddingVertical)
     }
 
     func topMenuBarStyle(isCompact: Bool = false) -> some View {
         self
-            .padding(.top, isCompact ? AppTheme.Spacing.nano : AppTheme.Spacing.micro)
-            .padding(.bottom, isCompact ? AppTheme.Spacing.nano : AppTheme.Spacing.micro)
+            .padding(.top, isCompact ? AppDesign.Theme.Spacing.nano : AppDesign.Theme.Spacing.micro)
+            .padding(.bottom, isCompact ? AppDesign.Theme.Spacing.nano : AppDesign.Theme.Spacing.micro)
             .frame(maxWidth: .infinity)
-            .appConstrainContentWidth(maxWidth: AppTheme.Layout.topMenuMaxWidth)
+            .appConstrainContentWidth(maxWidth: AppDesign.Theme.Layout.topMenuMaxWidth)
             .appAdaptiveScreenHorizontalPadding()
     }
 }

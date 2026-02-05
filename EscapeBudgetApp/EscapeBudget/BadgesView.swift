@@ -14,11 +14,11 @@ struct BadgesView: View {
     private func tint(for role: Badge.TintRole) -> Color {
         switch role {
         case .tint:
-            return AppColors.tint(for: appColorMode)
+            return AppDesign.Colors.tint(for: appColorMode)
         case .success:
-            return AppColors.success(for: appColorMode)
+            return AppDesign.Colors.success(for: appColorMode)
         case .warning:
-            return AppColors.warning(for: appColorMode)
+            return AppDesign.Colors.warning(for: appColorMode)
         case .purple:
             return .purple
         }
@@ -26,19 +26,14 @@ struct BadgesView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
-                ScrollOffsetReader(coordinateSpace: "BadgesView.scroll", id: "BadgesView.scroll")
-                if let topChrome {
-                    topChrome
-                }
-
+            AppChromeStack(topChrome: topChrome, scrollID: "BadgesView.scroll") {
                 streaksCard
-                
+
                 Text("Badges")
                     .appSectionTitleText()
-                    .padding(.horizontal, AppTheme.Spacing.medium)
+                    .padding(.horizontal, AppDesign.Theme.Spacing.medium)
 
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppTheme.Spacing.tight) {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppDesign.Theme.Spacing.tight) {
                     ForEach(orderedBadges) { badge in
                         BadgeCardView(
                             title: badge.title,
@@ -49,10 +44,9 @@ struct BadgesView: View {
                         )
                     }
                 }
-                .padding(.horizontal, AppTheme.Spacing.medium)
-                .padding(.bottom, AppTheme.Spacing.medium)
+                .padding(.horizontal, AppDesign.Theme.Spacing.medium)
+                .padding(.bottom, AppDesign.Theme.Spacing.medium)
             }
-            .padding(.top, AppTheme.Spacing.tight)
         }
         .background(Color(.systemGroupedBackground))
         .coordinateSpace(name: "BadgesView.scroll")
@@ -72,7 +66,7 @@ struct BadgesView: View {
     }
 
     private var streaksCard: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
             HStack {
                 Text("Week Streaks")
                     .appSectionTitleText()
@@ -83,29 +77,29 @@ struct BadgesView: View {
                     .monospacedDigit()
             }
 
-            HStack(spacing: AppTheme.Spacing.tight) {
+            HStack(spacing: AppDesign.Theme.Spacing.tight) {
                 StreakMetricView(
                     title: "Current",
                     value: badgeService.weeklyOpenStreak,
-                    tint: AppColors.warning(for: appColorMode),
+                    tint: AppDesign.Colors.warning(for: appColorMode),
                     systemImage: "flame.fill"
                 )
                 StreakMetricView(
                     title: "Best",
                     value: badgeService.bestWeeklyOpenStreak,
-                    tint: AppColors.tint(for: appColorMode),
+                    tint: AppDesign.Colors.tint(for: appColorMode),
                     systemImage: "crown.fill"
                 )
                 StreakMetricView(
                     title: "Imports",
                     value: badgeService.importsCompleted,
-                    tint: AppColors.success(for: appColorMode),
+                    tint: AppDesign.Colors.success(for: appColorMode),
                     systemImage: "tray.and.arrow.down.fill"
                 )
             }
         }
         .appElevatedCardSurface(padding: 16, stroke: Color.primary.opacity(0.05))
-        .padding(.horizontal, AppTheme.Spacing.medium)
+        .padding(.horizontal, AppDesign.Theme.Spacing.medium)
     }
 }
 
@@ -116,13 +110,13 @@ private struct StreakMetricView: View {
     let systemImage: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-            HStack(spacing: AppTheme.Spacing.xSmall) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
+            HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                 Image(systemName: systemImage)
                     .appCaptionText()
                     .foregroundStyle(tint)
                 Text(title.uppercased())
-                    .font(.caption2)
+                    .appCaption2Text()
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -137,10 +131,10 @@ private struct StreakMetricView: View {
                 .foregroundStyle(.primary)
                 .monospacedDigit()
         }
-        .padding(AppTheme.Spacing.tight)
+        .padding(AppDesign.Theme.Spacing.tight)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous)
                 .fill(tint.opacity(0.10))
         )
     }
@@ -154,7 +148,7 @@ private struct BadgeCardView: View {
     let isEarned: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
             HStack {
                 ZStack {
                     Circle()

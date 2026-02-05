@@ -49,11 +49,13 @@ enum TransferMatcher {
         let lookbackStart = Calendar.current.date(byAdding: .day, value: -max(1, config.lookbackDays), to: now) ?? now
 
         let standardRaw = TransactionKind.standard.rawValue
+        let transferRaw = TransactionKind.transfer.rawValue
         let descriptor = FetchDescriptor<Transaction>(
             predicate: #Predicate<Transaction> { t in
                 t.transferID == nil &&
                 t.transferInboxDismissed == false &&
                 t.kindRawValue == standardRaw &&
+                t.category == nil &&
                 t.date >= lookbackStart
             },
             sortBy: [SortDescriptor(\Transaction.date, order: .reverse)]
@@ -61,6 +63,13 @@ enum TransferMatcher {
 
         let candidates = (try? modelContext.fetch(descriptor)) ?? []
         let eligible = candidates.filter { $0.account != nil && $0.amount != 0 }
+
+        let payeeHistory = buildPayeeHistory(
+            modelContext: modelContext,
+            lookbackStart: lookbackStart,
+            standardRaw: standardRaw,
+            transferRaw: transferRaw
+        )
 
         // Load learned patterns if ML scoring is enabled
         let patterns = config.useMLScoring ? TransferPatternLearner(modelContext: modelContext).fetchReliablePatterns() : []
@@ -96,10 +105,21 @@ enum TransferMatcher {
                         let pattern = patterns.first { pattern in
                             pattern.accountPairID == features.accountPairID
                         }
-                        score = mlScore
+                        score = adjustScoreWithPayeeHistory(
+                            baseScore: mlScore,
+                            outflow: outflow,
+                            inflow: inflow,
+                            payeeHistory: payeeHistory
+                        )
                         matchedPattern = pattern
                     } else {
-                        score = scorePair(outflow: outflow, inflow: inflow, maxDaysApart: config.maxDaysApart)
+                        let rawScore = scorePair(outflow: outflow, inflow: inflow, maxDaysApart: config.maxDaysApart)
+                        score = adjustScoreWithPayeeHistory(
+                            baseScore: rawScore,
+                            outflow: outflow,
+                            inflow: inflow,
+                            payeeHistory: payeeHistory
+                        )
                         matchedPattern = nil
                     }
 
@@ -138,6 +158,102 @@ enum TransferMatcher {
         let left = String(describing: outflowID)
         let right = String(describing: inflowID)
         return left < right ? "\(left)|\(right)" : "\(right)|\(left)"
+    }
+
+    private struct PayeeHistory {
+        var expenseCount: Int = 0
+        var incomeCount: Int = 0
+        var transferCount: Int = 0
+
+        var categorizedCount: Int {
+            expenseCount + incomeCount
+        }
+
+        var expenseRatio: Double {
+            guard categorizedCount > 0 else { return 0 }
+            return Double(expenseCount) / Double(categorizedCount)
+        }
+
+        var transferRatio: Double {
+            let total = categorizedCount + transferCount
+            guard total > 0 else { return 0 }
+            return Double(transferCount) / Double(total)
+        }
+    }
+
+    @MainActor
+    private static func buildPayeeHistory(
+        modelContext: ModelContext,
+        lookbackStart: Date,
+        standardRaw: String,
+        transferRaw: String
+    ) -> [String: PayeeHistory] {
+        var history: [String: PayeeHistory] = [:]
+
+        let categorizedDescriptor = FetchDescriptor<Transaction>(
+            predicate: #Predicate<Transaction> { t in
+                t.date >= lookbackStart &&
+                t.kindRawValue == standardRaw &&
+                t.category != nil
+            }
+        )
+        let categorized = (try? modelContext.fetch(categorizedDescriptor)) ?? []
+        for tx in categorized {
+            let key = payeeKey(tx.payee)
+            guard !key.isEmpty else { continue }
+            var entry = history[key, default: PayeeHistory()]
+            if tx.category?.group?.type == .income {
+                entry.incomeCount += 1
+            } else {
+                entry.expenseCount += 1
+            }
+            history[key] = entry
+        }
+
+        let transferDescriptor = FetchDescriptor<Transaction>(
+            predicate: #Predicate<Transaction> { t in
+                t.date >= lookbackStart &&
+                t.kindRawValue == transferRaw
+            }
+        )
+        let transfers = (try? modelContext.fetch(transferDescriptor)) ?? []
+        for tx in transfers {
+            let key = payeeKey(tx.payee)
+            guard !key.isEmpty else { continue }
+            var entry = history[key, default: PayeeHistory()]
+            entry.transferCount += 1
+            history[key] = entry
+        }
+
+        return history
+    }
+
+    private static func adjustScoreWithPayeeHistory(
+        baseScore: Double,
+        outflow: Transaction,
+        inflow: Transaction,
+        payeeHistory: [String: PayeeHistory]
+    ) -> Double {
+        var score = baseScore
+
+        let outKey = payeeKey(outflow.payee)
+        let inKey = payeeKey(inflow.payee)
+        let outHistory = payeeHistory[outKey]
+        let inHistory = payeeHistory[inKey]
+
+        let expenseRatio = max(outHistory?.expenseRatio ?? 0, inHistory?.expenseRatio ?? 0)
+        let expenseCount = max(outHistory?.expenseCount ?? 0, inHistory?.expenseCount ?? 0)
+        if expenseCount >= 2 && expenseRatio >= 0.6 {
+            score -= min(0.25, expenseRatio * 0.25)
+        }
+
+        let transferRatio = max(outHistory?.transferRatio ?? 0, inHistory?.transferRatio ?? 0)
+        let transferCount = max(outHistory?.transferCount ?? 0, inHistory?.transferCount ?? 0)
+        if transferCount >= 2 && transferRatio >= 0.4 {
+            score += min(0.15, transferRatio * 0.15)
+        }
+
+        return max(0, min(1, score))
     }
 
     private static func absAmountKey(for amount: Decimal) -> Int {
@@ -238,6 +354,10 @@ enum TransferMatcher {
             .replacingOccurrences(of: "[^a-z0-9 ]", with: " ", options: .regularExpression)
             .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private static func payeeKey(_ string: String) -> String {
+        normalize(string)
     }
 
     private static func shareToken(_ a: String, _ b: String) -> Bool {

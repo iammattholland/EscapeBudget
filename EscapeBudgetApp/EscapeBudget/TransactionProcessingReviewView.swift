@@ -17,10 +17,10 @@ struct TransactionProcessingReviewView: View {
 
                 Section("Updates") {
                     ForEach(events) { event in
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                            HStack(spacing: AppTheme.Spacing.compact) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                            HStack(spacing: AppDesign.Theme.Spacing.compact) {
                                 Image(systemName: iconName(for: event.kind))
-                                    .foregroundStyle(AppColors.tint(for: appColorMode))
+                                    .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                                 Text(event.title)
                                     .appSecondaryBodyText()
                             }
@@ -29,7 +29,7 @@ struct TransactionProcessingReviewView: View {
                                 Text(detail)
                                     .appCaptionText()
                                     .foregroundStyle(.secondary)
-                                    .padding(.leading, AppTheme.Spacing.indentSmall)
+                                    .padding(.leading, AppDesign.Theme.Spacing.indentSmall)
                             }
                         }
                     }

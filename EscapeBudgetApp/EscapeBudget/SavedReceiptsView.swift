@@ -51,7 +51,7 @@ struct ReceiptRow: View {
     let currencyCode: String
 
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.tight) {
+        HStack(spacing: AppDesign.Theme.Spacing.tight) {
             // Receipt thumbnail
             if let imageData = receipt.imageData,
                let uiImage = UIImage(data: imageData) {
@@ -59,10 +59,10 @@ struct ReceiptRow: View {
                     .resizable()
                     .scaledToFill()
                     .frame(width: 60, height: 60)
-                    .cornerRadius(AppTheme.Radius.xSmall)
+                    .cornerRadius(AppDesign.Theme.Radius.xSmall)
                     .clipped()
             } else {
-                RoundedRectangle(cornerRadius: AppTheme.Radius.xSmall)
+                RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.xSmall)
                     .fill(Color(.secondarySystemFill))
                     .frame(width: 60, height: 60)
                     .overlay(
@@ -71,7 +71,7 @@ struct ReceiptRow: View {
                     )
             }
 
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                 Text(receipt.merchant ?? "Receipt")
                     .appSectionTitleText()
 
@@ -100,7 +100,7 @@ struct ReceiptRow: View {
                 .appCaptionText()
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, AppTheme.Spacing.micro)
+        .padding(.vertical, AppDesign.Theme.Spacing.micro)
     }
 }
 
@@ -114,19 +114,19 @@ struct ReceiptDetailView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.large) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.large) {
                     // Receipt Image
                     if let imageData = receipt.imageData,
                        let uiImage = UIImage(data: imageData) {
                         Image(uiImage: uiImage)
                             .resizable()
                             .scaledToFit()
-                            .cornerRadius(AppTheme.Radius.compact)
+                            .cornerRadius(AppDesign.Theme.Radius.compact)
                             .shadow(radius: 4)
                     }
 
                     // Receipt Details
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                         if let merchant = receipt.merchant {
                             DetailRow(label: "Merchant", value: merchant)
                         }
@@ -141,19 +141,19 @@ struct ReceiptDetailView: View {
                     }
                     .padding()
                     .background(Color(.secondarySystemBackground))
-                    .cornerRadius(AppTheme.Radius.compact)
+                    .cornerRadius(AppDesign.Theme.Radius.compact)
 
                     // Line Items
                     if !receipt.items.isEmpty {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                             Text("Items")
                                 .appSectionTitleText()
-                                .padding(.horizontal)
+                                .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
 
                             VStack(spacing: 0) {
                                 ForEach(receipt.items) { item in
                                     HStack {
-                                        VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                                             Text(item.name)
                                                 .appSecondaryBodyText()
                                             if item.quantity > 1 {
@@ -177,16 +177,16 @@ struct ReceiptDetailView: View {
                                 }
                             }
                             .background(Color(.secondarySystemBackground))
-                            .cornerRadius(AppTheme.Radius.compact)
+                            .cornerRadius(AppDesign.Theme.Radius.compact)
                         }
                     }
 
                     // Extracted Text (for debugging)
                     if let extractedText = receipt.extractedText, !extractedText.isEmpty {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                             Text("Extracted Text")
                                 .appSectionTitleText()
-                                .padding(.horizontal)
+                                .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
 
                             Text(extractedText)
                                 .appCaptionText()
@@ -194,7 +194,7 @@ struct ReceiptDetailView: View {
                                 .padding()
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(Color(.secondarySystemBackground))
-                                .cornerRadius(AppTheme.Radius.compact)
+                                .cornerRadius(AppDesign.Theme.Radius.compact)
                         }
                     }
                 }

@@ -17,11 +17,11 @@ struct OverviewSpendingVelocityCard: View {
     private var statusColor: Color {
         switch velocityData.status {
         case .underPace, .noSpending:
-            return AppColors.success(for: appColorMode)
+            return AppDesign.Colors.success(for: appColorMode)
         case .onPace:
-            return AppColors.warning(for: appColorMode)
+            return AppDesign.Colors.warning(for: appColorMode)
         case .slightlyOver, .overPace:
-            return AppColors.danger(for: appColorMode)
+            return AppDesign.Colors.danger(for: appColorMode)
         case .noBudget:
             return .secondary
         }
@@ -50,10 +50,10 @@ struct OverviewSpendingVelocityCard: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.cardGap) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.cardGap) {
             // Header with gauge
-            HStack(alignment: .top, spacing: AppTheme.Spacing.tight) {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+            HStack(alignment: .top, spacing: AppDesign.Theme.Spacing.tight) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                     Text("Spending Pace")
                         .appSectionTitleText()
 
@@ -65,7 +65,7 @@ struct OverviewSpendingVelocityCard: View {
 
                 Spacer()
 
-                VStack(spacing: AppTheme.Spacing.micro) {
+                VStack(spacing: AppDesign.Theme.Spacing.micro) {
                     SpendingVelocityGauge(
                         velocityRatio: velocityData.velocityRatio,
                         size: gaugeSize
@@ -83,10 +83,10 @@ struct OverviewSpendingVelocityCard: View {
             if velocityData.isUsable {
                 LazyVGrid(
                     columns: [
-                        GridItem(.flexible(), spacing: AppTheme.Spacing.small),
-                        GridItem(.flexible(), spacing: AppTheme.Spacing.small)
+                        GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small),
+                        GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small)
                     ],
-                    spacing: AppTheme.Spacing.small
+                    spacing: AppDesign.Theme.Spacing.small
                 ) {
                     OverviewValueTile(
                         title: "Daily Spend",
@@ -107,11 +107,11 @@ struct OverviewSpendingVelocityCard: View {
                     title: "Period Progress",
                     valueText: "Day \(velocityData.daysElapsed) of \(velocityData.daysInPeriod)",
                     progress: velocityData.periodProgress,
-                    tint: AppColors.tint(for: appColorMode)
+                    tint: AppDesign.Colors.tint(for: appColorMode)
                 )
 
                 // Projection summary
-                HStack(spacing: AppTheme.Spacing.xSmall) {
+                HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                     Image(systemName: projectionIcon)
                         .foregroundStyle(projectionColor)
                         .appIconSmall()
@@ -129,7 +129,7 @@ struct OverviewSpendingVelocityCard: View {
                     description: Text("Assign budget amounts to categories to track your spending pace.")
                 )
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, AppTheme.Spacing.xSmall)
+                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
             } else {
                 // No spending state
                 ContentUnavailableView(
@@ -138,7 +138,7 @@ struct OverviewSpendingVelocityCard: View {
                     description: Text("Start adding transactions to see your spending pace.")
                 )
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, AppTheme.Spacing.xSmall)
+                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
             }
         }
         .accessibilityElement(children: .contain)
@@ -167,9 +167,9 @@ struct OverviewSpendingVelocityCard: View {
 
     private var projectionColor: Color {
         if velocityData.projectedRemainingBudget >= 0 {
-            return AppColors.success(for: appColorMode)
+            return AppDesign.Colors.success(for: appColorMode)
         } else {
-            return AppColors.danger(for: appColorMode)
+            return AppDesign.Colors.danger(for: appColorMode)
         }
     }
 }
@@ -190,7 +190,7 @@ struct OverviewSpendingVelocityCard: View {
         OverviewSpendingVelocityCard(velocityData: data, currencyCode: "USD")
             .padding()
             .background(Color(.secondarySystemGroupedBackground))
-            .cornerRadius(AppTheme.Radius.card)
+            .cornerRadius(AppDesign.Theme.Radius.card)
             .padding()
     }
     .background(Color(.systemGroupedBackground))
@@ -210,7 +210,7 @@ struct OverviewSpendingVelocityCard: View {
         OverviewSpendingVelocityCard(velocityData: data, currencyCode: "USD")
             .padding()
             .background(Color(.secondarySystemGroupedBackground))
-            .cornerRadius(AppTheme.Radius.card)
+            .cornerRadius(AppDesign.Theme.Radius.card)
             .padding()
     }
     .background(Color(.systemGroupedBackground))
@@ -230,7 +230,7 @@ struct OverviewSpendingVelocityCard: View {
         OverviewSpendingVelocityCard(velocityData: data, currencyCode: "USD")
             .padding()
             .background(Color(.secondarySystemGroupedBackground))
-            .cornerRadius(AppTheme.Radius.card)
+            .cornerRadius(AppDesign.Theme.Radius.card)
             .padding()
     }
     .background(Color(.systemGroupedBackground))

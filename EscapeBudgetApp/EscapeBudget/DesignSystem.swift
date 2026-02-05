@@ -75,6 +75,10 @@ enum AppTheme {
         static let maxContentWidthMac: CGFloat = 820
         /// Max width for top menu chrome (match card/content width)
         static let topMenuMaxWidth: CGFloat = 720
+        /// Consistent spacing between top chrome and content
+        static let topChromeContentGap: CGFloat = AppTheme.Spacing.small
+        /// Top padding for chrome stacks/lists
+        static let topChromeTopPadding: CGFloat = AppTheme.Spacing.micro
         /// Scroll offset threshold for compact chrome transitions
         static let scrollCompactThreshold: CGFloat = 12
         /// Minimum drag distance to trigger swipe actions
@@ -174,28 +178,79 @@ enum AppTheme {
         static let hero: CGFloat = 64       // Hero sections, large empty states
     }
 
+    // MARK: - Display Size
+    // Large numeric or hero text sizing.
+    enum DisplaySize {
+        static let xSmall: CGFloat = 14
+        static let small: CGFloat = 16
+        static let medium: CGFloat = 18
+        static let large: CGFloat = 20
+        static let xLarge: CGFloat = 24
+        static let xxLarge: CGFloat = 28
+        static let xxxLarge: CGFloat = 32
+        static let huge: CGFloat = 34
+        static let xxxxLarge: CGFloat = 36
+        static let mega: CGFloat = 40
+        static let giga: CGFloat = 42
+        static let hero: CGFloat = 48
+    }
+
     // MARK: - Typography
     // Font definitions. Use appXxxText() helpers for convenience.
     // All fonts use system dynamic type for accessibility.
     enum Typography {
         /// Screen titles, modal headers - .title3.semibold
         static let title: Font = .title3.weight(.semibold)
+        /// Screen titles (regular) - .title3
+        static let title3: Font = .title3
+        /// Large section titles - .title2
+        static let title2: Font = .title2
+        /// Emphasized title2 - .title2.bold
+        static let title2Bold: Font = .title2.weight(.bold)
+        /// Primary titles - .title
+        static let title1: Font = .title
+        /// Large display titles - .largeTitle
+        static let largeTitle: Font = .largeTitle
+        /// Large display titles - .largeTitle.bold
+        static let largeTitleBold: Font = .largeTitle.weight(.bold)
         /// Section headers, card titles - .headline.semibold
         static let sectionTitle: Font = .headline.weight(.semibold)
+        /// Headline text - .headline
+        static let headline: Font = .headline
         /// Primary content text - .body
         static let body: Font = .body
+        /// Semibold body text - .body.semibold
+        static let bodyStrong: Font = .body.weight(.semibold)
         /// Supporting text, descriptions - .subheadline
         static let secondaryBody: Font = .subheadline
+        /// Supporting text, semibold - .subheadline.semibold
+        static let secondaryBodyStrong: Font = .subheadline.weight(.semibold)
         /// Small labels, metadata - .caption
         static let caption: Font = .caption
+        /// Extra small labels - .caption2
+        static let caption2: Font = .caption2
         /// Fine print, timestamps - .footnote
         static let footnote: Font = .footnote
         /// Emphasized small text - .caption.semibold
         static let captionStrong: Font = .caption.weight(.semibold)
+        /// Emphasized extra small text - .caption2.semibold
+        static let caption2Strong: Font = .caption2.weight(.semibold)
         /// Tab bar labels - .subheadline.semibold
         static let tabLabel: Font = .subheadline.weight(.semibold)
         /// Button text - .headline
         static let buttonLabel: Font = .headline
+        /// Callout text - .callout
+        static let callout: Font = .callout
+        /// Callout text - .callout.semibold
+        static let calloutStrong: Font = .callout.weight(.semibold)
+
+        static func display(
+            size: CGFloat,
+            weight: Font.Weight = .bold,
+            design: Font.Design = .default
+        ) -> Font {
+            .system(size: size, weight: weight, design: design)
+        }
     }
 }
 
@@ -270,13 +325,13 @@ extension View {
             .frame(maxWidth: .infinity)
     }
 
-    /// Primary call-to-action button style (borderedProminent).
+    /// Primary call-to-action button style (glass).
     /// Use for the main action in a view.
     /// Example: Button("Save") { }.appPrimaryCTA()
     @ViewBuilder
     func appPrimaryCTA(controlSize: ControlSize? = nil) -> some View {
         let styled = self
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glass)
             .font(AppTheme.Typography.buttonLabel.weight(.semibold))
 
         if let controlSize {
@@ -286,13 +341,13 @@ extension View {
         }
     }
 
-    /// Secondary call-to-action button style (bordered).
+    /// Secondary call-to-action button style (glass).
     /// Use for alternative/cancel actions.
     /// Example: Button("Cancel") { }.appSecondaryCTA()
     @ViewBuilder
     func appSecondaryCTA(controlSize: ControlSize? = nil) -> some View {
         let styled = self
-            .buttonStyle(.bordered)
+            .buttonStyle(.glass)
             .font(AppTheme.Typography.buttonLabel.weight(.semibold))
 
         if let controlSize {
@@ -300,6 +355,24 @@ extension View {
         } else {
             styled
         }
+    }
+
+    /// Compact primary action style for action bars/toolbars.
+    @ViewBuilder
+    func appActionBarPrimary() -> some View {
+        self
+            .buttonStyle(.glass)
+            .controlSize(.small)
+            .font(AppTheme.Typography.secondaryBody.weight(.semibold))
+    }
+
+    /// Compact secondary action style for action bars/toolbars.
+    @ViewBuilder
+    func appActionBarSecondary() -> some View {
+        self
+            .buttonStyle(.glass)
+            .controlSize(.small)
+            .font(AppTheme.Typography.secondaryBody.weight(.semibold))
     }
 
     // MARK: Typography Helpers
@@ -319,9 +392,29 @@ extension View {
         self.font(AppTheme.Typography.secondaryBody)
     }
 
+    /// Supporting/secondary text - .subheadline.semibold
+    func appSecondaryBodyStrongText() -> some View {
+        self.font(AppTheme.Typography.secondaryBodyStrong)
+    }
+
     /// Small labels, metadata - .caption
     func appCaptionText() -> some View {
         self.font(AppTheme.Typography.caption)
+    }
+
+    /// Extra small labels - .caption2
+    func appCaption2Text() -> some View {
+        self.font(AppTheme.Typography.caption2)
+    }
+
+    /// Small labels, metadata - .caption.semibold
+    func appCaptionStrongText() -> some View {
+        self.font(AppTheme.Typography.captionStrong)
+    }
+
+    /// Extra small labels - .caption2.semibold
+    func appCaption2StrongText() -> some View {
+        self.font(AppTheme.Typography.caption2Strong)
     }
 
     /// Screen/modal titles - .title3.semibold
@@ -329,9 +422,68 @@ extension View {
         self.font(AppTheme.Typography.title)
     }
 
+    /// Screen titles (regular) - .title3
+    func appTitle3Text() -> some View {
+        self.font(AppTheme.Typography.title3)
+    }
+
+    /// Large section titles - .title2
+    func appTitle2Text() -> some View {
+        self.font(AppTheme.Typography.title2)
+    }
+
+    /// Emphasized title2 - .title2.bold
+    func appTitle2BoldText() -> some View {
+        self.font(AppTheme.Typography.title2Bold)
+    }
+
+    /// Primary titles - .title
+    func appTitle1Text() -> some View {
+        self.font(AppTheme.Typography.title1)
+    }
+
+    /// Large display titles - .largeTitle
+    func appLargeTitleText() -> some View {
+        self.font(AppTheme.Typography.largeTitle)
+    }
+
+    /// Large display titles - .largeTitle.bold
+    func appLargeTitleBoldText() -> some View {
+        self.font(AppTheme.Typography.largeTitleBold)
+    }
+
+    /// Headline text - .headline
+    func appHeadlineText() -> some View {
+        self.font(AppTheme.Typography.headline)
+    }
+
+    /// Semibold body text - .body.semibold
+    func appBodyStrongText() -> some View {
+        self.font(AppTheme.Typography.bodyStrong)
+    }
+
     /// Fine print, timestamps - .footnote
     func appFootnoteText() -> some View {
         self.font(AppTheme.Typography.footnote)
+    }
+
+    /// Callout text - .callout.semibold
+    func appCalloutStrongText() -> some View {
+        self.font(AppTheme.Typography.calloutStrong)
+    }
+
+    /// Callout text - .callout
+    func appCalloutText() -> some View {
+        self.font(AppTheme.Typography.callout)
+    }
+
+    /// Display/hero text sizes with consistent tokens.
+    func appDisplayText(
+        _ size: CGFloat,
+        weight: Font.Weight = .bold,
+        design: Font.Design = .default
+    ) -> some View {
+        self.font(AppTheme.Typography.display(size: size, weight: weight, design: design))
     }
 
     // MARK: Layout Helpers

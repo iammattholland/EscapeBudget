@@ -10,17 +10,18 @@ struct EmptyDataCard: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        VStack(spacing: AppTheme.Spacing.medium) {
+        VStack(spacing: AppDesign.Theme.Spacing.medium) {
             Image(systemName: systemImage)
-                .font(.system(size: AppTheme.IconSize.large, weight: .semibold))
+                .appIconLarge()
+                .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
 
             Text(title)
-                .font(AppTheme.Typography.sectionTitle)
+                .font(AppDesign.Theme.Typography.sectionTitle)
                 .foregroundStyle(.primary)
 
             Text(message)
-                .font(AppTheme.Typography.secondaryBody)
+                .font(AppDesign.Theme.Typography.secondaryBody)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
 
@@ -30,25 +31,25 @@ struct EmptyDataCard: View {
                 }
                 .buttonStyle(EmptyDataCardActionButtonStyle(colorScheme: colorScheme))
                 .controlSize(.regular)
-                .font(AppTheme.Typography.buttonLabel.weight(.semibold))
+                .font(AppDesign.Theme.Typography.buttonLabel.weight(.semibold))
             }
         }
         .padding()
         .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.card, style: .continuous)
                 .fill(colorScheme == .dark ? Color(.secondarySystemGroupedBackground) : Color(.systemBackground))
         )
-        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.card, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
-                .strokeBorder(Color(.separator), lineWidth: AppTheme.Stroke.subtle)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.card, style: .continuous)
+                .strokeBorder(Color(.separator), lineWidth: AppDesign.Theme.Stroke.subtle)
                 .opacity(colorScheme == .dark ? 0 : 1)
         )
         .listRowBackground(Color.clear)
         .listRowSeparator(.hidden)
-        .padding(.vertical, AppTheme.Spacing.xxLarge)
-        .padding(.horizontal, AppTheme.Spacing.screenHorizontal)
+        .padding(.vertical, AppDesign.Theme.Spacing.xxLarge)
+        .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
     }
 }
 
@@ -57,16 +58,16 @@ private struct EmptyDataCardActionButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .padding(.horizontal, AppTheme.Spacing.cardPadding)
-            .padding(.vertical, AppTheme.Spacing.small)
+            .padding(.horizontal, AppDesign.Theme.Spacing.cardPadding)
+            .padding(.vertical, AppDesign.Theme.Spacing.small)
             .frame(minHeight: 36)
             .foregroundStyle(foregroundColor(configuration: configuration))
             .background(backgroundColor(configuration: configuration))
             .overlay(
-                RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
+                RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button, style: .continuous)
                     .strokeBorder(borderColor(configuration: configuration), lineWidth: 1)
             )
-            .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button, style: .continuous))
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 
@@ -81,7 +82,7 @@ private struct EmptyDataCardActionButtonStyle: ButtonStyle {
 
     private func backgroundColor(configuration: Configuration) -> some View {
         let base: Color = (colorScheme == .dark) ? Color(.systemGray6) : .white
-        return RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
+        return RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button, style: .continuous)
             .fill(configuration.isPressed ? base.opacity(0.85) : base)
     }
 

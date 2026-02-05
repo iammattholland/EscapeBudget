@@ -42,13 +42,13 @@ struct ReceiptReviewView: View {
 	                            .resizable()
 	                            .scaledToFit()
 	                            .frame(maxHeight: 200)
-	                            .cornerRadius(AppTheme.Radius.xSmall)
+	                            .cornerRadius(AppDesign.Theme.Radius.xSmall)
 	                    }
 	                }
 
                 // Receipt Details
                 Section("Receipt Details") {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                         Text("Merchant")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -58,7 +58,7 @@ struct ReceiptReviewView: View {
 
                     DatePicker("Date", selection: $date, displayedComponents: .date)
 
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                         Text("Total Amount")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -85,7 +85,7 @@ struct ReceiptReviewView: View {
                                 }
                                 .buttonStyle(.plain)
 
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                                     Text(item.name)
                                         .appSecondaryBodyText()
                                     Text("\(item.quantity) × \(item.price.formatted(.currency(code: currencyCode)))")

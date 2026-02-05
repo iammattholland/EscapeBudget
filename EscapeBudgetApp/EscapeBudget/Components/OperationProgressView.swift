@@ -50,8 +50,8 @@ struct OperationProgressOverlay: View {
             Color.black.opacity(0.3)
                 .ignoresSafeArea()
 
-            VStack(spacing: AppTheme.Spacing.large) {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+            VStack(spacing: AppDesign.Theme.Spacing.large) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
                     if let fractionComplete {
                         ProgressView(value: fractionComplete)
                     } else {
@@ -59,7 +59,7 @@ struct OperationProgressOverlay: View {
                     }
 
                     HStack(alignment: .firstTextBaseline) {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                             Text(progress.title)
                                 .appSectionTitleText()
                             Text(progress.message)
@@ -77,7 +77,7 @@ struct OperationProgressOverlay: View {
                 }
                 .padding()
                 .background(.regularMaterial)
-                .cornerRadius(AppTheme.Radius.compact)
+                .cornerRadius(AppDesign.Theme.Radius.compact)
 
                 if progress.cancellable, let onCancel {
                     Button("Cancel", role: .cancel, action: onCancel)

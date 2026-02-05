@@ -20,7 +20,7 @@ extension ImportDataViewImpl {
                 ForEach(importedTags, id: \.self) { raw in
                     HStack {
                         Text(raw)
-                            .font(AppTheme.Typography.body)
+                            .font(AppDesign.Theme.Typography.body)
                         Spacer()
 
                         Menu {
@@ -48,14 +48,14 @@ extension ImportDataViewImpl {
                                 tagMapping.removeValue(forKey: raw)
                             }
                         } label: {
-                            HStack(spacing: AppTheme.Spacing.compact) {
+                            HStack(spacing: AppDesign.Theme.Spacing.compact) {
                                 if ignoredImportedTags.contains(raw) {
                                     Text("Ignored")
-                                        .foregroundStyle(AppColors.danger(for: appColorMode))
+                                        .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                                 } else if let mapped = tagMapping[raw] {
                                     TransactionTagChip(tag: mapped)
                                     Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(AppColors.success(for: appColorMode))
+                                        .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                                 } else {
                                     Text("Will Create")
                                         .foregroundStyle(.secondary)
@@ -63,10 +63,10 @@ extension ImportDataViewImpl {
                                         .appCaptionText()
                                 }
                             }
-		                            .padding(.horizontal, AppTheme.Spacing.compact)
-		                            .padding(.vertical, AppTheme.Spacing.micro)
+		                            .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+		                            .padding(.vertical, AppDesign.Theme.Spacing.micro)
 		                            .background(Color(.secondarySystemBackground))
-		                            .cornerRadius(AppTheme.Radius.xSmall)
+		                            .cornerRadius(AppDesign.Theme.Radius.xSmall)
 		                        }
 		                    }
 		                }
@@ -76,7 +76,7 @@ extension ImportDataViewImpl {
                 checkForDuplicates()
                 currentStep = .review
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glass)
             .controlSize(.large)
             .padding()
         }
@@ -96,14 +96,14 @@ extension ImportDataViewImpl {
                                     newTagName = target.rawTag
                                 }
                                 .appCaptionText()
-                                .foregroundStyle(AppColors.tint(for: appColorMode))
+                                .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                             }
                         }
 
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: AppTheme.Spacing.tight), count: 5), spacing: AppTheme.Spacing.tight) {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.tight), count: 5), spacing: AppDesign.Theme.Spacing.tight) {
                             ForEach(TagColorPalette.options(for: appColorMode), id: \.hex) { option in
                                 Circle()
-                                    .fill(Color(hex: option.hex) ?? AppColors.tint(for: appColorMode))
+                                    .fill(Color(hex: option.hex) ?? AppDesign.Colors.tint(for: appColorMode))
                                     .frame(width: 28, height: 28)
                                     .overlay(
                                         Circle()
@@ -112,7 +112,7 @@ extension ImportDataViewImpl {
                                     .onTapGesture { newTagColorHex = option.hex }
                             }
                         }
-                        .padding(.vertical, AppTheme.Spacing.micro)
+                        .padding(.vertical, AppDesign.Theme.Spacing.micro)
                     }
                 }
                 .navigationTitle("Create Tag")

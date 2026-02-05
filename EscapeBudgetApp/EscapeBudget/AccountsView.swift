@@ -13,6 +13,7 @@ struct AccountsView: View {
     @State private var editingAccount: Account?
     @State private var deletingAccount: Account?
     @State private var selectedAccount: Account?
+    @State private var showingAccountsActions = false
     private let topChrome: AnyView?
 
     init(searchText: Binding<String>, topChrome: (() -> AnyView)? = nil) {
@@ -24,11 +25,8 @@ struct AccountsView: View {
         Group {
             if accounts.isEmpty {
                 List {
-                    if let topChrome {
-                        topChrome
-                            .listRowInsets(EdgeInsets())
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
+                    if topChrome != nil {
+                        AppChromeListRow(topChrome: topChrome, scrollID: "AccountsView.scroll")
                     }
                     EmptyDataCard(
                         systemImage: "creditcard",
@@ -50,11 +48,8 @@ struct AccountsView: View {
                 .coordinateSpace(name: "AccountsView.scroll")
             } else {
                 List {
-                    if let topChrome {
-                        topChrome
-                            .listRowInsets(EdgeInsets())
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
+                    if topChrome != nil {
+                        AppChromeListRow(topChrome: topChrome, scrollID: "AccountsView.scroll")
                     }
                     if filteredAccounts.isEmpty {
                         ContentUnavailableView.search(text: searchText)
@@ -69,7 +64,7 @@ struct AccountsView: View {
                                 netWorth: netWorth,
                                 currencyCode: currencyCode
                             )
-                            .padding(.top, AppTheme.Spacing.small)
+                            .padding(.top, AppDesign.Theme.Spacing.small)
                             .listRowInsets(EdgeInsets())
                             .listRowSeparator(.hidden)
                         }
@@ -104,7 +99,7 @@ struct AccountsView: View {
                                             } label: {
                                                 Label("Edit", systemImage: "pencil")
                                             }
-                                            .tint(AppColors.tint(for: appColorMode))
+                                            .tint(AppDesign.Colors.tint(for: appColorMode))
                                         }
                                     }
                                 }
@@ -114,7 +109,7 @@ struct AccountsView: View {
                 }
                 .listStyle(.insetGrouped)
                 .appListCompactSpacing()
-                .appListTopInset(AppTheme.Spacing.medium)
+                .appListTopInset(AppDesign.Theme.Spacing.medium)
                 .background(ScrollOffsetEmitter(id: "AccountsView.scroll"))
                 .coordinateSpace(name: "AccountsView.scroll")
             }
@@ -127,46 +122,10 @@ struct AccountsView: View {
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    Button {
-                        do {
-                            try undoRedoManager.undo()
-                        } catch {
-                            SecurityLogger.shared.logSecurityError(error, context: "AccountsView.undo")
-                            AppErrorCenter.shared.show(
-                                title: "Error",
-                                message: "Couldn’t undo that action. Please try again."
-                            )
-                        }
-                    } label: {
-                        Label("Undo", systemImage: "arrow.uturn.backward")
-                    }
-                    .disabled(!undoRedoManager.canUndo)
-
-                    Button {
-                        do {
-                            try undoRedoManager.redo()
-                        } catch {
-                            SecurityLogger.shared.logSecurityError(error, context: "AccountsView.redo")
-                            AppErrorCenter.shared.show(
-                                title: "Error",
-                                message: "Couldn’t redo that action. Please try again."
-                            )
-                        }
-                    } label: {
-                        Label("Redo", systemImage: "arrow.uturn.forward")
-                    }
-                    .disabled(!undoRedoManager.canRedo)
-
-                    Divider()
-
-                    Button {
-                        showingAddAccount = true
-                    } label: {
-                        Label("Add Account", systemImage: "plus")
-                    }
+                Button {
+                    showingAccountsActions = true
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Image(systemName: "ellipsis")
                         .imageScale(.large)
                 }
             }
@@ -205,6 +164,44 @@ struct AccountsView: View {
                     },
                     onDelete: nil
                 )
+            }
+        }
+        .sheet(isPresented: $showingAccountsActions) {
+            NavigationStack {
+                AccountsActionsSheet(
+                    canUndo: undoRedoManager.canUndo,
+                    canRedo: undoRedoManager.canRedo,
+                    onUndo: {
+                        do {
+                            try undoRedoManager.undo()
+                        } catch {
+                            SecurityLogger.shared.logSecurityError(error, context: "AccountsView.undo")
+                            AppErrorCenter.shared.show(
+                                title: "Error",
+                                message: "Couldn’t undo that action. Please try again."
+                            )
+                        }
+                    },
+                    onRedo: {
+                        do {
+                            try undoRedoManager.redo()
+                        } catch {
+                            SecurityLogger.shared.logSecurityError(error, context: "AccountsView.redo")
+                            AppErrorCenter.shared.show(
+                                title: "Error",
+                                message: "Couldn’t redo that action. Please try again."
+                            )
+                        }
+                    },
+                    onAddAccount: { showingAddAccount = true }
+                )
+                .navigationTitle("Account Actions")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") { showingAccountsActions = false }
+                    }
+                }
             }
         }
         .sheet(item: $editingAccount) { account in
@@ -316,6 +313,43 @@ struct AccountsView: View {
     }
 }
 
+private struct AccountsActionsSheet: View {
+    let canUndo: Bool
+    let canRedo: Bool
+    let onUndo: () -> Void
+    let onRedo: () -> Void
+    let onAddAccount: () -> Void
+
+    var body: some View {
+        List {
+            Section("Accounts") {
+                Button {
+                    onAddAccount()
+                } label: {
+                    Label("Add Account", systemImage: "plus")
+                }
+            }
+
+            Section("History") {
+                Button {
+                    onUndo()
+                } label: {
+                    Label("Undo", systemImage: "arrow.uturn.backward")
+                }
+                .disabled(!canUndo)
+
+                Button {
+                    onRedo()
+                } label: {
+                    Label("Redo", systemImage: "arrow.uturn.forward")
+                }
+                .disabled(!canRedo)
+            }
+        }
+        .listStyle(.insetGrouped)
+    }
+}
+
 private struct AccountsSummaryCard: View {
     let count: Int
     let totalAssets: Decimal
@@ -325,9 +359,9 @@ private struct AccountsSummaryCard: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
             HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                     Text("Overview")
                         .appSectionTitleText()
                     Text("\(count) account\(count == 1 ? "" : "s")")
@@ -336,19 +370,16 @@ private struct AccountsSummaryCard: View {
                 }
                 Spacer()
                 Text(netWorth, format: .currency(code: currencyCode))
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(netWorth >= 0 ? .primary : AppColors.danger(for: appColorMode))
+                    .appTitleText()
+                    .foregroundStyle(netWorth >= 0 ? .primary : AppDesign.Colors.danger(for: appColorMode))
             }
 
-            HStack(spacing: AppTheme.Spacing.tight) {
-                SummaryPill(title: "Assets", value: totalAssets, currencyCode: currencyCode, tint: AppColors.success(for: appColorMode))
-                SummaryPill(title: "Debt", value: totalDebt, currencyCode: currencyCode, tint: AppColors.warning(for: appColorMode))
+            HStack(spacing: AppDesign.Theme.Spacing.tight) {
+                SummaryPill(title: "Assets", value: totalAssets, currencyCode: currencyCode, tint: AppDesign.Colors.success(for: appColorMode))
+                SummaryPill(title: "Debt", value: totalDebt, currencyCode: currencyCode, tint: AppDesign.Colors.warning(for: appColorMode))
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(AppTheme.Radius.small)
-        .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 2)
+        .appCardSurface(stroke: .clear)
     }
 }
 
@@ -359,23 +390,23 @@ private struct SummaryPill: View {
     let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
             Text(title)
                 .appCaptionText()
                 .foregroundStyle(.secondary)
             Text(value, format: .currency(code: currencyCode))
-                .font(.subheadline.weight(.semibold))
+                .appSecondaryBodyStrongText()
                 .foregroundStyle(.primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, AppTheme.Spacing.tight)
-        .padding(.vertical, AppTheme.Spacing.small)
+        .padding(.horizontal, AppDesign.Theme.Spacing.tight)
+        .padding(.vertical, AppDesign.Theme.Spacing.small)
         .background(tint.opacity(0.12))
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.compact)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact)
                 .stroke(tint.opacity(0.25), lineWidth: 1)
         )
-        .cornerRadius(AppTheme.Radius.compact)
+        .cornerRadius(AppDesign.Theme.Radius.compact)
     }
 }
 
@@ -385,33 +416,33 @@ private struct AccountRow: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.tight) {
+        HStack(spacing: AppDesign.Theme.Spacing.tight) {
             ZStack {
                 Circle()
                     .fill(account.type.color.opacity(0.18))
                 Image(systemName: account.type.icon)
                     .foregroundStyle(account.type.color)
-                    .font(.system(size: 16, weight: .semibold))
+                    .appDisplayText(AppDesign.Theme.DisplaySize.small, weight: .semibold)
             }
             .frame(width: 36, height: 36)
 
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                 Text(account.name)
-                    .font(.body.weight(.semibold))
+                    .appBodyStrongText()
                     .foregroundStyle(.primary)
 
-                HStack(spacing: AppTheme.Spacing.xSmall) {
+                HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                     Text(account.type.rawValue)
                         .appCaptionText()
                         .foregroundStyle(.secondary)
 
                     if account.isTrackingOnly {
                         Text("External")
-                            .font(.caption2.weight(.semibold))
-                            .padding(.horizontal, AppTheme.Spacing.xSmall)
-                            .padding(.vertical, AppTheme.Spacing.hairline)
-                            .background(Capsule().fill(AppColors.warning(for: appColorMode).opacity(0.12)))
-                            .foregroundStyle(AppColors.warning(for: appColorMode))
+                            .appCaption2StrongText()
+                            .padding(.horizontal, AppDesign.Theme.Spacing.xSmall)
+                            .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+                            .background(Capsule().fill(AppDesign.Colors.warning(for: appColorMode).opacity(0.12)))
+                            .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                             .lineLimit(1)
                     }
 
@@ -430,10 +461,10 @@ private struct AccountRow: View {
             Spacer()
 
             Text(account.balance, format: .currency(code: currencyCode))
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(account.balance >= 0 ? .primary : AppColors.danger(for: appColorMode))
+                .appSecondaryBodyStrongText()
+                .foregroundStyle(account.balance >= 0 ? .primary : AppDesign.Colors.danger(for: appColorMode))
         }
-        .padding(.vertical, AppTheme.Spacing.hairline)
+        .padding(.vertical, AppDesign.Theme.Spacing.hairline)
     }
 }
 
@@ -465,7 +496,7 @@ private struct AccountEditorSheet: View {
     var body: some View {
         Form {
             Section("Details") {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                    Text("Name")
 	                        .appCaptionText()
 	                        .foregroundStyle(.secondary)
@@ -479,11 +510,11 @@ private struct AccountEditorSheet: View {
 	                    }
 	                }
 
-	                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+	                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                    Text("Current Balance")
 	                        .appCaptionText()
 	                        .foregroundStyle(.secondary)
-	                    HStack(spacing: AppTheme.Spacing.compact) {
+	                    HStack(spacing: AppDesign.Theme.Spacing.compact) {
 	                        Text(currencySymbol(for: currencyCode))
 	                            .appTitleText()
 	                            .fontWeight(.semibold)

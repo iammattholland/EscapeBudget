@@ -127,7 +127,7 @@ struct ReportsSpendingView: View {
                 systemImage: "list.bullet",
                 title: "View all expenses",
                 value: "\(filteredTransactions.count) tx",
-                tint: AppColors.danger(for: appColorMode),
+                tint: AppDesign.Colors.danger(for: appColorMode),
                 action: {
                     drilldown = ReviewTransactionDrilldown(
                         title: "All Expenses",
@@ -148,7 +148,7 @@ struct ReportsSpendingView: View {
                     systemImage: "tag.slash",
                     title: "Uncategorized",
                     value: "\(uncategorizedAmount.formatted(.currency(code: currencyCode))) • \(uncategorizedCount) tx",
-                    tint: AppColors.warning(for: appColorMode),
+                    tint: AppDesign.Colors.warning(for: appColorMode),
                     action: { showingUncategorizedFix = true }
                 )
             )
@@ -161,7 +161,7 @@ struct ReportsSpendingView: View {
                     systemImage: "arrow.up.right.circle.fill",
                     title: "Largest expense",
                     value: abs(largestExpense.amount).formatted(.currency(code: currencyCode)),
-                    tint: AppColors.danger(for: appColorMode),
+                    tint: AppDesign.Colors.danger(for: appColorMode),
                     action: { transactionToEdit = largestExpense }
                 )
             )
@@ -172,13 +172,8 @@ struct ReportsSpendingView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: AppTheme.Spacing.cardGap) {
-                ScrollOffsetReader(coordinateSpace: "ReportsSpendingView.scroll", id: "ReportsSpendingView.scroll")
-                if let topChrome {
-                    topChrome
-                }
-
-                VStack(spacing: AppTheme.Spacing.cardGap) {
+            AppChromeStack(topChrome: topChrome, scrollID: "ReportsSpendingView.scroll") {
+                VStack(spacing: AppDesign.Theme.Spacing.cardGap) {
                     BudgetReviewSectionCard {
                         SpendingSummaryCard(
                             total: totalSpending,
@@ -205,7 +200,7 @@ struct ReportsSpendingView: View {
                             subtitle: "How spending changes across your selected range",
                             series: spendingTrend,
                             currencyCode: currencyCode,
-                            tint: AppColors.danger(for: appColorMode)
+                            tint: AppDesign.Colors.danger(for: appColorMode)
                         )
                     }
 
@@ -216,7 +211,7 @@ struct ReportsSpendingView: View {
                             items: Array(spendingByCategory.prefix(8)),
                             total: totalSpending,
                             currencyCode: currencyCode,
-                            tint: AppColors.danger(for: appColorMode)
+                            tint: AppDesign.Colors.danger(for: appColorMode)
                         ) { name in
                             let matching = filteredTransactions.filter { ($0.category?.name ?? "Uncategorized") == name }.sorted { $0.date > $1.date }
                             drilldown = ReviewTransactionDrilldown(
@@ -236,7 +231,7 @@ struct ReportsSpendingView: View {
                             items: Array(spendingByMerchant.prefix(8)),
                             total: totalSpending,
                             currencyCode: currencyCode,
-                            tint: AppColors.warning(for: appColorMode)
+                            tint: AppDesign.Colors.warning(for: appColorMode)
                         ) { merchant in
                             let matching = filteredTransactions.filter { $0.payee.trimmingCharacters(in: .whitespacesAndNewlines) == merchant }.sorted { $0.date > $1.date }
                             drilldown = ReviewTransactionDrilldown(
@@ -251,8 +246,8 @@ struct ReportsSpendingView: View {
 
                     // Insights live on Home; Review keeps action-oriented callouts.
                 }
-                .padding(.horizontal, AppTheme.Spacing.medium)
-                .padding(.vertical, AppTheme.Spacing.tight)
+                .padding(.horizontal, AppDesign.Theme.Spacing.medium)
+                .padding(.vertical, AppDesign.Theme.Spacing.tight)
             }
         }
         .background(SpendingTransactionsQuery(start: dateRangeDates.0, end: dateRangeDates.1) { fetched in
@@ -471,7 +466,7 @@ struct ReportsIncomeView: View {
                 systemImage: "list.bullet",
                 title: "View all income",
                 value: "\(filteredTransactions.count) tx",
-                tint: AppColors.success(for: appColorMode),
+                tint: AppDesign.Colors.success(for: appColorMode),
                 action: {
                     drilldown = ReviewTransactionDrilldown(
                         title: "All Income",
@@ -491,7 +486,7 @@ struct ReportsIncomeView: View {
                     systemImage: "person.crop.circle.fill",
                     title: "Top payer",
                     value: "\(payer) • \(amount.formatted(.currency(code: currencyCode)))",
-                    tint: AppColors.tint(for: appColorMode),
+                    tint: AppDesign.Colors.tint(for: appColorMode),
                     action: {
                         let matching = filteredTransactions
                             .filter { $0.payee.trimmingCharacters(in: .whitespacesAndNewlines) == payer }
@@ -515,7 +510,7 @@ struct ReportsIncomeView: View {
                     systemImage: "arrow.down.left.circle.fill",
                     title: "Largest income",
                     value: largestIncome.amount.formatted(.currency(code: currencyCode)),
-                    tint: AppColors.success(for: appColorMode),
+                    tint: AppDesign.Colors.success(for: appColorMode),
                     action: { transactionToEdit = largestIncome }
                 )
             )
@@ -581,13 +576,8 @@ struct ReportsIncomeView: View {
     
     var body: some View {
         ScrollView {
-            VStack(spacing: AppTheme.Spacing.cardGap) {
-                ScrollOffsetReader(coordinateSpace: "ReportsIncomeView.scroll", id: "ReportsIncomeView.scroll")
-                if let topChrome {
-                    topChrome
-                }
-
-                VStack(spacing: AppTheme.Spacing.cardGap) {
+            AppChromeStack(topChrome: topChrome, scrollID: "ReportsIncomeView.scroll") {
+                VStack(spacing: AppDesign.Theme.Spacing.cardGap) {
                     BudgetReviewSectionCard {
                         IncomeSummaryCard(
                             total: totalIncome,
@@ -614,7 +604,7 @@ struct ReportsIncomeView: View {
                             subtitle: "How income changes across your selected range",
                             series: incomeTrend,
                             currencyCode: currencyCode,
-                            tint: AppColors.success(for: appColorMode)
+                            tint: AppDesign.Colors.success(for: appColorMode)
                         )
                     }
 
@@ -625,7 +615,7 @@ struct ReportsIncomeView: View {
                             items: Array(incomeByPayer.prefix(8)),
                             total: totalIncome,
                             currencyCode: currencyCode,
-                            tint: AppColors.success(for: appColorMode)
+                            tint: AppDesign.Colors.success(for: appColorMode)
                         ) { payer in
                             let matching = filteredTransactions.filter { $0.payee.trimmingCharacters(in: .whitespacesAndNewlines) == payer }.sorted { $0.date > $1.date }
                             drilldown = ReviewTransactionDrilldown(
@@ -646,7 +636,7 @@ struct ReportsIncomeView: View {
                                 items: Array(incomeBySource.prefix(6)),
                                 total: totalIncome,
                                 currencyCode: currencyCode,
-                                tint: AppColors.tint(for: appColorMode)
+                                tint: AppDesign.Colors.tint(for: appColorMode)
                             ) { source in
                                 let matching = filteredTransactions.filter { ($0.category?.name ?? $0.payee) == source }.sorted { $0.date > $1.date }
                                 drilldown = ReviewTransactionDrilldown(
@@ -662,8 +652,8 @@ struct ReportsIncomeView: View {
 
                     // Insights live on Home; Review keeps action-oriented callouts.
                 }
-                .padding(.horizontal, AppTheme.Spacing.medium)
-                .padding(.vertical, AppTheme.Spacing.tight)
+                .padding(.horizontal, AppDesign.Theme.Spacing.medium)
+                .padding(.vertical, AppDesign.Theme.Spacing.tight)
             }
         }
         .background(Color(.systemGroupedBackground))
@@ -705,7 +695,7 @@ private struct ReviewTransactionsSheet: View {
             List {
 	                Section {
 	                    HStack(alignment: .firstTextBaseline) {
-	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+	                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                            Text(drilldown.title)
 	                                .appSectionTitleText()
 	                            Text(drilldown.subtitle)
@@ -718,12 +708,12 @@ private struct ReviewTransactionsSheet: View {
 	                        Text(total, format: .currency(code: drilldown.currencyCode))
 	                            .appSectionTitleText()
 	                            .fontWeight(.semibold)
-	                            .foregroundStyle(drilldown.emphasizeOutflow ? AppColors.danger(for: appColorMode) : AppColors.success(for: appColorMode))
+	                            .foregroundStyle(drilldown.emphasizeOutflow ? AppDesign.Colors.danger(for: appColorMode) : AppDesign.Colors.success(for: appColorMode))
                             .monospacedDigit()
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
                     }
-                    .padding(.vertical, AppTheme.Spacing.micro)
+                    .padding(.vertical, AppDesign.Theme.Spacing.micro)
                 }
 
                 if drilldown.transactions.isEmpty {
@@ -893,9 +883,9 @@ private struct ReviewTrendCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
 	            HStack(alignment: .firstTextBaseline) {
-	                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+	                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                    Text(title)
 	                        .appSectionTitleText()
                     Text(subtitle)
@@ -922,7 +912,7 @@ private struct ReviewTrendCard: View {
                     description: Text("Add transactions in this range to see a trend.")
                 )
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, AppTheme.Spacing.xSmall)
+                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
             } else {
 	                Chart(series.buckets) { bucket in
 	                    BarMark(
@@ -930,7 +920,7 @@ private struct ReviewTrendCard: View {
 	                        y: .value("Total", NSDecimalNumber(decimal: bucket.total).doubleValue)
 	                    )
 	                    .foregroundStyle(tint.gradient)
-	                    .cornerRadius(AppTheme.Radius.tag)
+	                    .cornerRadius(AppDesign.Theme.Radius.tag)
 	                }
                 .chartXAxis {
                     AxisMarks(values: .automatic(desiredCount: 4)) { value in
@@ -959,7 +949,7 @@ private struct ReviewTrendCard: View {
                     }
                 }
                 .frame(height: 150)
-                .padding(.vertical, AppTheme.Spacing.micro)
+                .padding(.vertical, AppDesign.Theme.Spacing.micro)
             }
         }
     }
@@ -975,8 +965,8 @@ private struct ReviewBreakdownCard: View {
     let onSelect: (String) -> Void
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
-	            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
+	            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                Text(title)
 	                    .appSectionTitleText()
                 Text(subtitle)
@@ -991,15 +981,15 @@ private struct ReviewBreakdownCard: View {
                     description: Text("Add transactions to populate this breakdown.")
                 )
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, AppTheme.Spacing.xSmall)
+                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
             } else {
-                VStack(spacing: AppTheme.Spacing.small) {
+                VStack(spacing: AppDesign.Theme.Spacing.small) {
                     ForEach(items, id: \.0) { item in
                         let pct = total > 0 ? Double(truncating: (item.1 / total) as NSNumber) : 0
                         Button {
                             onSelect(item.0)
                         } label: {
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
 	                                HStack {
 	                                    Text(item.0)
 	                                        .appSecondaryBodyText()
@@ -1045,14 +1035,14 @@ private struct SpendingSummaryCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
 	            HStack(alignment: .firstTextBaseline) {
-	                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+	                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                    Text("Spending")
 	                        .appSectionTitleText()
                     Text(total, format: .currency(code: currencyCode))
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundStyle(AppColors.danger(for: appColorMode))
+                        .appDisplayText(AppDesign.Theme.DisplaySize.xxxLarge, weight: .bold)
+                        .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
@@ -1065,7 +1055,7 @@ private struct SpendingSummaryCard: View {
                     .foregroundStyle(.secondary)
             }
 
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: AppTheme.Spacing.small), GridItem(.flexible(), spacing: AppTheme.Spacing.small)], spacing: AppTheme.Spacing.small) {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small), GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small)], spacing: AppDesign.Theme.Spacing.small) {
                 OverviewValueTile(title: "Avg / Day", value: avgDaily, currencyCode: currencyCode, tint: .secondary)
                 OverviewValueTile(title: "Avg / Tx", value: avgTransaction, currencyCode: currencyCode, tint: .secondary)
             }
@@ -1075,7 +1065,7 @@ private struct SpendingSummaryCard: View {
                     title: "Uncategorized",
                     valueText: "\(uncategorizedAmount.formatted(.currency(code: currencyCode))) • \(Int(uncategorizedShare * 100))%",
                     progress: uncategorizedShare,
-                    tint: AppColors.warning(for: appColorMode)
+                    tint: AppDesign.Colors.warning(for: appColorMode)
                 )
             }
 
@@ -1085,7 +1075,7 @@ private struct SpendingSummaryCard: View {
                     title: "Largest Expense",
                     value: abs(largestExpense.amount).formatted(.currency(code: currencyCode)),
                     subtitle: largestExpense.payee,
-                    tint: AppColors.danger(for: appColorMode)
+                    tint: AppDesign.Colors.danger(for: appColorMode)
                 )
             }
         }
@@ -1103,14 +1093,14 @@ private struct IncomeSummaryCard: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
             HStack(alignment: .firstTextBaseline) {
-	                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+	                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                    Text("Income")
 	                        .appSectionTitleText()
                     Text(total, format: .currency(code: currencyCode))
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundStyle(AppColors.success(for: appColorMode))
+                        .appDisplayText(AppDesign.Theme.DisplaySize.xxxLarge, weight: .bold)
+                        .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
@@ -1123,7 +1113,7 @@ private struct IncomeSummaryCard: View {
                     .foregroundStyle(.secondary)
             }
 
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: AppTheme.Spacing.small), GridItem(.flexible(), spacing: AppTheme.Spacing.small)], spacing: AppTheme.Spacing.small) {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small), GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small)], spacing: AppDesign.Theme.Spacing.small) {
                 OverviewValueTile(title: "Avg / Day", value: avgDaily, currencyCode: currencyCode, tint: .secondary)
                 OverviewValueTile(title: "Avg / Deposit", value: avgDeposit, currencyCode: currencyCode, tint: .secondary)
             }
@@ -1134,8 +1124,8 @@ private struct IncomeSummaryCard: View {
                     valueText: "\(Int(payerConcentration * 100))%",
                     progress: payerConcentration,
                     tint: payerConcentration >= 0.75
-                        ? AppColors.warning(for: appColorMode)
-                        : AppColors.success(for: appColorMode)
+                        ? AppDesign.Colors.warning(for: appColorMode)
+                        : AppDesign.Colors.success(for: appColorMode)
                 )
             }
 
@@ -1145,7 +1135,7 @@ private struct IncomeSummaryCard: View {
                     title: "Largest Income",
                     value: largestIncome.amount.formatted(.currency(code: currencyCode)),
                     subtitle: largestIncome.payee,
-                    tint: AppColors.success(for: appColorMode)
+                    tint: AppDesign.Colors.success(for: appColorMode)
                 )
             }
         }
@@ -1159,18 +1149,18 @@ struct ReviewStoryCard: View {
     let tint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-            HStack(spacing: AppTheme.Spacing.compact) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
+            HStack(spacing: AppDesign.Theme.Spacing.compact) {
                 Image(systemName: systemImage)
                     .foregroundStyle(tint)
                 Text(title)
-                    .font(.caption.weight(.semibold))
+                    .appCaptionStrongText()
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
             }
 
             Text(text)
-                .font(.subheadline.weight(.semibold))
+                .appSecondaryBodyStrongText()
                 .foregroundStyle(.primary)
                 .lineLimit(4)
                 .minimumScaleFactor(0.9)

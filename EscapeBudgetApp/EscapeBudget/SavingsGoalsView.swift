@@ -21,16 +21,9 @@ struct SavingsGoalsView: View {
         Group {
             if savingsGoals.isEmpty {
                 List {
-                    if let topChrome {
-                        topChrome
-                            .listRowInsets(EdgeInsets())
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
+                    if topChrome != nil {
+                        AppChromeListRow(topChrome: topChrome, scrollID: "SavingsGoalsView.scroll")
                     }
-                    ScrollOffsetReader(coordinateSpace: "SavingsGoalsView.scroll", id: "SavingsGoalsView.scroll")
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
 
                 EmptyDataCard(
                     systemImage: "target",
@@ -50,22 +43,15 @@ struct SavingsGoalsView: View {
                 .coordinateSpace(name: "SavingsGoalsView.scroll")
             } else {
                 List {
-                    if let topChrome {
-                        topChrome
-                            .listRowInsets(EdgeInsets())
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
+                    if topChrome != nil {
+                        AppChromeListRow(topChrome: topChrome, scrollID: "SavingsGoalsView.scroll")
                     }
-                    ScrollOffsetReader(coordinateSpace: "SavingsGoalsView.scroll", id: "SavingsGoalsView.scroll")
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
 
                     // Summary Card
                     Section {
-                        VStack(spacing: AppTheme.Spacing.tight) {
+                        VStack(spacing: AppDesign.Theme.Spacing.tight) {
                             HStack {
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                                     Text("Total Saved")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
@@ -76,7 +62,7 @@ struct SavingsGoalsView: View {
 
                                 Spacer()
 
-                                VStack(alignment: .trailing, spacing: AppTheme.Spacing.micro) {
+                                VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.micro) {
                                     Text("Total Goal")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
@@ -86,9 +72,9 @@ struct SavingsGoalsView: View {
                             }
                             
                             ProgressView(value: overallProgress)
-                                .tint(AppColors.tint(for: appColorMode))
+                                .tint(AppDesign.Colors.tint(for: appColorMode))
                         }
-                        .padding(.vertical, AppTheme.Spacing.compact)
+                        .padding(.vertical, AppDesign.Theme.Spacing.compact)
                     }
                     
                     // Goals List
@@ -130,7 +116,7 @@ struct SavingsGoalsView: View {
                         Label("Add Goal", systemImage: "plus")
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Image(systemName: "ellipsis")
                         .imageScale(.large)
                 }
                 .tint(.black)
@@ -196,7 +182,7 @@ struct SavingsGoalRow: View {
     @Environment(\.appColorMode) private var appColorMode
 
     private var color: Color {
-        Color(hex: goal.colorHex) ?? AppColors.tint(for: appColorMode)
+        Color(hex: goal.colorHex) ?? AppDesign.Colors.tint(for: appColorMode)
     }
 
     private var smartInsight: String? {
@@ -237,7 +223,7 @@ struct SavingsGoalRow: View {
 
     var body: some View {
         NavigationLink(destination: SavingsGoalDetailView(goal: goal)) {
-            HStack(spacing: AppTheme.Spacing.medium) {
+            HStack(spacing: AppDesign.Theme.Spacing.medium) {
                 // Circular Progress Ring (simplified)
                 ZStack {
                     Circle()
@@ -263,7 +249,7 @@ struct SavingsGoalRow: View {
                 }
 
                 // Content
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                     Text(goal.name)
                         .appSectionTitleText()
 
@@ -274,13 +260,13 @@ struct SavingsGoalRow: View {
                     if let insight = smartInsight {
                         Text(insight)
                             .appCaptionText()
-                            .foregroundStyle(goal.isAchieved ? AppColors.success(for: appColorMode) : color)
+                            .foregroundStyle(goal.isAchieved ? AppDesign.Colors.success(for: appColorMode) : color)
                     }
                 }
 
                 Spacer(minLength: 0)
             }
-            .padding(.vertical, AppTheme.Spacing.compact)
+            .padding(.vertical, AppDesign.Theme.Spacing.compact)
         }
     }
 }
@@ -357,10 +343,10 @@ struct AddSavingsGoalView: View {
                 }
                 
                 Section("Color") {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: AppTheme.Spacing.tight) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: AppDesign.Theme.Spacing.tight) {
                         ForEach(colorOptions, id: \.0) { hex, name in
                             Circle()
-                                .fill(Color(hex: hex) ?? AppColors.tint(for: appColorMode))
+                                .fill(Color(hex: hex) ?? AppDesign.Colors.tint(for: appColorMode))
                                 .frame(width: 40, height: 40)
                                 .overlay(
                                     Circle()
@@ -431,16 +417,16 @@ struct SavingsGoalDetailView: View {
     var body: some View {
         List {
             Section {
-                VStack(spacing: AppTheme.Spacing.medium) {
+                VStack(spacing: AppDesign.Theme.Spacing.medium) {
                     Text(goal.progressPercentage, format: .percent.precision(.fractionLength(1)))
-                        .font(.system(size: 48, weight: .bold))
-                        .foregroundStyle(Color(hex: goal.colorHex) ?? AppColors.tint(for: appColorMode))
+                        .appDisplayText(AppDesign.Theme.DisplaySize.hero, weight: .bold)
+                        .foregroundStyle(Color(hex: goal.colorHex) ?? AppDesign.Colors.tint(for: appColorMode))
                     
                     ProgressView(value: goal.progressPercentage / 100)
-                        .tint(Color(hex: goal.colorHex) ?? AppColors.tint(for: appColorMode))
+                        .tint(Color(hex: goal.colorHex) ?? AppDesign.Colors.tint(for: appColorMode))
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, AppTheme.Spacing.compact)
+                .padding(.vertical, AppDesign.Theme.Spacing.compact)
             }
             
             Section("Progress") {
@@ -468,7 +454,7 @@ struct SavingsGoalDetailView: View {
             if let notes = goal.notes {
                 Section("Notes") {
                     Text(notes)
-                        .font(AppTheme.Typography.body)
+                        .font(AppDesign.Theme.Typography.body)
                 }
             }
         }

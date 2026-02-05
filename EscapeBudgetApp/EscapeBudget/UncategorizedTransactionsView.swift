@@ -28,9 +28,9 @@ struct UncategorizedTransactionsView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 actionButtons
-                    .padding(.horizontal, AppTheme.Spacing.medium)
-                    .padding(.top, AppTheme.Spacing.small)
-                    .padding(.bottom, AppTheme.Spacing.xSmall)
+                    .padding(.horizontal, AppDesign.Theme.Spacing.medium)
+                    .padding(.top, AppDesign.Theme.Spacing.small)
+                    .padding(.bottom, AppDesign.Theme.Spacing.xSmall)
 
                 transactionList
             }
@@ -97,9 +97,9 @@ struct UncategorizedTransactionsView: View {
                         .listRowBackground(Color.clear)
                     } else {
                         ForEach(transactions) { transaction in
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                                 HStack {
-                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                                         Text(transaction.payee)
                                             .appSectionTitleText()
                                         
@@ -111,7 +111,7 @@ struct UncategorizedTransactionsView: View {
                                     Spacer()
                                     
                                     Text(transaction.amount, format: .currency(code: currencyCode))
-                                        .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                                        .foregroundStyle(transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)
                                 }
                                 
                                 Menu {
@@ -144,10 +144,10 @@ struct UncategorizedTransactionsView: View {
                                 } label: {
                                     Text("Assign Category")
                                         .appCaptionText()
-                                        .padding(.horizontal, AppTheme.Spacing.compact)
-                                        .padding(.vertical, AppTheme.Spacing.micro)
-                                        .background(Capsule().fill(AppColors.warning(for: appColorMode).opacity(0.15)))
-                                        .foregroundStyle(AppColors.warning(for: appColorMode))
+                                        .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+                                        .padding(.vertical, AppDesign.Theme.Spacing.micro)
+                                        .background(Capsule().fill(AppDesign.Colors.warning(for: appColorMode).opacity(0.15)))
+                                        .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -175,23 +175,23 @@ struct UncategorizedTransactionsView: View {
     }
 
     private var actionButtons: some View {
-        VStack(spacing: AppTheme.Spacing.compact) {
+        VStack(spacing: AppDesign.Theme.Spacing.compact) {
             Button {
                 showingSmartCategorize = true
             } label: {
                 Label("Smart Categorize", systemImage: "sparkles")
-                    .font(.subheadline.weight(.semibold))
+                    .appSecondaryBodyStrongText()
                     .frame(maxWidth: .infinity)
             }
             .appPrimaryCTA()
             .disabled(transactions.isEmpty)
 
-            HStack(spacing: AppTheme.Spacing.compact) {
+            HStack(spacing: AppDesign.Theme.Spacing.compact) {
                 Button {
                     showingQuickCategorize = true
                 } label: {
                     Label("Quick Categorize", systemImage: "bolt.fill")
-                        .font(.subheadline.weight(.semibold))
+                        .appSecondaryBodyStrongText()
                         .frame(maxWidth: .infinity)
                 }
                 .appSecondaryCTA()
@@ -201,7 +201,7 @@ struct UncategorizedTransactionsView: View {
                     showingBulkCategorize = true
                 } label: {
                     Label("Bulk Edit", systemImage: "square.stack.3d.up.fill")
-                        .font(.subheadline.weight(.semibold))
+                        .appSecondaryBodyStrongText()
                         .frame(maxWidth: .infinity)
                 }
                 .appSecondaryCTA()

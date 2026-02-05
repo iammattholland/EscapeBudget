@@ -113,6 +113,8 @@ final class KeychainService {
 
 enum KeychainKey: String, CaseIterable {
     case biometricsEnabled = "biometrics_enabled"
+    case passcodeEnabled = "passcode_enabled"
+    case passcodeHash = "passcode_hash"
     case lastAuthenticatedTimestamp = "last_auth_timestamp"
     case authFailureCount = "auth_failure_count"
     case appleUserID = "account.apple.user_id"

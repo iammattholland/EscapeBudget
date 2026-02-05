@@ -79,7 +79,7 @@ struct CustomWidgetRenderer: View {
                             .foregroundStyle(by: .value("Source", item.name))
                     } else {
                         BarMark(x: .value("Source", item.name), y: .value("Amount", item.amount))
-                            .foregroundStyle(AppColors.success(for: appColorMode).gradient)
+                            .foregroundStyle(AppDesign.Colors.success(for: appColorMode).gradient)
                     }
                 }
             }
@@ -89,22 +89,22 @@ struct CustomWidgetRenderer: View {
 
         // Trends & Patterns
         case .spendingTrend:
-            renderTrendChart(data: buildSpendingTrend(), color: AppColors.danger(for: appColorMode), emptyMessage: "No spending data")
+            renderTrendChart(data: buildSpendingTrend(), color: AppDesign.Colors.danger(for: appColorMode), emptyMessage: "No spending data")
 
         case .incomeTrend:
-            renderTrendChart(data: buildIncomeTrend(), color: AppColors.success(for: appColorMode), emptyMessage: "No income data")
+            renderTrendChart(data: buildIncomeTrend(), color: AppDesign.Colors.success(for: appColorMode), emptyMessage: "No income data")
 
         case .categoryTrend:
-            renderTrendChart(data: buildCategoryTrendData(), color: AppColors.tint(for: appColorMode), emptyMessage: "No category data")
+            renderTrendChart(data: buildCategoryTrendData(), color: AppDesign.Colors.tint(for: appColorMode), emptyMessage: "No category data")
 
         case .dailySpendingPattern:
             renderPatternChart(data: buildDailyPattern(), emptyMessage: "No spending data")
 
         case .weeklySpendingPattern:
-            renderTrendChart(data: buildWeeklyPattern(), color: AppColors.danger(for: appColorMode), emptyMessage: "No spending data")
+            renderTrendChart(data: buildWeeklyPattern(), color: AppDesign.Colors.danger(for: appColorMode), emptyMessage: "No spending data")
 
         case .monthlySpendingPattern:
-            renderTrendChart(data: buildMonthlyPattern(), color: AppColors.danger(for: appColorMode), emptyMessage: "No spending data")
+            renderTrendChart(data: buildMonthlyPattern(), color: AppDesign.Colors.danger(for: appColorMode), emptyMessage: "No spending data")
 
         // Comparisons
         case .incomeVsExpenses:
@@ -121,7 +121,7 @@ struct CustomWidgetRenderer: View {
 
         // Financial Health
         case .netWorthOverTime:
-            renderTrendChart(data: buildNetWorthTrend(), color: AppColors.tint(for: appColorMode), emptyMessage: "No account data")
+            renderTrendChart(data: buildNetWorthTrend(), color: AppDesign.Colors.tint(for: appColorMode), emptyMessage: "No account data")
 
         case .savingsRate:
             renderSavingsRateChart()
@@ -220,7 +220,7 @@ struct CustomWidgetRenderer: View {
         } else {
             Chart(data, id: \.name) { item in
                 BarMark(x: .value("Day", item.name), y: .value("Amount", item.amount))
-                    .foregroundStyle(AppColors.danger(for: appColorMode).gradient)
+                    .foregroundStyle(AppDesign.Colors.danger(for: appColorMode).gradient)
             }
         }
     }
@@ -244,7 +244,7 @@ struct CustomWidgetRenderer: View {
         } else {
             Chart(data.prefix(10), id: \.name) { item in
                 BarMark(x: .value("Amount", item.amount), y: .value("Name", item.name))
-                    .foregroundStyle(AppColors.danger(for: appColorMode).gradient)
+                    .foregroundStyle(AppDesign.Colors.danger(for: appColorMode).gradient)
             }
             .chartXAxis(.hidden)
         }
@@ -258,7 +258,7 @@ struct CustomWidgetRenderer: View {
         } else {
             Chart(data, id: \.name) { item in
                 BarMark(x: .value("Type", item.name), y: .value("Amount", item.amount))
-                    .foregroundStyle(item.name == "Income" ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
+                    .foregroundStyle(item.name == "Income" ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
             }
         }
     }
@@ -266,15 +266,15 @@ struct CustomWidgetRenderer: View {
     @ViewBuilder
     private func renderSavingsRateChart() -> some View {
         let rate = calculateSavingsRate()
-        VStack(spacing: AppTheme.Spacing.tight) {
+        VStack(spacing: AppDesign.Theme.Spacing.tight) {
             Text("\(Int(rate))%")
-                .font(.system(size: 48, weight: .bold))
-                .foregroundStyle(rate >= 20 ? AppColors.success(for: appColorMode) : (rate >= 10 ? AppColors.warning(for: appColorMode) : AppColors.danger(for: appColorMode)))
+                .appDisplayText(AppDesign.Theme.DisplaySize.hero, weight: .bold)
+                .foregroundStyle(rate >= 20 ? AppDesign.Colors.success(for: appColorMode) : (rate >= 10 ? AppDesign.Colors.warning(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode)))
             Text("Savings Rate")
                 .appCaptionText()
                 .foregroundStyle(.secondary)
             ProgressView(value: min(rate / 100, 1.0))
-                .tint(rate >= 20 ? AppColors.success(for: appColorMode) : (rate >= 10 ? AppColors.warning(for: appColorMode) : AppColors.danger(for: appColorMode)))
+                .tint(rate >= 20 ? AppDesign.Colors.success(for: appColorMode) : (rate >= 10 ? AppDesign.Colors.warning(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode)))
         }
         .padding()
     }
@@ -300,7 +300,7 @@ struct CustomWidgetRenderer: View {
         } else {
             Chart(data) { item in
                 BarMark(x: .value("Date", item.date), y: .value("Amount", item.amount))
-                    .foregroundStyle(item.amount >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
+                    .foregroundStyle(item.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
             }
         }
     }
@@ -308,9 +308,9 @@ struct CustomWidgetRenderer: View {
     @ViewBuilder
     private func renderAverageTransactionChart() -> some View {
         let avg = calculateAverageTransaction()
-        VStack(spacing: AppTheme.Spacing.tight) {
+        VStack(spacing: AppDesign.Theme.Spacing.tight) {
             Text(avg, format: .currency(code: currencyCode))
-                .font(.system(size: 36, weight: .bold))
+                .appDisplayText(AppDesign.Theme.DisplaySize.xxxxLarge, weight: .bold)
                 .foregroundStyle(.primary)
             Text("Average Transaction")
                 .appCaptionText()
@@ -327,7 +327,7 @@ struct CustomWidgetRenderer: View {
         } else {
             Chart(data, id: \.name) { item in
                 BarMark(x: .value("Period", item.name), y: .value("Count", item.amount))
-                    .foregroundStyle(AppColors.tint(for: appColorMode).gradient)
+                    .foregroundStyle(AppDesign.Colors.tint(for: appColorMode).gradient)
             }
         }
     }
@@ -340,7 +340,7 @@ struct CustomWidgetRenderer: View {
         } else {
             Chart(data, id: \.name) { item in
                 BarMark(x: .value("Account", item.name), y: .value("Balance", item.amount))
-                    .foregroundStyle(AppColors.tint(for: appColorMode).gradient)
+                    .foregroundStyle(AppDesign.Colors.tint(for: appColorMode).gradient)
             }
         }
     }
@@ -365,9 +365,9 @@ struct CustomWidgetRenderer: View {
                         Spacer()
                         Text(transaction.amount, format: .currency(code: currencyCode))
                             .appSecondaryBodyText()
-                            .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                            .foregroundStyle(transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)
                     }
-                    .padding(.vertical, AppTheme.Spacing.compact)
+                    .padding(.vertical, AppDesign.Theme.Spacing.compact)
                     Divider()
                 }
                 if filteredTransactions.isEmpty {
@@ -386,7 +386,7 @@ struct CustomWidgetRenderer: View {
                         Spacer()
                         Text(item.amount, format: .currency(code: currencyCode))
                     }
-                    .padding(.vertical, AppTheme.Spacing.compact)
+                    .padding(.vertical, AppDesign.Theme.Spacing.compact)
                     Divider()
                 }
             }
@@ -759,12 +759,12 @@ struct CustomWidgetRenderer: View {
         if upcomingBills.isEmpty {
             WidgetEmptyStateView(message: "No upcoming bills")
         } else {
-            VStack(spacing: AppTheme.Spacing.compact) {
+            VStack(spacing: AppDesign.Theme.Spacing.compact) {
                 ForEach(Array(upcomingBills), id: \.id) { bill in
                     UpcomingBillRow(bill: bill, currencyCode: currencyCode, appColorMode: appColorMode)
                 }
             }
-            .padding(.vertical, AppTheme.Spacing.micro)
+            .padding(.vertical, AppDesign.Theme.Spacing.micro)
         }
     }
 }
@@ -783,13 +783,13 @@ struct UpcomingBillRow: View {
 
     private var urgencyColor: Color {
         if daysUntil < 0 {
-            return AppColors.danger(for: appColorMode)
+            return AppDesign.Colors.danger(for: appColorMode)
         } else if daysUntil == 0 {
-            return AppColors.danger(for: appColorMode)
+            return AppDesign.Colors.danger(for: appColorMode)
         } else if daysUntil <= 3 {
-            return AppColors.warning(for: appColorMode)
+            return AppDesign.Colors.warning(for: appColorMode)
         } else if daysUntil <= 7 {
-            return AppColors.tint(for: appColorMode)
+            return AppDesign.Colors.tint(for: appColorMode)
         } else {
             return .secondary
         }
@@ -808,38 +808,38 @@ struct UpcomingBillRow: View {
     }
 
 	    var body: some View {
-	        HStack(spacing: AppTheme.Spacing.compact) {
-	            RoundedRectangle(cornerRadius: AppTheme.Radius.hairline)
+	        HStack(spacing: AppDesign.Theme.Spacing.compact) {
+	            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.hairline)
 	                .fill(urgencyColor)
 	                .frame(width: 3)
 
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                 Text(bill.name)
                     .appCaptionText()
                     .fontWeight(.medium)
                     .lineLimit(1)
 
                 Text(bill.nextDate, format: .dateTime.month(.abbreviated).day())
-                    .font(.caption2)
+                    .appCaption2Text()
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: AppTheme.Spacing.hairline) {
+            VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.hairline) {
                 Text(bill.amount, format: .currency(code: currencyCode))
                     .appCaptionText()
                     .fontWeight(.semibold)
 
                 Text(daysText)
-                    .font(.caption2)
+                    .appCaption2Text()
                     .foregroundStyle(urgencyColor)
             }
         }
-	        .padding(.vertical, AppTheme.Spacing.micro)
-	        .padding(.horizontal, AppTheme.Spacing.compact)
+	        .padding(.vertical, AppDesign.Theme.Spacing.micro)
+	        .padding(.horizontal, AppDesign.Theme.Spacing.compact)
 	        .background(Color(.secondarySystemBackground))
-	        .cornerRadius(AppTheme.Radius.tag)
+	        .cornerRadius(AppDesign.Theme.Radius.tag)
 	    }
 }
 
@@ -847,9 +847,9 @@ struct WidgetEmptyStateView: View {
     let message: String
     
     var body: some View {
-        VStack(spacing: AppTheme.Spacing.compact) {
+        VStack(spacing: AppDesign.Theme.Spacing.compact) {
             Image(systemName: "chart.bar.xaxis")
-                .font(.largeTitle)
+                .appLargeTitleText()
                 .foregroundStyle(.secondary.opacity(0.3))
             Text(message)
                 .appCaptionText()

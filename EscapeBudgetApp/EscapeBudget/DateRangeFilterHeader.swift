@@ -40,9 +40,9 @@ struct DateRangeFilterHeader: View {
             // Left Arrow
             Button(action: previousPeriod) {
                 Image(systemName: "chevron.left")
-                    .font(isCompact ? .callout : .body)
+                    .font(isCompact ? AppDesign.Theme.Typography.callout : AppDesign.Theme.Typography.body)
                     .foregroundStyle(.primary)
-                    .padding(isCompact ? AppTheme.Spacing.xSmall : AppTheme.Spacing.compact)
+                    .padding(isCompact ? AppDesign.Theme.Spacing.xSmall : AppDesign.Theme.Spacing.compact)
                     .background(Color(.systemGray6))
                     .clipShape(Circle())
             }
@@ -58,9 +58,9 @@ struct DateRangeFilterHeader: View {
                 showingModeDialog = true
             } label: {
                 Text(labelText)
-                    .font(isCompact ? .subheadline.weight(.semibold) : .headline)
+                    .font(isCompact ? AppDesign.Theme.Typography.secondaryBodyStrong : AppDesign.Theme.Typography.headline)
                     .foregroundStyle(.primary)
-                    .padding(.vertical, isCompact ? AppTheme.Spacing.micro : AppTheme.Spacing.compact)
+                    .padding(.vertical, isCompact ? AppDesign.Theme.Spacing.micro : AppDesign.Theme.Spacing.compact)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.plain)
@@ -70,9 +70,9 @@ struct DateRangeFilterHeader: View {
             // Right Arrow
             Button(action: nextPeriod) {
                 Image(systemName: "chevron.right")
-                    .font(isCompact ? .callout : .body)
+                    .font(isCompact ? AppDesign.Theme.Typography.callout : AppDesign.Theme.Typography.body)
                     .foregroundStyle(.primary)
-                    .padding(isCompact ? AppTheme.Spacing.xSmall : AppTheme.Spacing.compact)
+                    .padding(isCompact ? AppDesign.Theme.Spacing.xSmall : AppDesign.Theme.Spacing.compact)
                     .background(Color(.systemGray6))
                     .clipShape(Circle())
             }

@@ -142,16 +142,16 @@ struct ImportProcessingReviewView: View {
                 Section("This Import") {
                     summaryRow(title: "File", value: fileName ?? "—")
 
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                         Text("Options")
-                            .font(.subheadline.weight(.semibold))
+                            .appSecondaryBodyStrongText()
                         optionsRow(title: "Payee cleanup", enabled: options.normalizePayee)
                         optionsRow(title: "Auto rules", enabled: options.applyAutoRules)
                         optionsRow(title: "Duplicate detection", enabled: options.detectDuplicates)
                         optionsRow(title: "Transfer suggestions", enabled: options.suggestTransfers)
                         optionsRow(title: "Processing history", enabled: options.saveProcessingHistory)
                     }
-                    .padding(.vertical, AppTheme.Spacing.hairline)
+                    .padding(.vertical, AppDesign.Theme.Spacing.hairline)
                 }
 
                 Section("Summary") {
@@ -260,16 +260,16 @@ struct ImportProcessingReviewView: View {
                                         transaction: transaction
                                     )
                                 } label: {
-                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                                         TransactionRowView(transaction: transaction)
 
                                         if let events = result.eventsByTransactionID[transaction.persistentModelID], !events.isEmpty {
-                                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                                                 ForEach(events) { event in
-                                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
-                                                        HStack(spacing: AppTheme.Spacing.compact) {
+                                                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
+                                                        HStack(spacing: AppDesign.Theme.Spacing.compact) {
                                                             Image(systemName: iconName(for: event.kind))
-                                                                .foregroundStyle(AppColors.tint(for: appColorMode))
+                                                                .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                                                             Text(event.title)
                                                                 .appFootnoteText()
                                                                 .foregroundStyle(.secondary)
@@ -279,7 +279,7 @@ struct ImportProcessingReviewView: View {
                                                                 Text(detail)
                                                                     .appCaptionText()
                                                                     .foregroundStyle(.secondary)
-                                                                    .padding(.leading, AppTheme.Spacing.indentSmall)
+                                                                    .padding(.leading, AppDesign.Theme.Spacing.indentSmall)
                                                             }
                                                         }
                                                     }
@@ -332,8 +332,8 @@ private struct RuleImpactSheet: View {
         NavigationStack {
             List {
                 Section("Rule") {
-                    HStack(alignment: .top, spacing: AppTheme.Spacing.compact) {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                    HStack(alignment: .top, spacing: AppDesign.Theme.Spacing.compact) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                             Text(ruleName)
                                 .appSectionTitleText()
                             if let rule {
@@ -356,11 +356,11 @@ private struct RuleImpactSheet: View {
                             Button("Edit") {
                                 editingRule = rule
                             }
-                            .buttonStyle(.bordered)
+                            .buttonStyle(.glass)
                             .controlSize(.small)
                         }
                     }
-                    .padding(.vertical, AppTheme.Spacing.micro)
+                    .padding(.vertical, AppDesign.Theme.Spacing.micro)
                 }
 
                 Section("Affected Transactions") {
@@ -377,7 +377,7 @@ private struct RuleImpactSheet: View {
                                 editingTransaction = tx
                             } label: {
                                 HStack {
-                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                                         Text(tx.payee)
                                             .appSecondaryBodyText()
                                         Text(tx.date, format: .dateTime.year().month().day())
@@ -444,14 +444,14 @@ private struct RuleImpactSheet: View {
     }
 
     private func optionsRow(title: String, enabled: Bool) -> some View {
-        HStack(spacing: AppTheme.Spacing.small) {
+        HStack(spacing: AppDesign.Theme.Spacing.small) {
             Image(systemName: enabled ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(enabled ? AppColors.success(for: appColorMode) : .secondary)
+                .foregroundStyle(enabled ? AppDesign.Colors.success(for: appColorMode) : .secondary)
             Text(title)
                 .foregroundStyle(.primary)
             Spacer()
         }
-        .font(AppTheme.Typography.secondaryBody)
+        .font(AppDesign.Theme.Typography.secondaryBody)
     }
 
     @ViewBuilder
@@ -459,12 +459,12 @@ private struct RuleImpactSheet: View {
         let base = modelContext.model(for: suggestion.baseID) as? Transaction
         let match = modelContext.model(for: suggestion.matchID) as? Transaction
 
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
             Text("\(base?.payee ?? "Unknown") ↔︎ \(match?.payee ?? "Unknown")")
                 .appSecondaryBodyText()
                 .fontWeight(.medium)
 
-            HStack(spacing: AppTheme.Spacing.compact) {
+            HStack(spacing: AppDesign.Theme.Spacing.compact) {
                 Text(suggestion.amount, format: .currency(code: currencyCode))
                     .appCaptionText()
                     .foregroundStyle(.secondary)
@@ -487,6 +487,6 @@ private struct RuleImpactSheet: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.vertical, AppTheme.Spacing.hairline)
+        .padding(.vertical, AppDesign.Theme.Spacing.hairline)
     }
 }

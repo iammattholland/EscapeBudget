@@ -10,17 +10,17 @@ struct DemoModeBanner: View {
             Button {
                 showingTurnOffConfirm = true
             } label: {
-                HStack(spacing: AppTheme.Spacing.compact) {
+                HStack(spacing: AppDesign.Theme.Spacing.compact) {
                     Circle()
                         .fill(Color.orange)
                         .frame(width: 8, height: 8)
 
                     Text("Demo Mode On")
-                        .font(.caption.weight(.semibold))
+                        .appCaptionStrongText()
                         .foregroundStyle(.primary)
                 }
-                .padding(.horizontal, AppTheme.Spacing.small)
-                .padding(.vertical, AppTheme.Spacing.xSmall)
+                .padding(.horizontal, AppDesign.Theme.Spacing.small)
+                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
                 .background(
                     Capsule(style: .continuous)
                         .fill(.ultraThinMaterial)

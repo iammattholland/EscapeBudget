@@ -53,6 +53,8 @@ struct TransactionFormView: View {
 	@Query(sort: \Transaction.date, order: .reverse) private var existingTransactions: [Transaction]
 	@State private var payeeSuggestions: [String] = []
     @State private var transferBaseTransaction: Transaction?
+    @State private var showingDirectLinkAccountPicker = false
+    @State private var directLinkSelectedAccount: Account?
     @State private var processingReview: ProcessingReviewSheetItem?
     @State private var autoRuleEditSheet: AutoRuleEditSheetItem?
     @State private var autoRuleApplications: [AutoRuleApplication] = []
@@ -145,14 +147,14 @@ struct TransactionFormView: View {
                 Text("Add items from this purchase for quick reference and future insights.")
                     .appCaptionText()
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, AppTheme.Spacing.micro)
+                    .padding(.vertical, AppDesign.Theme.Spacing.micro)
             } else {
                 ForEach(purchasedItems) { item in
                     Button {
                         editingPurchasedItemID = item.id
                     } label: {
-                        HStack(alignment: .firstTextBaseline, spacing: AppTheme.Spacing.tight) {
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                        HStack(alignment: .firstTextBaseline, spacing: AppDesign.Theme.Spacing.tight) {
+                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                                 Text(item.name.isEmpty ? "Item" : item.name)
                                     .foregroundStyle(.primary)
                                 if !item.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -176,11 +178,11 @@ struct TransactionFormView: View {
         } header: {
             Text("Purchased Items")
         } footer: {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                 Text("Items: \(purchasedItems.count) • Total: \(formatCurrency(purchasedItemsTotal))")
                 if purchasedItemsShouldWarnMismatch {
                     Text("Total doesn’t match transaction amount (\(formatCurrency(decimalAbs(amount)))). Difference: \(formatCurrency(purchasedItemsAmountDiff)).")
-                        .foregroundStyle(AppColors.warning(for: appColorMode))
+                        .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                 }
                 if !canAddPurchasedItem {
                     Text("Limit reached (\(TransactionTextLimits.maxPurchasedItemsPerTransaction) items per transaction).")
@@ -196,18 +198,18 @@ struct TransactionFormView: View {
         Section {
             if let receipt = receiptImage {
                 // Receipt preview
-                HStack(spacing: AppTheme.Spacing.tight) {
+                HStack(spacing: AppDesign.Theme.Spacing.tight) {
                     if let imageData = receipt.imageData,
 	                       let uiImage = UIImage(data: imageData) {
 	                        Image(uiImage: uiImage)
 	                            .resizable()
 	                            .scaledToFill()
 	                            .frame(width: 60, height: 60)
-	                            .cornerRadius(AppTheme.Radius.xSmall)
+	                            .cornerRadius(AppDesign.Theme.Radius.xSmall)
 	                            .clipped()
 	                    }
 
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                         Text(receipt.merchant ?? "Receipt")
                             .appSectionTitleText()
                         if let date = receipt.receiptDate {
@@ -228,7 +230,7 @@ struct TransactionFormView: View {
                         receiptImage = nil
                     } label: {
                         Image(systemName: "trash")
-                            .foregroundStyle(AppColors.danger(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                     }
                 }
 
@@ -470,19 +472,19 @@ struct TransactionFormView: View {
 
         // Show Transfer badge if transaction is a transfer
         if transactionKind == .transfer {
-            return ("Transfer", AppColors.tint(for: appColorMode))
+            return ("Transfer", AppDesign.Colors.tint(for: appColorMode))
         }
 
         return amountType == .income
-            ? ("Income", AppColors.success(for: appColorMode))
-            : ("Expense", AppColors.danger(for: appColorMode))
+            ? ("Income", AppDesign.Colors.success(for: appColorMode))
+            : ("Expense", AppDesign.Colors.danger(for: appColorMode))
     }
     
     private var amountColor: Color {
         if amountInput.trimmingCharacters(in: .whitespaces).isEmpty {
             return .primary
         }
-        return amountType == .income ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode)
+        return amountType == .income ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode)
     }
     
     private var currencySymbol: String {
@@ -720,7 +722,7 @@ struct TransactionFormView: View {
         NavigationStack {
             Form {
                 Section("Details") {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                         Text("Payee")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -738,21 +740,21 @@ struct TransactionFormView: View {
                                                 .foregroundStyle(.primary)
                                             Spacer()
                                         }
-                                        .padding(.horizontal, AppTheme.Spacing.compact)
-                                        .padding(.vertical, AppTheme.Spacing.xSmall)
+                                        .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+                                        .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
 	                                    }
 	                                }
 	                            }
 	                            .background(Color(.systemGray6))
-	                            .cornerRadius(AppTheme.Radius.xSmall)
+	                            .cornerRadius(AppDesign.Theme.Radius.xSmall)
 	                        }
 	                    }
                     
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                         Text("Amount")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
-                        HStack(spacing: AppTheme.Spacing.compact) {
+                        HStack(spacing: AppDesign.Theme.Spacing.compact) {
                             Text(currencySymbol)
                                 .appTitleText()
                                 .foregroundStyle(amountColor)
@@ -767,15 +769,15 @@ struct TransactionFormView: View {
                                     .appCaptionText()
                                     .fontWeight(.semibold)
                                     .foregroundStyle(indicator.color)
-                                    .padding(.horizontal, AppTheme.Spacing.small)
-                                    .padding(.vertical, AppTheme.Spacing.micro)
+                                    .padding(.horizontal, AppDesign.Theme.Spacing.small)
+                                    .padding(.vertical, AppDesign.Theme.Spacing.micro)
                                     .background(indicator.color.opacity(0.15))
-                                    .cornerRadius(AppTheme.Radius.button)
+                                    .cornerRadius(AppDesign.Theme.Radius.button)
                             }
                         }
                     }
                     
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                         Text("Date")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -783,7 +785,7 @@ struct TransactionFormView: View {
                             .labelsHidden()
                     }
                     
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                         Text("Memo")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -797,15 +799,15 @@ struct TransactionFormView: View {
                         HStack {
                             Spacer()
                             Text("\(min(memo.count, memoLimit))/\(memoLimit)")
-                                .font(.caption2)
-                                .foregroundStyle(memo.count >= memoLimit ? AppColors.warning(for: appColorMode) : .secondary)
+                                .appCaption2Text()
+                                .foregroundStyle(memo.count >= memoLimit ? AppDesign.Colors.warning(for: appColorMode) : .secondary)
                                 .monospacedDigit()
                         }
                     }
                 }
                 
                 Section("Account & Category") {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                         Text("Account")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -825,7 +827,7 @@ struct TransactionFormView: View {
                                     .foregroundStyle(.secondary)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, AppTheme.Spacing.xSmall)
+                            .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -840,11 +842,11 @@ struct TransactionFormView: View {
                                 .foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
-                        .padding(.top, AppTheme.Spacing.micro)
+                        .padding(.top, AppDesign.Theme.Spacing.micro)
                     }
                     
                     if !isSplit {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                             Text("Category")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
@@ -918,7 +920,7 @@ struct TransactionFormView: View {
 	                                        .foregroundStyle(.secondary)
 	                                }
 	                                .frame(maxWidth: .infinity, alignment: .leading)
-	                                .padding(.vertical, AppTheme.Spacing.xSmall)
+	                                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
 	                                .contentShape(Rectangle())
 	                            }
 	                            .buttonStyle(.plain)
@@ -937,10 +939,10 @@ struct TransactionFormView: View {
                                     .foregroundStyle(.secondary)
                             }
 	                            .buttonStyle(.plain)
-	                            .padding(.top, AppTheme.Spacing.micro)
+	                            .padding(.top, AppDesign.Theme.Spacing.micro)
 
                                 if let provenance = autoRuleApplications.first(where: { AutoRuleFieldChange.fromStored($0.fieldChanged) == .category }) {
-                                    HStack(spacing: AppTheme.Spacing.xSmall) {
+                                    HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                                         Image(systemName: "wand.and.stars")
                                             .appCaptionText()
                                             .foregroundStyle(.secondary)
@@ -950,19 +952,19 @@ struct TransactionFormView: View {
                                         Spacer()
                                         if !provenance.wasOverridden, let rule = provenance.rule {
                                             Button("Edit") { autoRuleEditSheet = AutoRuleEditSheetItem(rule: rule) }
-                                                .font(.caption.weight(.semibold))
+                                                .appCaptionStrongText()
                                         }
                                     }
-                                    .padding(.top, AppTheme.Spacing.micro)
+                                    .padding(.top, AppDesign.Theme.Spacing.micro)
                                 }
 		                            
 		                        if !categorySuggestions.isEmpty {
-	                            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+	                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
 	                                Text("Quick Categories")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
                                     ScrollView(.horizontal, showsIndicators: false) {
-                                        HStack(spacing: AppTheme.Spacing.compact) {
+                                        HStack(spacing: AppDesign.Theme.Spacing.compact) {
                                             ForEach(categorySuggestions) { suggestion in
                                                 Button {
                                                     selectedCategory = suggestion
@@ -970,15 +972,15 @@ struct TransactionFormView: View {
                                                     Text(suggestion.name)
                                                         .appCaptionText()
                                                         .fontWeight(.semibold)
-                                                        .padding(.horizontal, AppTheme.Spacing.tight)
-                                                        .padding(.vertical, AppTheme.Spacing.xSmall)
+                                                        .padding(.horizontal, AppDesign.Theme.Spacing.tight)
+                                                        .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
                                                         .background(
                                                             Capsule()
-                                                                .fill((selectedCategory?.persistentModelID == suggestion.persistentModelID) ? AppColors.tint(for: appColorMode).opacity(0.2) : Color(.systemGray6))
+                                                                .fill((selectedCategory?.persistentModelID == suggestion.persistentModelID) ? AppDesign.Colors.tint(for: appColorMode).opacity(0.2) : Color(.systemGray6))
                                                         )
                                                         .overlay(
                                                             Capsule()
-                                                                .stroke(selectedCategory?.persistentModelID == suggestion.persistentModelID ? AppColors.tint(for: appColorMode) : Color(.systemGray4), lineWidth: 1)
+                                                                .stroke(selectedCategory?.persistentModelID == suggestion.persistentModelID ? AppDesign.Colors.tint(for: appColorMode) : Color(.systemGray4), lineWidth: 1)
                                                         )
                                                 }
                                                 .buttonStyle(.plain)
@@ -986,7 +988,7 @@ struct TransactionFormView: View {
                                         }
                                     }
 	                            }
-	                            .padding(.top, AppTheme.Spacing.micro)
+	                            .padding(.top, AppDesign.Theme.Spacing.micro)
 	                        }
 		                    }
 		                }
@@ -1001,7 +1003,7 @@ struct TransactionFormView: View {
                     } else {
                         // For new transactions being created as transfers
                         Section("Transfer Information") {
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                                 Text("Save this transaction first to match it with a transfer in another account.")
                                     .appCaptionText()
                                     .foregroundStyle(.secondary)
@@ -1016,7 +1018,7 @@ struct TransactionFormView: View {
                             .foregroundStyle(.secondary)
                     } else {
                         ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: AppTheme.Spacing.compact) {
+                            HStack(spacing: AppDesign.Theme.Spacing.compact) {
                                 ForEach(selectedTags) { tag in
                                     TransactionTagChip(tag: tag)
                                         .onTapGesture {
@@ -1024,7 +1026,7 @@ struct TransactionFormView: View {
                                         }
                                 }
                             }
-                            .padding(.vertical, AppTheme.Spacing.micro)
+                            .padding(.vertical, AppDesign.Theme.Spacing.micro)
                         }
                     }
 
@@ -1038,8 +1040,8 @@ struct TransactionFormView: View {
                 if let transaction = transactionToEdit, !autoRuleApplications.isEmpty {
                     Section("Auto Rules") {
                         ForEach(autoRuleApplications.prefix(6)) { application in
-                            HStack(alignment: .top, spacing: AppTheme.Spacing.compact) {
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                            HStack(alignment: .top, spacing: AppDesign.Theme.Spacing.compact) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                                     Text(application.rule?.name ?? "Deleted Rule")
                                         .appSecondaryBodyText()
                                         .fontWeight(.medium)
@@ -1060,7 +1062,7 @@ struct TransactionFormView: View {
                                     Text("Overridden")
                                         .appCaptionText()
                                         .fontWeight(.semibold)
-                                        .foregroundStyle(AppColors.warning(for: appColorMode))
+                                        .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                                 } else if let rule = application.rule {
                                     Menu {
                                         Button {
@@ -1083,7 +1085,7 @@ struct TransactionFormView: View {
                                     } label: {
                                         Text("Actions")
                                     }
-                                    .buttonStyle(.bordered)
+                                    .buttonStyle(.glass)
                                     .controlSize(.small)
                                 }
                             }
@@ -1110,7 +1112,7 @@ struct TransactionFormView: View {
                 
                 Section("Split Transaction") {
                     Toggle(isOn: $isSplit) {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                             Text("Enable Split")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
@@ -1135,14 +1137,14 @@ struct TransactionFormView: View {
                     if isSplit {
                         ForEach($subtransactions) { $sub in
                             let subID = sub.id
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                                     Text("Split Amount")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
-                                    HStack(spacing: AppTheme.Spacing.micro) {
+                                    HStack(spacing: AppDesign.Theme.Spacing.micro) {
                                         Text(amount < 0 ? "-\(currencySymbol)" : currencySymbol)
-                                            .font(AppTheme.Typography.body)
+                                            .font(AppDesign.Theme.Typography.body)
                                             .foregroundStyle(.secondary)
                                         TextField("", text: splitAmountTextBinding(for: $sub), prompt: Text("0.00"))
                                             .keyboardType(.decimalPad)
@@ -1151,7 +1153,7 @@ struct TransactionFormView: View {
                                     }
                                 }
                                 
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                                     Text("Split Category")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
@@ -1168,7 +1170,7 @@ struct TransactionFormView: View {
                                     .labelsHidden()
                                 }
                                 
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                                     Text("Split Memo")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
@@ -1182,13 +1184,13 @@ struct TransactionFormView: View {
                                     HStack {
                                         Spacer()
                                         Text("\(min(sub.memo.count, memoLimit))/\(memoLimit)")
-                                            .font(.caption2)
-                                            .foregroundStyle(sub.memo.count >= memoLimit ? AppColors.warning(for: appColorMode) : .secondary)
+                                            .appCaption2Text()
+                                            .foregroundStyle(sub.memo.count >= memoLimit ? AppDesign.Colors.warning(for: appColorMode) : .secondary)
                                             .monospacedDigit()
                                     }
                                 }
                             }
-                            .padding(.vertical, AppTheme.Spacing.xSmall)
+                            .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
                         }
                         .onDelete { indexSet in
                             subtransactions.remove(atOffsets: indexSet)
@@ -1201,13 +1203,13 @@ struct TransactionFormView: View {
                             Label("Add Split", systemImage: "plus.circle")
                         }
                         
-                        VStack(spacing: AppTheme.Spacing.xSmall) {
+                        VStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                             HStack {
                                 Text("Split Total")
                                 Spacer()
                                 Text(splitTotal, format: .currency(code: currencyCode))
                                     .fontWeight(.semibold)
-                                    .foregroundStyle(splitTotal == amount ? .primary : AppColors.warning(for: appColorMode))
+                                    .foregroundStyle(splitTotal == amount ? .primary : AppDesign.Colors.warning(for: appColorMode))
                             }
                             
                             HStack {
@@ -1215,14 +1217,14 @@ struct TransactionFormView: View {
                                 Spacer()
                                 Text(splitRemaining, format: .currency(code: currencyCode))
                                     .fontWeight(.semibold)
-                                    .foregroundStyle(splitRemaining == 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
+                                    .foregroundStyle(splitRemaining == 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
                             }
                             
                             Text("Split amounts must equal the transaction total before saving.")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
-                        .padding(.top, AppTheme.Spacing.micro)
+                        .padding(.top, AppDesign.Theme.Spacing.micro)
                     }
                 }
                 
@@ -1248,17 +1250,17 @@ struct TransactionFormView: View {
                             Text("No history yet")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
-                                .padding(.vertical, AppTheme.Spacing.micro)
+                                .padding(.vertical, AppDesign.Theme.Spacing.micro)
                         } else {
 	                            ForEach(sortedHistoryEntries) { entry in
-	                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+	                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                                    Text(entry.detail)
 	                                        .appSecondaryBodyText()
 	                                    Text(entry.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
 	                                        .appCaptionText()
 	                                        .foregroundStyle(.secondary)
 	                                }
-                                .padding(.vertical, AppTheme.Spacing.hairline)
+                                .padding(.vertical, AppDesign.Theme.Spacing.hairline)
                             }
                         }
                     }
@@ -1310,23 +1312,23 @@ struct TransactionFormView: View {
                     if numericFieldFocused {
                         if focusedField == .amount {
                             let isIncomeSelected = isAmountIncome
-                            HStack(spacing: AppTheme.Spacing.compact) {
+                            HStack(spacing: AppDesign.Theme.Spacing.compact) {
                                 Button {
                                     applyAmountSign(isIncome: false)
                                 } label: {
                                     Text("Expense")
                                         .appCaptionText()
                                         .fontWeight(.semibold)
-                                        .foregroundStyle(AppColors.danger(for: appColorMode))
-                                        .padding(.horizontal, AppTheme.Spacing.tight)
-                                        .padding(.vertical, AppTheme.Spacing.xSmall)
+                                        .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
+                                        .padding(.horizontal, AppDesign.Theme.Spacing.tight)
+                                        .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
                                         .background(
-                                            RoundedRectangle(cornerRadius: AppTheme.Radius.button)
-                                                .fill((amount < 0 ? AppColors.danger(for: appColorMode).opacity(0.2) : AppColors.danger(for: appColorMode).opacity(0.08)))
+                                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button)
+                                                .fill((amount < 0 ? AppDesign.Colors.danger(for: appColorMode).opacity(0.2) : AppDesign.Colors.danger(for: appColorMode).opacity(0.08)))
                                         )
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: AppTheme.Radius.button)
-                                                .stroke(AppColors.danger(for: appColorMode).opacity(amount < 0 ? 1 : 0.4), lineWidth: amount < 0 ? 2 : 1)
+                                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button)
+                                                .stroke(AppDesign.Colors.danger(for: appColorMode).opacity(amount < 0 ? 1 : 0.4), lineWidth: amount < 0 ? 2 : 1)
                                         )
                                 }
                                 
@@ -1336,16 +1338,16 @@ struct TransactionFormView: View {
                                     Text("Income")
                                         .appCaptionText()
                                         .fontWeight(.semibold)
-                                        .foregroundStyle(AppColors.success(for: appColorMode))
-                                        .padding(.horizontal, AppTheme.Spacing.tight)
-                                        .padding(.vertical, AppTheme.Spacing.xSmall)
+                                        .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
+                                        .padding(.horizontal, AppDesign.Theme.Spacing.tight)
+                                        .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
                                         .background(
-                                            RoundedRectangle(cornerRadius: AppTheme.Radius.button)
-                                                .fill((isIncomeSelected ? AppColors.success(for: appColorMode).opacity(0.2) : AppColors.success(for: appColorMode).opacity(0.08)))
+                                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button)
+                                                .fill((isIncomeSelected ? AppDesign.Colors.success(for: appColorMode).opacity(0.2) : AppDesign.Colors.success(for: appColorMode).opacity(0.08)))
                                         )
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: AppTheme.Radius.button)
-                                                .stroke(AppColors.success(for: appColorMode).opacity(isIncomeSelected ? 1 : 0.4), lineWidth: isIncomeSelected ? 2 : 1)
+                                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button)
+                                                .stroke(AppDesign.Colors.success(for: appColorMode).opacity(isIncomeSelected ? 1 : 0.4), lineWidth: isIncomeSelected ? 2 : 1)
                                         )
                                 }
                             }
@@ -1407,13 +1409,13 @@ struct TransactionFormView: View {
         .sheet(isPresented: $showingNewAccountSheet) {
             NavigationStack {
                 Form {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                         Text("Account Name")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
 	                        TextField("Chequing", text: $newAccountName)
-	                            .padding(AppTheme.Spacing.tight)
-	                            .background(RoundedRectangle(cornerRadius: AppTheme.Radius.compact).fill(Color(.secondarySystemFill)))
+	                            .padding(AppDesign.Theme.Spacing.tight)
+	                            .background(RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact).fill(Color(.secondarySystemFill)))
                         
                         Text("Account Type")
                             .appCaptionText()
@@ -1429,19 +1431,19 @@ struct TransactionFormView: View {
 	                        .appCaptionText()
 	                        .foregroundStyle(.secondary)
 	                    ZStack(alignment: .leading) {
-	                        RoundedRectangle(cornerRadius: AppTheme.Radius.compact)
+	                        RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact)
 	                            .fill(Color(.secondarySystemFill))
-	                        HStack(spacing: AppTheme.Spacing.xSmall) {
+	                        HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                                 Text(currencySymbol)
                                     .foregroundStyle(.secondary)
                                 TextField("0.00", text: $newAccountBalanceInput)
                                     .keyboardType(.decimalPad)
                             }
-                            .padding(.horizontal, AppTheme.Spacing.tight)
-	                            .padding(.vertical, AppTheme.Spacing.small)
+                            .padding(.horizontal, AppDesign.Theme.Spacing.tight)
+	                            .padding(.vertical, AppDesign.Theme.Spacing.small)
 	                    }
                     }
-                    .padding(.vertical, AppTheme.Spacing.compact)
+                    .padding(.vertical, AppDesign.Theme.Spacing.compact)
                 }
                 .navigationTitle("New Account")
                 .toolbar {
@@ -1465,7 +1467,7 @@ struct TransactionFormView: View {
             NavigationStack {
                 Form {
                     if categoryCreationStep == .groupSelection {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                             Text("Choose a Group")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
@@ -1489,11 +1491,11 @@ struct TransactionFormView: View {
                                     .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)
-                            .padding(.top, AppTheme.Spacing.micro)
+                            .padding(.top, AppDesign.Theme.Spacing.micro)
                         }
-                        .padding(.vertical, AppTheme.Spacing.compact)
+                        .padding(.vertical, AppDesign.Theme.Spacing.compact)
                     } else {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                             if let group = newCategoryGroup {
                                 Text("Group: \(group.name)")
                                     .appCaptionText()
@@ -1504,10 +1506,10 @@ struct TransactionFormView: View {
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
 	                            TextField("Groceries", text: $newCategoryName)
-	                                .padding(AppTheme.Spacing.tight)
-	                                .background(RoundedRectangle(cornerRadius: AppTheme.Radius.compact).fill(Color(.secondarySystemFill)))
+	                                .padding(AppDesign.Theme.Spacing.tight)
+	                                .background(RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact).fill(Color(.secondarySystemFill)))
                         }
-                        .padding(.vertical, AppTheme.Spacing.compact)
+                        .padding(.vertical, AppDesign.Theme.Spacing.compact)
                     }
                 }
                 .navigationTitle(categoryCreationStep == .groupSelection ? "Select Group" : "New Category")
@@ -1545,13 +1547,13 @@ struct TransactionFormView: View {
         .sheet(isPresented: $showingNewGroupSheet) {
             NavigationStack {
                 Form {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                         Text("Group Name")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
 	                        TextField("Living Expenses", text: $newGroupName)
-	                            .padding(AppTheme.Spacing.tight)
-	                            .background(RoundedRectangle(cornerRadius: AppTheme.Radius.compact).fill(Color(.secondarySystemFill)))
+	                            .padding(AppDesign.Theme.Spacing.tight)
+	                            .background(RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact).fill(Color(.secondarySystemFill)))
                         
                         Text("Group Type")
                             .appCaptionText()
@@ -1563,7 +1565,7 @@ struct TransactionFormView: View {
                         }
                         .pickerStyle(.segmented)
                     }
-                    .padding(.vertical, AppTheme.Spacing.compact)
+                    .padding(.vertical, AppDesign.Theme.Spacing.compact)
                 }
                 .navigationTitle("New Group")
                 .toolbar {
@@ -1625,6 +1627,21 @@ struct TransactionFormView: View {
                         selectedCategory = nil
                     }
                 )
+            }
+        }
+        .sheet(isPresented: $showingDirectLinkAccountPicker) {
+            if let transaction = transactionToEdit {
+                NavigationStack {
+                    DirectTransferLinkView(
+                        base: transaction,
+                        currencyCode: currencyCode,
+                        accounts: accounts,
+                        onLinked: {
+                            selectedCategory = nil
+                            showingDirectLinkAccountPicker = false
+                        }
+                    )
+                }
             }
         }
         .sheet(item: $processingReview, onDismiss: {
@@ -1743,13 +1760,13 @@ struct TransactionFormView: View {
             .fill(Color(.secondarySystemFill))
             .frame(height: 36)
             .overlay(
-                HStack(spacing: AppTheme.Spacing.xSmall) {
+                HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                     Text("Select")
                     Image(systemName: "chevron.down")
                         .appCaptionText()
                 }
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, AppTheme.Spacing.tight)
+                .padding(.horizontal, AppDesign.Theme.Spacing.tight)
                 .frame(maxWidth: .infinity, alignment: .leading)
             )
         .allowsHitTesting(false)
@@ -1804,9 +1821,9 @@ struct TransactionFormView: View {
     private func transferInformationContent(for transaction: Transaction) -> some View {
         // Check if transaction is marked as external transfer
         if let externalLabel = transaction.externalTransferLabel {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                 HStack {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                         Text("External Transfer")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -1817,11 +1834,11 @@ struct TransactionFormView: View {
                     Spacer()
                     Image(systemName: "arrow.left.arrow.right.circle.fill")
                         .appTitleText()
-                        .foregroundStyle(AppColors.tint(for: appColorMode))
+                        .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                 }
                 .padding()
-                .background(AppColors.tint(for: appColorMode).opacity(0.1))
-                .cornerRadius(AppTheme.Radius.button)
+                .background(AppDesign.Colors.tint(for: appColorMode).opacity(0.1))
+                .cornerRadius(AppDesign.Theme.Radius.button)
 
                 Button(role: .destructive) {
                     clearExternalTransferLabel(transaction)
@@ -1834,10 +1851,10 @@ struct TransactionFormView: View {
             }
         } else if let transferID = transaction.transferID {
             // Show matched transfer info
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                 if let matched = fetchMatchedTransfer(transferID: transferID, excluding: transaction.persistentModelID) {
                     HStack {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                             Text("Matched Transfer")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
@@ -1855,8 +1872,8 @@ struct TransactionFormView: View {
                             .monospacedDigit()
                     }
                     .padding()
-                    .background(AppColors.tint(for: appColorMode).opacity(0.1))
-                    .cornerRadius(AppTheme.Radius.button)
+                    .background(AppDesign.Colors.tint(for: appColorMode).opacity(0.1))
+                    .cornerRadius(AppDesign.Theme.Radius.button)
 
                     Button(role: .destructive) {
                         unmatchTransfer(transaction)
@@ -1873,11 +1890,44 @@ struct TransactionFormView: View {
                 }
             }
         } else {
-            // Show Find Match button for unmatched transfers
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
-                Text("This transaction is marked as a transfer but not yet matched with a corresponding transaction in another account.")
-                    .appCaptionText()
-                    .foregroundStyle(.secondary)
+            // Show options for unmatched transfers
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
+                // Show intended account if set
+                if let intendedAccount = transaction.intendedTransferAccount {
+                    HStack {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                            Text("Intended Account")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                            Text("\(transaction.account?.name ?? "Account") → \(intendedAccount.name)")
+                                .appSecondaryBodyText()
+                                .fontWeight(.medium)
+                            Text("Transaction not yet matched")
+                                .appCaptionText()
+                                .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
+                        }
+                        Spacer()
+                        Image(systemName: "clock.arrow.circlepath")
+                            .appTitleText()
+                            .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
+                    }
+                    .padding()
+                    .background(AppDesign.Colors.warning(for: appColorMode).opacity(0.1))
+                    .cornerRadius(AppDesign.Theme.Radius.button)
+
+                    Button(role: .destructive) {
+                        clearIntendedAccount(transaction)
+                    } label: {
+                        Label("Remove Account Link", systemImage: "xmark.circle")
+                            .appSecondaryBodyText()
+                            .frame(maxWidth: .infinity)
+                    }
+                    .appSecondaryCTA()
+                } else {
+                    Text("This transaction is marked as a transfer but not yet matched with a corresponding transaction in another account.")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                }
 
                 Button {
                     transferBaseTransaction = transaction
@@ -1888,8 +1938,29 @@ struct TransactionFormView: View {
                 }
                 .appPrimaryCTA()
                 .labelStyle(.titleAndIcon)
+
+                Button {
+                    showingDirectLinkAccountPicker = true
+                } label: {
+                    Label(transaction.intendedTransferAccount == nil ? "Link to Account" : "Change Account", systemImage: "link")
+                        .appSecondaryBodyText()
+                        .frame(maxWidth: .infinity)
+                }
+                .appSecondaryCTA()
+                .labelStyle(.titleAndIcon)
             }
         }
+    }
+
+    private func clearIntendedAccount(_ transaction: Transaction) {
+        guard let intendedAccount = transaction.intendedTransferAccount else { return }
+        transaction.intendedTransferAccount = nil
+        TransactionHistoryService.append(
+            detail: "Removed account link to \"\(intendedAccount.name)\".",
+            to: transaction,
+            in: modelContext
+        )
+        _ = modelContext.safeSave(context: "TransactionFormView.clearIntendedAccount")
     }
 
     private func fetchMatchedTransfer(transferID: UUID, excluding: PersistentIdentifier) -> Transaction? {
@@ -2438,7 +2509,7 @@ private struct PurchasedItemEditorView: View {
     var body: some View {
         Form {
             Section("Item") {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                     Text("Name")
                         .appCaptionText()
                         .foregroundStyle(.secondary)
@@ -2459,8 +2530,8 @@ private struct PurchasedItemEditorView: View {
                                             .foregroundStyle(.primary)
                                         Spacer()
                                     }
-                                    .padding(.horizontal, AppTheme.Spacing.compact)
-                                    .padding(.vertical, AppTheme.Spacing.xSmall)
+                                    .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+                                    .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
                                 }
                                 .buttonStyle(.plain)
                                 if index != nameSuggestions.count - 1 {
@@ -2469,26 +2540,26 @@ private struct PurchasedItemEditorView: View {
                             }
                         }
                         .background(
-                            RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button, style: .continuous)
                                 .fill(Color(.secondarySystemFill))
                         )
-                        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous))
+                        .clipShape(RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button, style: .continuous))
                     }
 
                     HStack {
                         Spacer()
                         Text("\(min(item.name.count, nameLimit))/\(nameLimit)")
-                            .font(.caption2)
-                            .foregroundStyle(item.name.count >= nameLimit ? AppColors.warning(for: appColorMode) : .secondary)
+                            .appCaption2Text()
+                            .foregroundStyle(item.name.count >= nameLimit ? AppDesign.Colors.warning(for: appColorMode) : .secondary)
                             .monospacedDigit()
                     }
                 }
 
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                     Text("Price")
                         .appCaptionText()
                         .foregroundStyle(.secondary)
-                    HStack(spacing: AppTheme.Spacing.xSmall) {
+                    HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                         Text(currencySymbol)
                             .foregroundStyle(.secondary)
                         TextField("0.00", text: $item.priceInput)
@@ -2502,7 +2573,7 @@ private struct PurchasedItemEditorView: View {
             }
 
             Section("Note") {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                     TextField("Optional note", text: $item.note, axis: .vertical)
                         .lineLimit(3...6)
                         .onChange(of: item.note) { _, newValue in
@@ -2513,8 +2584,8 @@ private struct PurchasedItemEditorView: View {
                     HStack {
                         Spacer()
                         Text("\(min(item.note.count, noteLimit))/\(noteLimit)")
-                            .font(.caption2)
-                            .foregroundStyle(item.note.count >= noteLimit ? AppColors.warning(for: appColorMode) : .secondary)
+                            .appCaption2Text()
+                            .foregroundStyle(item.note.count >= noteLimit ? AppDesign.Colors.warning(for: appColorMode) : .secondary)
                             .monospacedDigit()
                     }
                 }
@@ -2543,5 +2614,275 @@ private extension TransactionFormView {
             .replacingOccurrences(of: ",", with: ".")
             .filter { "0123456789.".contains($0) }
         return Decimal(string: sanitized) ?? 0
+    }
+}
+
+// MARK: - Direct Transfer Link View
+
+private struct DirectTransferLinkView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.appColorMode) private var appColorMode
+
+    let base: Transaction
+    let currencyCode: String
+    let accounts: [Account]
+    let onLinked: () -> Void
+
+    @State private var selectedAccount: Account?
+    @State private var errorMessage: String?
+    @State private var showingConfirm = false
+    @State private var showingAccountOnlyConfirm = false
+    @State private var pendingTransaction: Transaction?
+
+    private var eligibleAccounts: [Account] {
+        accounts.filter { $0.persistentModelID != base.account?.persistentModelID }
+    }
+
+    var body: some View {
+        Group {
+            if let account = selectedAccount {
+                transactionListView(for: account)
+            } else {
+                accountListView
+            }
+        }
+        .navigationTitle(selectedAccount == nil ? "Select Account" : "Select Transaction")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") { dismiss() }
+            }
+            if selectedAccount != nil {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        selectedAccount = nil
+                    } label: {
+                        Label("Back", systemImage: "chevron.left")
+                    }
+                }
+            }
+        }
+        .alert("Link Transfer", isPresented: $showingConfirm) {
+            Button("Cancel", role: .cancel) {
+                pendingTransaction = nil
+            }
+            Button("Link") {
+                if let transaction = pendingTransaction {
+                    linkTransfer(with: transaction)
+                }
+            }
+        } message: {
+            if let transaction = pendingTransaction {
+                Text("Link this transaction as a transfer pair?\n\n\(transaction.payee)\n\(transaction.amount, format: .currency(code: currencyCode))")
+            }
+        }
+        .alert("Link Account Only", isPresented: $showingAccountOnlyConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Link Account") {
+                if let account = selectedAccount {
+                    linkAccountOnly(account)
+                }
+            }
+        } message: {
+            if let account = selectedAccount {
+                Text("Record that this transfer is to/from \"\(account.name)\" without linking to a specific transaction?\n\nYou can match it to a transaction later.")
+            }
+        }
+    }
+
+    private var accountListView: some View {
+        List {
+            if let errorMessage {
+                Section {
+                    Text(errorMessage)
+                        .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
+                }
+            }
+
+            Section {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
+                    Text("Transfer from")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                    Text(base.account?.name ?? "Unknown Account")
+                        .appSectionTitleText()
+                    Text(base.amount, format: .currency(code: currencyCode))
+                        .appSecondaryBodyText()
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, AppDesign.Theme.Spacing.micro)
+            } footer: {
+                Text("Select the account containing the matching transaction.")
+            }
+
+            Section("Accounts") {
+                if eligibleAccounts.isEmpty {
+                    Text("No other accounts available")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(eligibleAccounts) { account in
+                        Button {
+                            selectedAccount = account
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
+                                    Text(account.name)
+                                        .appSecondaryBodyText()
+                                    Text(account.type.rawValue)
+                                        .appCaptionText()
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .foregroundStyle(.primary)
+                    }
+                }
+            }
+        }
+    }
+
+    private func transactionListView(for account: Account) -> some View {
+        TransactionPickerListView(
+            account: account,
+            baseTransaction: base,
+            currencyCode: currencyCode,
+            onSelect: { transaction in
+                pendingTransaction = transaction
+                showingConfirm = true
+            },
+            onLinkAccountOnly: {
+                showingAccountOnlyConfirm = true
+            }
+        )
+    }
+
+    private func linkTransfer(with match: Transaction) {
+        errorMessage = nil
+        do {
+            try TransferLinker.linkAsTransfer(base: base, match: match, modelContext: modelContext)
+            onLinked()
+        } catch {
+            errorMessage = "Couldn't link transfer. Please try a different transaction."
+            pendingTransaction = nil
+        }
+    }
+
+    private func linkAccountOnly(_ account: Account) {
+        base.intendedTransferAccount = account
+        TransactionHistoryService.append(
+            detail: "Linked to account \"\(account.name)\" (transaction not yet matched).",
+            to: base,
+            in: modelContext
+        )
+        _ = modelContext.safeSave(context: "DirectTransferLinkView.linkAccountOnly")
+        onLinked()
+    }
+}
+
+private struct TransactionPickerListView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.appColorMode) private var appColorMode
+
+    let account: Account
+    let baseTransaction: Transaction
+    let currencyCode: String
+    let onSelect: (Transaction) -> Void
+    let onLinkAccountOnly: () -> Void
+
+    @State private var searchText = ""
+
+    private var transactions: [Transaction] {
+        let accountID = account.persistentModelID
+        let baseID = baseTransaction.persistentModelID
+        var descriptor = FetchDescriptor<Transaction>(
+            predicate: #Predicate { transaction in
+                transaction.account?.persistentModelID == accountID &&
+                transaction.persistentModelID != baseID &&
+                transaction.transferID == nil
+            },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        descriptor.fetchLimit = 500
+        return (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    private var filteredTransactions: [Transaction] {
+        let needle = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !needle.isEmpty else { return transactions }
+        return transactions.filter {
+            $0.payee.localizedCaseInsensitiveContains(needle) ||
+            ($0.memo?.localizedCaseInsensitiveContains(needle) ?? false)
+        }
+    }
+
+    var body: some View {
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
+                    Text("Linking to")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                    Text(account.name)
+                        .appSectionTitleText()
+                }
+                .padding(.vertical, AppDesign.Theme.Spacing.micro)
+            } footer: {
+                Text("Select a transaction to link as the transfer pair, or link the account only if the transaction isn't available yet.")
+            }
+
+            Section {
+                Button {
+                    onLinkAccountOnly()
+                } label: {
+                    Label("Link Account Only", systemImage: "building.columns")
+                        .appSecondaryBodyText()
+                }
+            } footer: {
+                Text("Record that this transfer is to/from this account without matching a specific transaction. Useful when the paired transaction hasn't been imported yet.")
+            }
+
+            Section("Transactions") {
+                if filteredTransactions.isEmpty {
+                    ContentUnavailableView(
+                        "No Transactions",
+                        systemImage: "doc.text",
+                        description: Text("No unlinked transactions found in this account.")
+                    )
+                } else {
+                    ForEach(filteredTransactions) { transaction in
+                        Button {
+                            onSelect(transaction)
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
+                                    Text(transaction.payee)
+                                        .appSecondaryBodyText()
+                                        .lineLimit(1)
+                                    Text(transaction.date, format: .dateTime.month().day().year())
+                                        .appCaptionText()
+                                        .foregroundStyle(.secondary)
+                                    if let memo = transaction.memo, !memo.isEmpty {
+                                        Text(memo)
+                                            .appCaptionText()
+                                            .foregroundStyle(.tertiary)
+                                            .lineLimit(1)
+                                    }
+                                }
+                                Spacer()
+                                Text(transaction.amount, format: .currency(code: currencyCode))
+                                    .appSecondaryBodyText()
+                                    .monospacedDigit()
+                            }
+                        }
+                        .foregroundStyle(.primary)
+                    }
+                }
+            }
+        }
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search transactions")
     }
 }

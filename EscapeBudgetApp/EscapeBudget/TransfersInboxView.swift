@@ -19,6 +19,7 @@ struct TransfersInboxView: View {
     @State private var amountMinText = ""
     @State private var amountMaxText = ""
     @State private var showingClearAllConfirm = false
+    @State private var showingInboxActions = false
     @State private var isSelecting = false
     @State private var selectedSuggestionIDs: Set<String> = []
     @State private var selectedUnmatchedIDs: Set<PersistentIdentifier> = []
@@ -82,7 +83,7 @@ struct TransfersInboxView: View {
                 if let errorMessage {
                     Section {
                         Text(errorMessage)
-                            .foregroundStyle(AppColors.danger(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                     }
                 }
 
@@ -116,10 +117,10 @@ struct TransfersInboxView: View {
                                     pendingSuggestion = suggestion
                                 }
                             } label: {
-                                HStack(spacing: AppTheme.Spacing.tight) {
+                                HStack(spacing: AppDesign.Theme.Spacing.tight) {
                                     if isSelecting {
                                         Image(systemName: selectedSuggestionIDs.contains(suggestion.id) ? "checkmark.circle.fill" : "circle")
-                                            .foregroundStyle(selectedSuggestionIDs.contains(suggestion.id) ? AppColors.tint(for: appColorMode) : .secondary)
+                                            .foregroundStyle(selectedSuggestionIDs.contains(suggestion.id) ? AppDesign.Colors.tint(for: appColorMode) : .secondary)
                                     }
 
                                     SuggestedTransferRow(
@@ -158,9 +159,9 @@ struct TransfersInboxView: View {
                                     Button {
                                         toggleSelection(for: transaction)
                                     } label: {
-                                        HStack(spacing: AppTheme.Spacing.tight) {
+                                        HStack(spacing: AppDesign.Theme.Spacing.tight) {
                                             Image(systemName: selectedUnmatchedIDs.contains(transaction.persistentModelID) ? "checkmark.circle.fill" : "circle")
-                                                .foregroundStyle(selectedUnmatchedIDs.contains(transaction.persistentModelID) ? AppColors.tint(for: appColorMode) : .secondary)
+                                                .foregroundStyle(selectedUnmatchedIDs.contains(transaction.persistentModelID) ? AppDesign.Colors.tint(for: appColorMode) : .secondary)
                                             UnmatchedTransferRow(transaction: transaction, currencyCode: currencyCode)
                                         }
                                     }
@@ -194,7 +195,7 @@ struct TransfersInboxView: View {
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
                 if isSelecting {
-                    HStack(spacing: AppTheme.Spacing.tight) {
+                    HStack(spacing: AppDesign.Theme.Spacing.tight) {
                         Button(role: .destructive) {
                             dismissSelected()
                         } label: {
@@ -213,9 +214,9 @@ struct TransfersInboxView: View {
                         .appPrimaryCTA()
                         .disabled(selectedSuggestionIDs.isEmpty)
                     }
-                    .padding(.horizontal, AppTheme.Spacing.medium)
-                    .padding(.top, AppTheme.Spacing.small)
-                    .padding(.bottom, AppTheme.Spacing.tight)
+                    .padding(.horizontal, AppDesign.Theme.Spacing.medium)
+                    .padding(.top, AppDesign.Theme.Spacing.small)
+                    .padding(.bottom, AppDesign.Theme.Spacing.tight)
                     .background(.ultraThinMaterial)
                 }
             }
@@ -224,76 +225,10 @@ struct TransfersInboxView: View {
                     Button("Done") { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        if isSelecting {
-                            Button {
-                                selectAllVisible()
-                            } label: {
-                                Label("Select All", systemImage: "checkmark.circle")
-                            }
-
-                            Button {
-                                clearSelection()
-                            } label: {
-                                Label("Clear Selection", systemImage: "xmark.circle")
-                            }
-                            .disabled(selectedCount == 0)
-
-                            Divider()
-
-                            Button {
-                                linkSelectedSuggestions()
-                            } label: {
-                                Label("Link Selected (\(selectedSuggestionIDs.count))", systemImage: "link")
-                            }
-                            .disabled(selectedSuggestionIDs.isEmpty)
-
-                            Button(role: .destructive) {
-                                dismissSelected()
-                            } label: {
-                                Label("Dismiss Selected (\(selectedCount))", systemImage: "xmark")
-                            }
-                            .disabled(selectedCount == 0)
-
-                            Divider()
-
-                            Button {
-                                exitSelectionMode()
-                            } label: {
-                                Label("Done Selecting", systemImage: "checkmark")
-                            }
-                        } else {
-                            Button {
-                                showingAmountFilter = true
-                            } label: {
-                                Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
-                            }
-
-                            Button {
-                                Task { await reloadSuggestions() }
-                            } label: {
-                                Label("Refresh", systemImage: "arrow.clockwise")
-                            }
-                            .disabled(isLoadingSuggestions)
-
-                            Divider()
-
-                            Button {
-                                enterSelectionMode()
-                            } label: {
-                                Label("Select Multiple", systemImage: "checklist")
-                            }
-
-                            Divider()
-
-                            Button(role: .destructive) {
-                                showingClearAllConfirm = true
-                            } label: {
-                                Label("Clear All", systemImage: "trash")
-                            }
-                        }
+                    Button {
+                        showingInboxActions = true
                     } label: {
-                        Image(systemName: "ellipsis.circle")
+                        Image(systemName: "ellipsis")
                             .imageScale(.large)
                     }
                     .accessibilityLabel("More")
@@ -306,6 +241,7 @@ struct TransfersInboxView: View {
                         currencyCode: currencyCode,
                         onLinked: { transferID in
                             editTransfer = TransferEditorDestination(id: transferID)
+                            removeSuggestionPair(baseID: suggestion.baseID, matchID: suggestion.matchID)
                             Task { await reloadSuggestions() }
                         }
                     )
@@ -316,6 +252,32 @@ struct TransfersInboxView: View {
             }
             .sheet(isPresented: $showingAmountFilter) {
                 amountFilterSheet
+            }
+            .sheet(isPresented: $showingInboxActions) {
+                NavigationStack {
+                    TransfersInboxActionsSheet(
+                        isSelecting: isSelecting,
+                        isLoading: isLoadingSuggestions,
+                        selectedCount: selectedCount,
+                        selectedSuggestionsCount: selectedSuggestionIDs.count,
+                        onSelectAll: { selectAllVisible() },
+                        onClearSelection: { clearSelection() },
+                        onLinkSelected: { linkSelectedSuggestions() },
+                        onDismissSelected: { dismissSelected() },
+                        onDoneSelecting: { exitSelectionMode() },
+                        onFilter: { showingAmountFilter = true },
+                        onRefresh: { Task { await reloadSuggestions() } },
+                        onSelectMultiple: { enterSelectionMode() },
+                        onClearAll: { showingClearAllConfirm = true }
+                    )
+                    .navigationTitle("Transfers Inbox")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") { showingInboxActions = false }
+                        }
+                    }
+                }
             }
             .confirmationDialog(
                 "Clear Transfers Inbox?",
@@ -531,6 +493,7 @@ struct TransfersInboxView: View {
             }
             do {
                 try TransferLinker.linkAsTransfer(base: base, match: match, modelContext: modelContext)
+                removeSuggestionPair(baseID: suggestion.baseID, matchID: suggestion.matchID)
                 linked += 1
             } catch {
                 failed += 1
@@ -547,6 +510,20 @@ struct TransfersInboxView: View {
 
         exitSelectionMode()
         Task { await reloadSuggestions() }
+    }
+
+    private func removeSuggestionPair(baseID: PersistentIdentifier, matchID: PersistentIdentifier) {
+        suggestions.removeAll { suggestion in
+            suggestion.baseID == baseID ||
+            suggestion.matchID == baseID ||
+            suggestion.baseID == matchID ||
+            suggestion.matchID == matchID ||
+            (suggestion.baseID == baseID && suggestion.matchID == matchID) ||
+            (suggestion.baseID == matchID && suggestion.matchID == baseID)
+        }
+        selectedSuggestionIDs = selectedSuggestionIDs.filter { id in
+            suggestions.contains { $0.id == id }
+        }
     }
 
     private func clearAllInboxItems() {
@@ -580,8 +557,8 @@ private struct SuggestedTransferRow: View {
 
     var body: some View {
         if let base, let match {
-            HStack(spacing: AppTheme.Spacing.tight) {
-	                    VStack(alignment: .leading, spacing: AppTheme.Spacing.nano) {
+            HStack(spacing: AppDesign.Theme.Spacing.tight) {
+	                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.nano) {
 	                        Text("\(base.account?.name ?? "From") → \(match.account?.name ?? "To")")
 	                            .appSecondaryBodyText()
 	                            .fontWeight(.semibold)
@@ -605,19 +582,19 @@ private struct SuggestedTransferRow: View {
 
                 Spacer()
 
-                    VStack(alignment: .trailing, spacing: AppTheme.Spacing.hairline) {
+                    VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.hairline) {
                         Text(suggestion.amount, format: .currency(code: currencyCode))
                             .appSecondaryBodyText()
                             .fontWeight(.semibold)
                             .monospacedDigit()
 
                     Text("\(Int(min(suggestion.score * 100, 100).rounded()))%")
-                        .font(.caption2)
+                        .appCaption2Text()
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
             }
-            .padding(.vertical, AppTheme.Spacing.micro)
+            .padding(.vertical, AppDesign.Theme.Spacing.micro)
         } else {
             Text("Transfer")
                 .foregroundStyle(.secondary)
@@ -631,8 +608,8 @@ private struct UnmatchedTransferRow: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.tight) {
-	            VStack(alignment: .leading, spacing: AppTheme.Spacing.nano) {
+        HStack(spacing: AppDesign.Theme.Spacing.tight) {
+	            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.nano) {
 	                Text(transaction.account?.name ?? "No Account")
 	                    .appSecondaryBodyText()
 	                    .fontWeight(.semibold)
@@ -646,10 +623,10 @@ private struct UnmatchedTransferRow: View {
             Text(transaction.amount, format: .currency(code: currencyCode))
                 .appSecondaryBodyText()
                 .fontWeight(.semibold)
-                .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
+                .foregroundStyle(transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
                 .monospacedDigit()
         }
-        .padding(.vertical, AppTheme.Spacing.hairline)
+        .padding(.vertical, AppDesign.Theme.Spacing.hairline)
     }
 }
 
@@ -672,7 +649,7 @@ private struct TransferSuggestionConfirmView: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(AppColors.danger(for: appColorMode))
+                        .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                 }
             }
 
@@ -732,8 +709,8 @@ private struct TransferTransactionRow: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.tight) {
-	            VStack(alignment: .leading, spacing: AppTheme.Spacing.nano) {
+        HStack(spacing: AppDesign.Theme.Spacing.tight) {
+	            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.nano) {
 	                Text(transaction.account?.name ?? "No Account")
 	                    .appSecondaryBodyText()
 	                    .fontWeight(.semibold)
@@ -751,9 +728,95 @@ private struct TransferTransactionRow: View {
             Text(transaction.amount, format: .currency(code: currencyCode))
                 .appSecondaryBodyText()
                 .fontWeight(.semibold)
-                .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
+                .foregroundStyle(transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
                 .monospacedDigit()
         }
-        .padding(.vertical, AppTheme.Spacing.hairline)
+        .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+    }
+}
+
+private struct TransfersInboxActionsSheet: View {
+    let isSelecting: Bool
+    let isLoading: Bool
+    let selectedCount: Int
+    let selectedSuggestionsCount: Int
+    let onSelectAll: () -> Void
+    let onClearSelection: () -> Void
+    let onLinkSelected: () -> Void
+    let onDismissSelected: () -> Void
+    let onDoneSelecting: () -> Void
+    let onFilter: () -> Void
+    let onRefresh: () -> Void
+    let onSelectMultiple: () -> Void
+    let onClearAll: () -> Void
+
+    var body: some View {
+        List {
+            if isSelecting {
+                Section("Selection") {
+                    Button {
+                        onSelectAll()
+                    } label: {
+                        Label("Select All", systemImage: "checkmark.circle")
+                    }
+
+                    Button {
+                        onClearSelection()
+                    } label: {
+                        Label("Clear Selection", systemImage: "xmark.circle")
+                    }
+                    .disabled(selectedCount == 0)
+
+                    Button {
+                        onLinkSelected()
+                    } label: {
+                        Label("Link Selected (\(selectedSuggestionsCount))", systemImage: "link")
+                    }
+                    .disabled(selectedSuggestionsCount == 0)
+
+                    Button(role: .destructive) {
+                        onDismissSelected()
+                    } label: {
+                        Label("Dismiss Selected (\(selectedCount))", systemImage: "xmark")
+                    }
+                    .disabled(selectedCount == 0)
+
+                    Button {
+                        onDoneSelecting()
+                    } label: {
+                        Label("Done Selecting", systemImage: "checkmark")
+                    }
+                }
+            } else {
+                Section("Actions") {
+                    Button {
+                        onFilter()
+                    } label: {
+                        Label("Filter", systemImage: "line.3.horizontal.decrease.circle")
+                    }
+
+                    Button {
+                        onRefresh()
+                    } label: {
+                        Label("Refresh", systemImage: "arrow.clockwise")
+                    }
+                    .disabled(isLoading)
+
+                    Button {
+                        onSelectMultiple()
+                    } label: {
+                        Label("Select Multiple", systemImage: "checklist")
+                    }
+                }
+
+                Section("Manage") {
+                    Button(role: .destructive) {
+                        onClearAll()
+                    } label: {
+                        Label("Clear All", systemImage: "trash")
+                    }
+                }
+            }
+        }
     }
 }

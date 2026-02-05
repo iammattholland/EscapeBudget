@@ -25,7 +25,7 @@ extension ImportDataViewImpl {
                                 .foregroundStyle(.secondary)
                             Text("\(stagedTransactions.filter { $0.isDuplicate }.count)")
                                 .appSectionTitleText()
-                                .foregroundStyle(AppColors.warning(for: appColorMode))
+                                .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                         }
                         Spacer()
                         VStack(alignment: .leading) {
@@ -34,10 +34,10 @@ extension ImportDataViewImpl {
                                 .foregroundStyle(.secondary)
                             Text("\(stagedTransactions.filter { $0.isSelected }.count)")
                                 .appSectionTitleText()
-                                .foregroundStyle(AppColors.success(for: appColorMode))
+                                .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                         }
                     }
-                    .padding(.vertical, AppTheme.Spacing.micro)
+                    .padding(.vertical, AppDesign.Theme.Spacing.micro)
                 } header: {
                     Text("Summary")
                 }
@@ -84,14 +84,14 @@ extension ImportDataViewImpl {
                     ForEach($stagedTransactions) { $tx in
                         HStack {
                             Image(systemName: tx.isSelected ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(tx.isSelected ? AppColors.tint(for: appColorMode) : .gray)
+                                .foregroundStyle(tx.isSelected ? AppDesign.Colors.tint(for: appColorMode) : .gray)
                                 .onTapGesture {
                                     tx.isSelected.toggle()
                                 }
                             
                             VStack(alignment: .leading) {
                                 Text(tx.payee)
-                                    .font(AppTheme.Typography.body)
+                                    .font(AppDesign.Theme.Typography.body)
                                     .fontWeight(.medium)
                                 Text(tx.date.formatted(date: .abbreviated, time: .omitted))
                                     .appCaptionText()
@@ -99,59 +99,59 @@ extension ImportDataViewImpl {
 
 	                                if tx.kind == .transfer, tx.transferID != nil {
 	                                    Text("Transfer (linked)")
-	                                        .font(.caption2)
-	                                        .padding(.horizontal, AppTheme.Spacing.xSmall)
-	                                        .padding(.vertical, AppTheme.Spacing.hairline)
-	                                        .background(AppColors.tint(for: appColorMode).opacity(0.12))
-	                                        .foregroundStyle(AppColors.tint(for: appColorMode))
-	                                        .cornerRadius(AppTheme.Radius.mini)
+	                                        .appCaption2Text()
+	                                        .padding(.horizontal, AppDesign.Theme.Spacing.xSmall)
+	                                        .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+	                                        .background(AppDesign.Colors.tint(for: appColorMode).opacity(0.12))
+	                                        .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
+	                                        .cornerRadius(AppDesign.Theme.Radius.mini)
 	                                }
                                 
                                 if let raw = tx.rawCategory {
                                     if let mapped = categoryMapping[raw] {
-                                        HStack(spacing: AppTheme.Spacing.micro) {
+                                        HStack(spacing: AppDesign.Theme.Spacing.micro) {
                                             Image(systemName: "checkmark.circle.fill")
-                                                .font(.caption2)
+                                                .appCaption2Text()
                                             Text(mapped.name)
                                                 .appCaptionText()
                                                 .fontWeight(.medium)
                                         }
-                                        .padding(.horizontal, AppTheme.Spacing.xSmall)
-		                                        .padding(.vertical, AppTheme.Spacing.nano)
-		                                        .background(AppColors.success(for: appColorMode).opacity(0.15))
-		                                        .foregroundStyle(AppColors.success(for: appColorMode))
-		                                        .cornerRadius(AppTheme.Radius.mini)
+                                        .padding(.horizontal, AppDesign.Theme.Spacing.xSmall)
+		                                        .padding(.vertical, AppDesign.Theme.Spacing.nano)
+		                                        .background(AppDesign.Colors.success(for: appColorMode).opacity(0.15))
+		                                        .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
+		                                        .cornerRadius(AppDesign.Theme.Radius.mini)
 		                                    } else {
-                                        HStack(spacing: AppTheme.Spacing.micro) {
+                                        HStack(spacing: AppDesign.Theme.Spacing.micro) {
                                             Image(systemName: "exclamationmark.triangle.fill")
-                                                .font(.caption2)
+                                                .appCaption2Text()
                                             Text("Unmapped: \(raw)")
                                                 .appCaptionText()
                                         }
-                                        .padding(.horizontal, AppTheme.Spacing.xSmall)
-		                                        .padding(.vertical, AppTheme.Spacing.nano)
-		                                        .background(AppColors.warning(for: appColorMode).opacity(0.15))
-		                                        .foregroundStyle(AppColors.warning(for: appColorMode))
-		                                        .cornerRadius(AppTheme.Radius.mini)
+                                        .padding(.horizontal, AppDesign.Theme.Spacing.xSmall)
+		                                        .padding(.vertical, AppDesign.Theme.Spacing.nano)
+		                                        .background(AppDesign.Colors.warning(for: appColorMode).opacity(0.15))
+		                                        .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
+		                                        .cornerRadius(AppDesign.Theme.Radius.mini)
 		                                    }
 	                                }
                             }
                             
                             Spacer()
                             
-                            VStack(alignment: .trailing, spacing: AppTheme.Spacing.xSmall) {
+                            VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.xSmall) {
                                 Text(tx.amount.formatted(.currency(code: currencyCode)))
-                                    .font(AppTheme.Typography.body)
-                                    .foregroundStyle(tx.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                                    .font(AppDesign.Theme.Typography.body)
+                                    .foregroundStyle(tx.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)
 
                                 if tx.kind == .transfer, let id = tx.transferID {
                                     Button {
                                         editingTransferLink = TransferLinkEditorDestination(id: id)
                                     } label: {
                                         Label("Linked", systemImage: "link")
-                                            .font(.caption2)
+                                            .appCaption2Text()
                                             .labelStyle(.iconOnly)
-                                            .foregroundStyle(AppColors.tint(for: appColorMode))
+                                            .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                                     }
                                     .buttonStyle(.plain)
                                     .accessibilityLabel("Edit linked transfer")
@@ -159,16 +159,16 @@ extension ImportDataViewImpl {
                                 
 	                                if tx.isDuplicate {
 	                                    Text("Duplicate")
-	                                        .font(.caption2)
-	                                        .padding(.horizontal, AppTheme.Spacing.xSmall)
-	                                        .padding(.vertical, AppTheme.Spacing.hairline)
-	                                        .background(AppColors.warning(for: appColorMode).opacity(0.2))
-	                                        .foregroundStyle(AppColors.warning(for: appColorMode))
-	                                        .cornerRadius(AppTheme.Radius.mini)
+	                                        .appCaption2Text()
+	                                        .padding(.horizontal, AppDesign.Theme.Spacing.xSmall)
+	                                        .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+	                                        .background(AppDesign.Colors.warning(for: appColorMode).opacity(0.2))
+	                                        .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
+	                                        .cornerRadius(AppDesign.Theme.Radius.mini)
 
 	                                    if let reason = tx.duplicateReason, !reason.isEmpty {
 	                                        Text(reason)
-	                                            .font(.caption2)
+	                                            .appCaption2Text()
                                             .foregroundStyle(.secondary)
                                     }
                                 }
@@ -186,7 +186,7 @@ extension ImportDataViewImpl {
                 Text("Finish Import (\(stagedTransactions.filter { $0.isSelected }.count))")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glass)
             .controlSize(.large)
             .padding()
             .disabled(stagedTransactions.filter { $0.isSelected }.isEmpty)

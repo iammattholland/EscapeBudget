@@ -106,11 +106,11 @@ enum ColumnType: String, CaseIterable, Identifiable, Sendable {
 
     func color(for mode: AppColorMode) -> Color {
         switch self {
-        case .date: return AppColors.tint(for: mode)
-        case .payee: return AppColors.warning(for: mode)
-        case .amount: return AppColors.success(for: mode)
-        case .inflow: return AppColors.success(for: mode)
-        case .outflow: return AppColors.danger(for: mode)
+        case .date: return AppDesign.Colors.tint(for: mode)
+        case .payee: return AppDesign.Colors.warning(for: mode)
+        case .amount: return AppDesign.Colors.success(for: mode)
+        case .inflow: return AppDesign.Colors.success(for: mode)
+        case .outflow: return AppDesign.Colors.danger(for: mode)
         case .memo: return .purple
         case .category: return .teal
         case .account: return .indigo
@@ -126,7 +126,7 @@ enum ColumnType: String, CaseIterable, Identifiable, Sendable {
     }
 
     var color: Color {
-        color(for: AppColors.currentModeFromDefaults())
+        color(for: AppDesign.Colors.currentModeFromDefaults())
     }
 }
 

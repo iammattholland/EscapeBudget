@@ -54,7 +54,6 @@ struct ImportDataViewImpl: View {
 
 		@State var defaultAccount: Account?
 		@State var signConvention: AmountSignConvention?
-		@State var showingSignConfirmation = false
     @State var showingImportOptionsSheet = false
     @State var hasConfiguredImportOptionsThisRun = false
 
@@ -105,6 +104,18 @@ struct ImportDataViewImpl: View {
     @State var bulkNewGroupName: String = ""
     @State var bulkNewGroupType: CategoryGroupType = .expense
     @State var selectedUnmappedCategories: Set<String> = []
+    @State var bulkGroupingMode: BulkGroupingMode = .smart
+    @State var bulkCategoryAssignments: [String: CategoryGroup] = [:]
+    @State var bulkAssignNewGroupToSelection = true
+    @State var bulkCreatedGroups: [CategoryGroup] = []
+
+    enum BulkGroupingMode: String, CaseIterable, Identifiable {
+        case smart = "Smart"
+        case single = "Single"
+        case custom = "Custom"
+
+        var id: String { rawValue }
+    }
     
 
     enum ImportStep {
@@ -164,88 +175,19 @@ struct ImportDataViewImpl: View {
     
     var body: some View {
         NavigationStack {
-            Group {
-					switch currentStep {
-					case .selectFile:
-						fileSelectionView
-					case .selectHeader:
-						headerSelectionView
-					case .mapColumns:
-						columnMappingView
-					case .preview:
-						previewView
-					case .importing:
-						importingView
-					case .mapAccounts:
-						accountMappingView
-					case .mapCategories:
-						categoryMappingView
-					case .mapTags:
-						tagMappingView
-					case .review:
-                    reviewImportView
-                case .complete:
-                    completeView
-                }
-            }
+            importContainer
+        }
+    }
+
+    private var importContainer: some View {
+        importBaseView
             .safeAreaInset(edge: .top) {
-                VStack(spacing: 0) {
-                    wizardStepIndicator
-                    Divider()
-                }
-                .background(Color(uiColor: .systemBackground))
+                wizardChrome
             }
             .navigationTitle(initialAccount == nil ? "Import Data" : "Import")
             .navigationBarTitleDisplayMode(.inline)
             .globalKeyboardDoneToolbar()
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { cancelImport() }
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    Group {
-                        switch currentStep {
-                        case .selectHeader:
-                            Button("Next") { 
-                                autoMapColumns()
-                                currentStep = .mapColumns 
-                            }
-                            .disabled(!canAdvanceFromHeader)
-                        case .mapColumns:
-                            Button("Next") { currentStep = .preview }
-                                .disabled(!canAdvanceToPreview)
-                        case .preview:
-                            Button("Import") {
-                                // Prompt for processing options here (instead of Settings).
-                                if !hasConfiguredImportOptionsThisRun {
-                                    importOptions = ImportProcessingOptions(
-                                        normalizePayee: normalizePayeeOnImport,
-                                        applyAutoRules: applyAutoRulesOnImport,
-                                        detectDuplicates: detectDuplicatesOnImport,
-                                        suggestTransfers: suggestTransfersOnImport,
-                                        saveProcessingHistory: saveProcessingHistory
-                                    )
-                                }
-                                showingImportOptionsSheet = true
-                            }
-                                .disabled(defaultAccount == nil)
-                                .confirmationDialog(
-                                    "Confirm Amount Signs",
-                                    isPresented: $showingSignConfirmation,
-                                    titleVisibility: .visible
-                                ) {
-                                    Button("Positive = Income") { beginImport(signConvention: .positiveIsIncome) }
-                                    Button("Positive = Expense") { beginImport(signConvention: .positiveIsExpense) }
-                                    Button("Cancel", role: .cancel) { }
-                                } message: {
-                                    Text("How should Escape Budget interpret positive/negative numbers in your CSV before importing?")
-                                }
-                        default:
-                            EmptyView()
-                        }
-                    }
-                }
-            }
+            .toolbar { importToolbar }
             .alert("Error", isPresented: isShowingError) {
                 Button("OK", role: .cancel) { }
             } message: {
@@ -265,29 +207,7 @@ struct ImportDataViewImpl: View {
                 )
             }
             .sheet(isPresented: $showingImportOptionsSheet) {
-                NavigationStack {
-                    ImportProcessingOptionsSheet(
-                        options: $importOptions,
-                        onUseOnce: {
-                            hasConfiguredImportOptionsThisRun = true
-                            showingImportOptionsSheet = false
-                            requestImportConfirmation()
-                        },
-                        onMakeDefault: {
-                            normalizePayeeOnImport = importOptions.normalizePayee
-                            applyAutoRulesOnImport = importOptions.applyAutoRules
-                            detectDuplicatesOnImport = importOptions.detectDuplicates
-                            suggestTransfersOnImport = importOptions.suggestTransfers
-                            saveProcessingHistory = importOptions.saveProcessingHistory
-                            hasConfiguredImportOptionsThisRun = true
-                            showingImportOptionsSheet = false
-                            requestImportConfirmation()
-                        },
-                        onCancel: {
-                            showingImportOptionsSheet = false
-                        }
-                    )
-                }
+                importOptionsSheet
             }
             .sheet(isPresented: $showingEncryptedExportPasswordSheet) {
                 encryptedExportPasswordSheet
@@ -302,50 +222,7 @@ struct ImportDataViewImpl: View {
                 }
             }
             .sheet(isPresented: $showingCreateAccountSheet) {
-                NavigationStack {
-                    Form {
-                        Section("Details") {
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                                Text("Name")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                                TextField("Enter account name", text: $newAccountName)
-                                    .textInputAutocapitalization(.words)
-                            }
-
-                            Picker("Account Type", selection: $newAccountType) {
-                                ForEach(AccountType.allCases) { type in
-                                    Text(type.rawValue).tag(type)
-                                }
-                            }
-
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                                Text("Current Balance")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                                HStack(spacing: AppTheme.Spacing.compact) {
-                                    Text(currencySymbol(for: currencyCode))
-                                        .foregroundStyle(.secondary)
-                                    TextField("0", text: $newAccountBalanceInput)
-                                        .keyboardType(.decimalPad)
-                                }
-                            }
-                        }
-                    }
-                    .navigationTitle("New Account")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .globalKeyboardDoneToolbar()
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Cancel") { showingCreateAccountSheet = false }
-                        }
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Add") { createAccountAndReturnToImport() }
-                                .disabled(newAccountName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        }
-                    }
-                }
-                .presentationDetents([.medium])
+                createAccountSheet
             }
             .onDisappear {
                 importTask?.cancel()
@@ -369,7 +246,153 @@ struct ImportDataViewImpl: View {
                     .transition(.opacity)
                 }
             }
+    }
+
+    private var importBaseView: some View {
+        Group {
+            switch currentStep {
+            case .selectFile:
+                fileSelectionView
+            case .selectHeader:
+                headerSelectionView
+            case .mapColumns:
+                columnMappingView
+            case .preview:
+                previewView
+            case .importing:
+                importingView
+            case .mapAccounts:
+                accountMappingView
+            case .mapCategories:
+                categoryMappingView
+            case .mapTags:
+                tagMappingView
+            case .review:
+                reviewImportView
+            case .complete:
+                completeView
+            }
         }
+    }
+
+    private var wizardChrome: some View {
+        VStack(spacing: 0) {
+            wizardStepIndicator
+            Divider()
+        }
+        .background(Color(uiColor: .systemBackground))
+    }
+
+    @ToolbarContentBuilder
+    private var importToolbar: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            Button("Cancel") { cancelImport() }
+        }
+        ToolbarItem(placement: .primaryAction) {
+            Group {
+                switch currentStep {
+                case .selectHeader:
+                    Button("Next") {
+                        autoMapColumns()
+                        currentStep = .mapColumns
+                    }
+                    .disabled(!canAdvanceFromHeader)
+                case .mapColumns:
+                    Button("Next") { currentStep = .preview }
+                        .disabled(!canAdvanceToPreview)
+                case .preview:
+                    Button("Import") {
+                        // Prompt for processing options here (instead of Settings).
+                        if !hasConfiguredImportOptionsThisRun {
+                            importOptions = ImportProcessingOptions(
+                                normalizePayee: normalizePayeeOnImport,
+                                applyAutoRules: applyAutoRulesOnImport,
+                                detectDuplicates: detectDuplicatesOnImport,
+                                suggestTransfers: suggestTransfersOnImport,
+                                saveProcessingHistory: saveProcessingHistory
+                            )
+                        }
+                        showingImportOptionsSheet = true
+                    }
+                    .disabled(defaultAccount == nil || signConvention == nil)
+                default:
+                    EmptyView()
+                }
+            }
+        }
+    }
+
+    private var importOptionsSheet: some View {
+        NavigationStack {
+            ImportProcessingOptionsSheet(
+                options: $importOptions,
+                onUseOnce: {
+                    hasConfiguredImportOptionsThisRun = true
+                    showingImportOptionsSheet = false
+                    requestImportConfirmation()
+                },
+                onMakeDefault: {
+                    normalizePayeeOnImport = importOptions.normalizePayee
+                    applyAutoRulesOnImport = importOptions.applyAutoRules
+                    detectDuplicatesOnImport = importOptions.detectDuplicates
+                    suggestTransfersOnImport = importOptions.suggestTransfers
+                    saveProcessingHistory = importOptions.saveProcessingHistory
+                    hasConfiguredImportOptionsThisRun = true
+                    showingImportOptionsSheet = false
+                    requestImportConfirmation()
+                },
+                onCancel: {
+                    showingImportOptionsSheet = false
+                }
+            )
+        }
+    }
+
+    private var createAccountSheet: some View {
+        NavigationStack {
+            Form {
+                Section("Details") {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                        Text("Name")
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
+                        TextField("Enter account name", text: $newAccountName)
+                            .textInputAutocapitalization(.words)
+                    }
+
+                    Picker("Account Type", selection: $newAccountType) {
+                        ForEach(AccountType.allCases) { type in
+                            Text(type.rawValue).tag(type)
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                        Text("Current Balance")
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
+                        HStack(spacing: AppDesign.Theme.Spacing.compact) {
+                            Text(currencySymbol(for: currencyCode))
+                                .foregroundStyle(.secondary)
+                            TextField("0", text: $newAccountBalanceInput)
+                                .keyboardType(.decimalPad)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("New Account")
+            .navigationBarTitleDisplayMode(.inline)
+            .globalKeyboardDoneToolbar()
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { showingCreateAccountSheet = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") { createAccountAndReturnToImport() }
+                        .disabled(newAccountName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.large])
     }
 
     init(initialAccount: Account? = nil) {

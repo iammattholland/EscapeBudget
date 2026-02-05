@@ -88,7 +88,7 @@ struct BulkCategorizeView: View {
                             .foregroundStyle(.secondary)
 
                     case .amountExact:
-                        HStack(spacing: AppTheme.Spacing.compact) {
+                        HStack(spacing: AppDesign.Theme.Spacing.compact) {
                             Text(currencySymbol)
                                 .foregroundStyle(.secondary)
                             TextField("Amount", text: $filterValue)
@@ -99,8 +99,8 @@ struct BulkCategorizeView: View {
                             .foregroundStyle(.secondary)
 
                     case .amountRange:
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
-                            HStack(spacing: AppTheme.Spacing.compact) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
+                            HStack(spacing: AppDesign.Theme.Spacing.compact) {
                                 Text("Min:")
                                     .foregroundStyle(.secondary)
                                 Text(currencySymbol)
@@ -109,7 +109,7 @@ struct BulkCategorizeView: View {
                                     .keyboardType(.decimalPad)
                             }
 
-                            HStack(spacing: AppTheme.Spacing.compact) {
+                            HStack(spacing: AppDesign.Theme.Spacing.compact) {
                                 Text("Max:")
                                     .foregroundStyle(.secondary)
                                 Text(currencySymbol)
@@ -154,11 +154,11 @@ struct BulkCategorizeView: View {
                             }
                         }
 
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                             Text("Amount Range (optional)")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
-                            HStack(spacing: AppTheme.Spacing.compact) {
+                            HStack(spacing: AppDesign.Theme.Spacing.compact) {
                                 Text("Min:")
                                     .foregroundStyle(.secondary)
                                 Text(currencySymbol)
@@ -167,7 +167,7 @@ struct BulkCategorizeView: View {
                                     .keyboardType(.decimalPad)
                             }
 
-                            HStack(spacing: AppTheme.Spacing.compact) {
+                            HStack(spacing: AppDesign.Theme.Spacing.compact) {
                                 Text("Max:")
                                     .foregroundStyle(.secondary)
                                 Text(currencySymbol)
@@ -202,7 +202,7 @@ struct BulkCategorizeView: View {
                 } footer: {
                     if !matchingTransactions.isEmpty {
                         Text("Found \(matchingTransactions.count) matching transaction\(matchingTransactions.count == 1 ? "" : "s")")
-                            .foregroundStyle(AppColors.success(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                     }
                 }
 
@@ -215,8 +215,8 @@ struct BulkCategorizeView: View {
 	                            Button {
 	                                selectedSuggestedOption = option
 	                            } label: {
-                                HStack(spacing: AppTheme.Spacing.tight) {
-	                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                                HStack(spacing: AppDesign.Theme.Spacing.tight) {
+	                                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                                        Text(option.payeeDisplay)
 	                                            .appSectionTitleText()
 	                                            .lineLimit(1)
@@ -231,7 +231,7 @@ struct BulkCategorizeView: View {
 	                                    Text("\(option.transactionIDs.count)")
 	                                        .appSectionTitleText()
 	                                        .monospacedDigit()
-	                                        .foregroundStyle(AppColors.tint(for: appColorMode))
+	                                        .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
 
                                     Image(systemName: "chevron.right")
                                         .appCaptionText()
@@ -287,7 +287,7 @@ struct BulkCategorizeView: View {
 
     private var payeeSuggestionsRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppTheme.Spacing.compact) {
+            HStack(spacing: AppDesign.Theme.Spacing.compact) {
                 ForEach(payeeSuggestions, id: \.self) { suggestion in
                     Button {
                         filterValue = suggestion
@@ -299,7 +299,7 @@ struct BulkCategorizeView: View {
                     .controlSize(.small)
                 }
             }
-            .padding(.vertical, AppTheme.Spacing.hairline)
+            .padding(.vertical, AppDesign.Theme.Spacing.hairline)
         }
     }
 
@@ -557,14 +557,14 @@ private struct SuggestedPayeeCategorizeSheet: View {
         NavigationStack {
             List {
 	                Section {
-	                    VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+	                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
 	                        Text(option.payeeDisplay)
 	                            .appSectionTitleText()
 	                        Text("Suggested category: \(option.category.name)")
 	                            .appSecondaryBodyText()
 	                            .foregroundStyle(.secondary)
 	                    }
-	                    .padding(.vertical, AppTheme.Spacing.micro)
+	                    .padding(.vertical, AppDesign.Theme.Spacing.micro)
 	                }
 
                 Section {
@@ -582,11 +582,11 @@ private struct SuggestedPayeeCategorizeSheet: View {
                                 if selectedIDs.contains(id) { selectedIDs.remove(id) }
                                 else { selectedIDs.insert(id) }
                             } label: {
-                                HStack(spacing: AppTheme.Spacing.tight) {
+                                HStack(spacing: AppDesign.Theme.Spacing.tight) {
                                     Image(systemName: selectedIDs.contains(id) ? "checkmark.circle.fill" : "circle")
-                                        .foregroundStyle(selectedIDs.contains(id) ? AppColors.tint(for: appColorMode) : .secondary)
+                                        .foregroundStyle(selectedIDs.contains(id) ? AppDesign.Colors.tint(for: appColorMode) : .secondary)
 
-	                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+	                                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
 	                                        Text(transaction.payee)
 	                                            .appSectionTitleText()
 	                                            .lineLimit(1)
@@ -687,12 +687,12 @@ struct BulkCategorizePreviewView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: AppTheme.Spacing.medium) {
+            VStack(spacing: AppDesign.Theme.Spacing.medium) {
                 // Summary Card
-                VStack(spacing: AppTheme.Spacing.tight) {
+                VStack(spacing: AppDesign.Theme.Spacing.tight) {
                     Image(systemName: "checkmark.circle.fill")
                         .appIconXLarge()
-                        .foregroundStyle(AppColors.success(for: appColorMode))
+                        .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
 
                     Text("\(transactions.count) Transaction\(transactions.count == 1 ? "" : "s")")
                         .appTitleText()
@@ -705,12 +705,12 @@ struct BulkCategorizePreviewView: View {
                     Text(category.name)
                         .appTitleText()
                         .fontWeight(.semibold)
-                        .foregroundStyle(AppColors.tint(for: appColorMode))
-                        .padding(.horizontal, AppTheme.Spacing.medium)
-                        .padding(.vertical, AppTheme.Spacing.compact)
+                        .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
+                        .padding(.horizontal, AppDesign.Theme.Spacing.medium)
+                        .padding(.vertical, AppDesign.Theme.Spacing.compact)
                         .background(
-                            RoundedRectangle(cornerRadius: AppTheme.Radius.xSmall)
-                                .fill(AppColors.tint(for: appColorMode).opacity(0.15))
+                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.xSmall)
+                                .fill(AppDesign.Colors.tint(for: appColorMode).opacity(0.15))
                         )
                 }
                 .padding()
@@ -719,7 +719,7 @@ struct BulkCategorizePreviewView: View {
                 List {
 	                    ForEach(transactions) { transaction in
 	                        HStack {
-	                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+	                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                                Text(transaction.payee)
 	                                    .appSectionTitleText()
 
@@ -729,7 +729,7 @@ struct BulkCategorizePreviewView: View {
 
                                 if let account = transaction.account {
                                     Text(account.name)
-                                        .font(.caption2)
+                                        .appCaption2Text()
                                         .foregroundStyle(.secondary)
                                 }
                             }
@@ -737,7 +737,7 @@ struct BulkCategorizePreviewView: View {
                             Spacer()
 
                             Text(transaction.amount, format: .currency(code: currencyCode))
-                                .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                                .foregroundStyle(transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)
                                 .fontWeight(.semibold)
                         }
                     }

@@ -61,7 +61,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
     }
 
     var body: some View {
-        let content = VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+        let content = VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
             HStack {
                 VStack(alignment: .leading) {
                     Text(title)
@@ -76,7 +76,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
                 if showsMenu {
                     Menu { menuContent() } label: {
                         Image(systemName: "ellipsis")
-                            .font(.system(size: 16, weight: .semibold))
+                            .appDisplayText(AppDesign.Theme.DisplaySize.small, weight: .semibold)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -86,7 +86,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
                 Text("Not enough data yet. Add transactions to see trends.")
                     .appFootnoteText()
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, AppTheme.Spacing.xLarge)
+                    .padding(.vertical, AppDesign.Theme.Spacing.xLarge)
             } else {
                 Chart {
                     ForEach(orderedSeries) { monthSeries in
@@ -155,26 +155,26 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
                                     .position(x: x, y: y)
                                     .zIndex(2)
 
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                                     Text(selectedPoint.series.title)
-                                        .font(.caption2)
+                                        .appCaption2Text()
                                         .foregroundStyle(.secondary)
                                     Text("Day \(selectedPoint.point.dayIndex)")
-                                        .font(.caption2)
+                                        .appCaption2Text()
                                         .foregroundStyle(.secondary)
                                     Text(selectedPoint.point.cumulativeAmount, format: .currency(code: lastUsedCurrencyCode))
                                         .appCaptionText()
                                         .fontWeight(.semibold)
                                         .monospacedDigit()
                                 }
-                                .padding(.horizontal, AppTheme.Spacing.compact)
-                                .padding(.vertical, AppTheme.Spacing.xSmall)
+                                .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+                                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
                                 .background(
-                                    RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
+                                    RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button, style: .continuous)
                                         .fill(Color(.systemBackground))
                                 )
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
+                                    RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button, style: .continuous)
                                         .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
                                 )
                                 .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 4)
@@ -191,7 +191,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
                         if let doubleValue = value.as(Double.self) {
                             AxisValueLabel {
                                 Text(doubleValue, format: .currency(code: lastUsedCurrencyCode))
-                                    .font(.caption2)
+                                    .appCaption2Text()
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -209,7 +209,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
 
             if !orderedSeries.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: AppTheme.Spacing.tight) {
+                    HStack(spacing: AppDesign.Theme.Spacing.tight) {
                         ForEach(orderedSeries) { monthSeries in
                             SpendingLegendItem(color: monthSeries.color, label: monthSeries.title)
                         }
@@ -222,7 +222,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
             content
                 .padding()
                 .background(Color(.systemBackground))
-                .cornerRadius(AppTheme.Radius.compact)
+                .cornerRadius(AppDesign.Theme.Radius.compact)
                 .shadow(color: Color.black.opacity(0.1), radius: 4)
         } else {
             content
@@ -289,7 +289,7 @@ struct MonthlyIncomeBarChart: View {
     }
 
     var body: some View {
-        let content = VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+        let content = VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
             HStack {
                 VStack(alignment: .leading) {
                     Text(title)
@@ -312,7 +312,7 @@ struct MonthlyIncomeBarChart: View {
                     Button(showAverageLine ? "Hide Monthly Average" : "Show Monthly Average", action: toggleAverage)
                 } label: {
                     Image(systemName: "ellipsis")
-                        .font(.system(size: 16, weight: .semibold))
+                        .appDisplayText(AppDesign.Theme.DisplaySize.small, weight: .semibold)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -321,7 +321,7 @@ struct MonthlyIncomeBarChart: View {
                 Text("Not enough income data yet. Add transactions to see trends.")
                     .appFootnoteText()
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, AppTheme.Spacing.xLarge)
+                    .padding(.vertical, AppDesign.Theme.Spacing.xLarge)
             } else {
                 Chart {
                     ForEach(monthlyTotals, id: \.month) { item in
@@ -347,7 +347,7 @@ struct MonthlyIncomeBarChart: View {
                         if let doubleValue = value.as(Double.self) {
                             AxisValueLabel {
                                 Text(doubleValue, format: .currency(code: currencyCode))
-                                    .font(.caption2)
+                                    .appCaption2Text()
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -359,7 +359,7 @@ struct MonthlyIncomeBarChart: View {
 
             if !orderedSeries.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: AppTheme.Spacing.tight) {
+                    HStack(spacing: AppDesign.Theme.Spacing.tight) {
                         ForEach(orderedSeries) { monthSeries in
                             SpendingLegendItem(color: monthSeries.color, label: monthSeries.title)
                         }
@@ -372,7 +372,7 @@ struct MonthlyIncomeBarChart: View {
             content
                 .padding()
                 .background(Color(.systemBackground))
-                .cornerRadius(AppTheme.Radius.compact)
+                .cornerRadius(AppDesign.Theme.Radius.compact)
                 .shadow(color: Color.black.opacity(0.1), radius: 4)
         } else {
             content
@@ -385,7 +385,7 @@ private struct SpendingLegendItem: View {
     let label: String
 
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.xSmall) {
+        HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
             Circle()
                 .fill(color)
                 .frame(width: 8, height: 8)

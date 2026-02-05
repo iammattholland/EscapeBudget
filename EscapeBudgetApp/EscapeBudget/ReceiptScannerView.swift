@@ -15,25 +15,25 @@ struct ReceiptScannerView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: AppTheme.Spacing.xLarge) {
+            VStack(spacing: AppDesign.Theme.Spacing.xLarge) {
                 Spacer()
 
                 Image(systemName: "doc.text.image")
                     .appIconHero()
                     .foregroundStyle(.secondary)
 
-                VStack(spacing: AppTheme.Spacing.compact) {
+                VStack(spacing: AppDesign.Theme.Spacing.compact) {
                     Text("Scan Receipt")
-                        .font(.title2.bold())
+                        .appTitle2BoldText()
 
                     Text("Take a photo, select from your library, or choose a file")
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                        .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
                 }
 
-                VStack(spacing: AppTheme.Spacing.tight) {
+                VStack(spacing: AppDesign.Theme.Spacing.tight) {
                     Button {
                         checkCameraAndPresent()
                     } label: {
@@ -70,7 +70,7 @@ struct ReceiptScannerView: View {
                     .appSecondaryCTA()
                     .controlSize(.large)
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
 
                 if isProcessing {
                     ProgressView("Processing receipt...")

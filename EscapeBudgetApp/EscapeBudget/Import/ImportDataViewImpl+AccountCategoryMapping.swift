@@ -30,7 +30,7 @@ extension ImportDataViewImpl {
 	                Section {
 	                    HStack {
 	                        Label("\(importedAccounts.count - unmappedAccounts.count) mapped", systemImage: "checkmark.circle.fill")
-	                            .foregroundStyle(AppColors.success(for: appColorMode))
+	                            .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
 	                        Spacer()
 	                        Label("\(unmappedAccounts.count) unmapped", systemImage: "circle.dashed")
 	                            .foregroundStyle(.secondary)
@@ -44,7 +44,7 @@ extension ImportDataViewImpl {
 	                    ForEach(importedAccounts, id: \.self) { raw in
 	                        HStack {
 	                            Text(raw)
-	                                .font(AppTheme.Typography.body)
+	                                .font(AppDesign.Theme.Typography.body)
 	                            Spacer()
 
 	                            Menu {
@@ -75,7 +75,7 @@ extension ImportDataViewImpl {
 	                                        Text(mapped.name)
 	                                            .foregroundStyle(.primary)
 	                                        Image(systemName: "checkmark.circle.fill")
-	                                            .foregroundStyle(AppColors.success(for: appColorMode))
+	                                            .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
 	                                    } else {
 	                                        Text("Use Default")
 	                                            .foregroundStyle(.secondary)
@@ -83,10 +83,10 @@ extension ImportDataViewImpl {
 	                                            .appCaptionText()
 	                                    }
 	                                }
-		                                .padding(.horizontal, AppTheme.Spacing.compact)
-		                                .padding(.vertical, AppTheme.Spacing.micro)
+		                                .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+		                                .padding(.vertical, AppDesign.Theme.Spacing.micro)
 		                                .background(Color(.secondarySystemBackground))
-		                                .cornerRadius(AppTheme.Radius.xSmall)
+		                                .cornerRadius(AppDesign.Theme.Radius.xSmall)
 		                            }
 		                        }
 		                    }
@@ -100,7 +100,7 @@ extension ImportDataViewImpl {
 	            Button("Next") {
 	                prepareCategoryMapping()
 	            }
-	            .buttonStyle(.borderedProminent)
+	            .buttonStyle(.glass)
 	            .controlSize(.large)
 	            .padding()
 	        }
@@ -108,7 +108,7 @@ extension ImportDataViewImpl {
 	            NavigationStack {
 	                Form {
 	                    Section {
-	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+	                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
 	                            Text("Imported Value")
 	                                .appCaptionText()
 	                                .foregroundStyle(.secondary)
@@ -118,7 +118,7 @@ extension ImportDataViewImpl {
 		                    }
 
 	                    Section("Details") {
-	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+	                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                            Text("Name")
 	                                .appCaptionText()
 	                                .foregroundStyle(.secondary)
@@ -132,11 +132,11 @@ extension ImportDataViewImpl {
 	                            }
 	                        }
 
-	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+	                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                            Text("Starting Balance")
 	                                .appCaptionText()
 	                                .foregroundStyle(.secondary)
-	                            HStack(spacing: AppTheme.Spacing.compact) {
+	                            HStack(spacing: AppDesign.Theme.Spacing.compact) {
 	                                Text(currencySymbol(for: currencyCode))
 	                                    .foregroundStyle(.secondary)
 	                                TextField("0", text: $newAccountBalanceInput)
@@ -159,10 +159,10 @@ extension ImportDataViewImpl {
 	                        .disabled(newAccountName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 	                    }
 	                }
-	            }
-	            .presentationDetents([.medium])
-	        }
-	    }
+            }
+            .presentationDetents([.large])
+        }
+    }
 
 		    var categoryMappingView: some View {
 		        VStack {
@@ -183,10 +183,10 @@ extension ImportDataViewImpl {
                         } label: {
                             HStack {
                                 Image(systemName: "plus.circle.fill")
-                                    .foregroundStyle(AppColors.tint(for: appColorMode))
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                                    .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                                     Text("Create All Unmapped Categories")
-                                        .font(AppTheme.Typography.body)
+                                        .font(AppDesign.Theme.Typography.body)
                                     Text("\(unmappedCategories.count) categories will be created")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
@@ -207,7 +207,7 @@ extension ImportDataViewImpl {
                 Section {
                     HStack {
                         Label("\(importedCategories.count - unmappedCategories.count) mapped", systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(AppColors.success(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                         Spacer()
                         Label("\(unmappedCategories.count) unmapped", systemImage: "circle.dashed")
                             .foregroundStyle(.secondary)
@@ -222,7 +222,7 @@ extension ImportDataViewImpl {
                     ForEach(importedCategories, id: \.self) { raw in
                         HStack {
                             Text(raw)
-                                .font(AppTheme.Typography.body)
+                                .font(AppDesign.Theme.Typography.body)
                             Spacer()
 
                             Menu {
@@ -251,7 +251,7 @@ extension ImportDataViewImpl {
                                         Text(mapped.name)
                                             .foregroundStyle(.primary)
                                         Image(systemName: "checkmark.circle.fill")
-                                            .foregroundStyle(AppColors.success(for: appColorMode))
+                                            .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                                     } else {
                                         Text("Select Category")
                                             .foregroundStyle(.secondary)
@@ -259,10 +259,10 @@ extension ImportDataViewImpl {
                                             .appCaptionText()
                                     }
                                 }
-		                                .padding(.horizontal, AppTheme.Spacing.compact)
-		                                .padding(.vertical, AppTheme.Spacing.micro)
+		                                .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+		                                .padding(.vertical, AppDesign.Theme.Spacing.micro)
 		                                .background(Color(.secondarySystemBackground))
-		                                .cornerRadius(AppTheme.Radius.xSmall)
+		                                .cornerRadius(AppDesign.Theme.Radius.xSmall)
 		                            }
 		                        }
 		                    }
@@ -274,7 +274,7 @@ extension ImportDataViewImpl {
             Button("Next") {
                 prepareTagMappingOrReview()
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glass)
             .controlSize(.large)
             .padding()
         }
@@ -282,7 +282,7 @@ extension ImportDataViewImpl {
             NavigationStack {
                 Form {
 	                    Section {
-	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+	                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
 	                            Text("Imported Value:")
 	                                .appCaptionText()
 	                                .foregroundStyle(.secondary)
@@ -297,7 +297,7 @@ extension ImportDataViewImpl {
                                     newCategoryName = target.rawCategory
                                 }
                                 .appCaptionText()
-                                .foregroundStyle(AppColors.tint(for: appColorMode))
+                                .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                             }
                         }
                         
@@ -311,7 +311,7 @@ extension ImportDataViewImpl {
                                         newGroupNameRaw = target.rawCategory
                                     }
                                     .appCaptionText()
-                                    .foregroundStyle(AppColors.tint(for: appColorMode))
+                                    .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                                 }
                             }
                             Picker("Type", selection: $newGroupType) {
@@ -348,23 +348,57 @@ extension ImportDataViewImpl {
         .sheet(isPresented: $showingBulkCategoryCreation) {
             NavigationStack {
                 Form {
-	                    Section {
-	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
-	                            Text("Create \(selectedUnmappedCategories.count) Categories")
-	                                .appSectionTitleText()
-	                            Text("These categories will be created and automatically mapped to your import data.")
-	                                .appCaptionText()
-	                                .foregroundStyle(.secondary)
-	                        }
-	                    }
+                    Section {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
+                            Text("Create \(selectedUnmappedCategories.count) Categories")
+                                .appSectionTitleText()
+                            Text("These categories will be created and automatically mapped to your import data.")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Section("Grouping") {
+                        Picker("Mode", selection: $bulkGroupingMode) {
+                            ForEach(BulkGroupingMode.allCases) { mode in
+                                Text(mode.rawValue).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+
+                        Text(bulkGroupingMode == .smart
+                             ? "Smart grouping uses payee keywords and existing patterns to pick the best group. Unmatched categories default to Expenses."
+                             : bulkGroupingMode == .single
+                             ? "All categories will be created in a single group."
+                             : "Assign categories to multiple groups before creating them.")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                    }
 
                     Section {
                         ForEach(unmappedCategories, id: \.self) { raw in
                             HStack {
                                 Image(systemName: selectedUnmappedCategories.contains(raw) ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(selectedUnmappedCategories.contains(raw) ? AppColors.tint(for: appColorMode) : .gray)
+                                    .foregroundStyle(selectedUnmappedCategories.contains(raw) ? AppDesign.Colors.tint(for: appColorMode) : .gray)
                                 Text(raw)
-                                    .font(AppTheme.Typography.body)
+                                    .font(AppDesign.Theme.Typography.body)
+                                Spacer()
+                                if bulkGroupingMode != .single {
+                                    Menu {
+                                        ForEach(allGroups.filter { $0.type != .transfer }) { group in
+                                            Button(group.name) {
+                                                bulkCategoryAssignments[raw] = group
+                                            }
+                                        }
+                                    } label: {
+                                        HStack(spacing: AppDesign.Theme.Spacing.micro) {
+                                            Text(bulkCategoryAssignments[raw]?.name ?? "Assign Group")
+                                                .foregroundStyle(.secondary)
+                                            Image(systemName: "chevron.up.chevron.down")
+                                                .appCaptionText()
+                                        }
+                                    }
+                                }
                             }
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -389,7 +423,7 @@ extension ImportDataViewImpl {
 	                                } label: {
 	                                    Text(selectedUnmappedCategories.count == unmappedCategories.count ? "Deselect All" : "Select All")
 	                                        .appSecondaryBodyText()
-	                                        .foregroundStyle(AppColors.tint(for: appColorMode))
+	                                        .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
 	                                }
                             }
                         }
@@ -397,20 +431,56 @@ extension ImportDataViewImpl {
                     }
 
                     Section("Destination Group") {
-                        Toggle("Create New Group", isOn: $bulkCreateNewGroup)
+                        if bulkGroupingMode == .single {
+                            Toggle("Create New Group", isOn: $bulkCreateNewGroup)
 
-                        if bulkCreateNewGroup {
+                            if bulkCreateNewGroup {
+                                TextField("Group Name", text: $bulkNewGroupName)
+                                Picker("Type", selection: $bulkNewGroupType) {
+                                    ForEach(CategoryGroupType.allCases.filter { $0 != .transfer }, id: \.self) { type in
+                                        Text(type.rawValue).tag(type)
+                                    }
+                                }
+                            } else {
+                                Picker("Group", selection: $bulkCategoryGroup) {
+                                    Text("Select Group").tag(Optional<CategoryGroup>.none)
+                                    ForEach(allGroups.filter { $0.type != .transfer }) { group in
+                                        Text(group.name).tag(Optional(group))
+                                    }
+                                }
+                            }
+                        } else {
+                            Text("Use Smart or Custom grouping to assign multiple groups.")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if bulkGroupingMode != .single {
+                        Section("Create Group") {
                             TextField("Group Name", text: $bulkNewGroupName)
                             Picker("Type", selection: $bulkNewGroupType) {
                                 ForEach(CategoryGroupType.allCases.filter { $0 != .transfer }, id: \.self) { type in
                                     Text(type.rawValue).tag(type)
                                 }
                             }
-                        } else {
-                            Picker("Group", selection: $bulkCategoryGroup) {
-                                Text("Select Group").tag(Optional<CategoryGroup>.none)
-                                ForEach(allGroups.filter { $0.type != .transfer }) { group in
-                                    Text(group.name).tag(Optional(group))
+                            Toggle("Assign to selected categories", isOn: $bulkAssignNewGroupToSelection)
+                            Button("Add Group") {
+                                createBulkGroupAndAssignIfNeeded()
+                            }
+                            .disabled(bulkNewGroupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                    }
+
+                    if !bulkAssignmentSummary.isEmpty {
+                        Section("Review") {
+                            ForEach(bulkAssignmentSummary, id: \.groupID) { summary in
+                                HStack {
+                                    Text(summary.group.name)
+                                    Spacer()
+                                    Text("\(summary.count)")
+                                        .appCaptionText()
+                                        .foregroundStyle(.secondary)
                                 }
                             }
                         }
@@ -419,6 +489,17 @@ extension ImportDataViewImpl {
                 .navigationTitle("Bulk Create")
                 .navigationBarTitleDisplayMode(.inline)
                 .globalKeyboardDoneToolbar()
+                .onChange(of: bulkGroupingMode) { _, _ in
+                    applyBulkGroupingMode()
+                }
+                .onChange(of: bulkCategoryGroup?.persistentModelID) { _, _ in
+                    if bulkGroupingMode == .single, let group = bulkCategoryGroup {
+                        assignAllSelected(to: group)
+                    }
+                }
+                .onChange(of: selectedUnmappedCategories) { _, _ in
+                    applyBulkGroupingMode()
+                }
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") {
@@ -429,7 +510,7 @@ extension ImportDataViewImpl {
                         Button("Create \(selectedUnmappedCategories.count)") {
                             performBulkCategoryCreation()
                         }
-                        .disabled(selectedUnmappedCategories.isEmpty || (bulkCreateNewGroup ? bulkNewGroupName.isEmpty : bulkCategoryGroup == nil))
+                        .disabled(selectedUnmappedCategories.isEmpty || (bulkGroupingMode == .single && (bulkCreateNewGroup ? bulkNewGroupName.isEmpty : bulkCategoryGroup == nil)))
                     }
                 }
             }
@@ -441,34 +522,40 @@ extension ImportDataViewImpl {
     func prepareBulkCategoryCreation() {
         // Pre-select all unmapped categories
         selectedUnmappedCategories = Set(unmappedCategories)
-        // Reset group selection - exclude transfer groups
-        bulkCategoryGroup = allGroups.filter { $0.type != .transfer }.first
+        let expensesGroup = getOrCreateDefaultExpensesGroup()
+        bulkCategoryGroup = expensesGroup
         bulkCreateNewGroup = false
         bulkNewGroupName = ""
         bulkNewGroupType = .expense
+        bulkGroupingMode = .smart
+        bulkCategoryAssignments = [:]
+        bulkCreatedGroups = []
+        applyBulkGroupingMode()
         showingBulkCategoryCreation = true
     }
 
 	    func performBulkCategoryCreation() {
-        var targetGroup: CategoryGroup
-
         var createdGroup: CategoryGroup? = nil
         var createdCategories: [Category] = []
 
-        if bulkCreateNewGroup {
-            let newGroup = CategoryGroup(name: bulkNewGroupName, type: bulkNewGroupType)
-            modelContext.insert(newGroup)
-            allGroups.append(newGroup)
-            targetGroup = newGroup
-            createdGroup = newGroup
-        } else {
-            guard let group = bulkCategoryGroup else { return }
-            targetGroup = group
+        if bulkGroupingMode == .single {
+            if bulkCreateNewGroup {
+                let newGroup = CategoryGroup(name: bulkNewGroupName, type: bulkNewGroupType)
+                modelContext.insert(newGroup)
+                allGroups.append(newGroup)
+                bulkCategoryGroup = newGroup
+                createdGroup = newGroup
+            }
+            guard let targetGroup = bulkCategoryGroup else { return }
+            assignAllSelected(to: targetGroup)
+        } else if bulkCategoryAssignments.isEmpty {
+            applyBulkGroupingMode()
         }
 
         // Create all selected categories
         for rawCategory in selectedUnmappedCategories {
             let newCat = Category(name: rawCategory)
+            let targetGroup = bulkCategoryAssignments[rawCategory] ?? getOrCreateDefaultExpensesGroup()
             newCat.group = targetGroup
             modelContext.insert(newCat)
             createdCategories.append(newCat)
@@ -497,9 +584,128 @@ extension ImportDataViewImpl {
         showingBulkCategoryCreation = false
     }
 
+    private var bulkAssignmentSummary: [(group: CategoryGroup, count: Int, groupID: PersistentIdentifier)] {
+        var counts: [PersistentIdentifier: (group: CategoryGroup, count: Int)] = [:]
+        for raw in selectedUnmappedCategories {
+            let group = bulkCategoryAssignments[raw] ?? bulkCategoryGroup ?? getOrCreateDefaultExpensesGroup()
+            let id = group.persistentModelID
+            if var entry = counts[id] {
+                entry.count += 1
+                counts[id] = entry
+            } else {
+                counts[id] = (group, 1)
+            }
+        }
+        return counts.values
+            .map { ($0.group, $0.count, $0.group.persistentModelID) }
+            .sorted { $0.0.order < $1.0.order }
+    }
+
+    private func applyBulkGroupingMode() {
+        switch bulkGroupingMode {
+        case .single:
+            if let group = bulkCategoryGroup {
+                assignAllSelected(to: group)
+            }
+        case .smart:
+            bulkCategoryAssignments = smartAssignments(for: selectedUnmappedCategories)
+        case .custom:
+            if bulkCategoryAssignments.isEmpty {
+                bulkCategoryAssignments = smartAssignments(for: selectedUnmappedCategories)
+            }
+        }
+    }
+
+    private func assignAllSelected(to group: CategoryGroup) {
+        for raw in selectedUnmappedCategories {
+            bulkCategoryAssignments[raw] = group
+        }
+    }
+
+    private func createBulkGroupAndAssignIfNeeded() {
+        let trimmed = bulkNewGroupName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let group = getOrCreateGroup(named: trimmed, type: bulkNewGroupType)
+        bulkCreatedGroups.append(group)
+        if bulkAssignNewGroupToSelection {
+            assignAllSelected(to: group)
+        }
+        bulkNewGroupName = ""
+        bulkNewGroupType = .expense
+    }
+
+    private func smartAssignments(for rawCategories: Set<String>) -> [String: CategoryGroup] {
+        var assignments: [String: CategoryGroup] = [:]
+        for raw in rawCategories {
+            assignments[raw] = smartGroup(for: raw)
+        }
+        return assignments
+    }
+
+    private func smartGroup(for raw: String) -> CategoryGroup {
+        let normalized = raw.lowercased()
+        let tokens = Set(normalized.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init))
+
+        let incomeKeywords: Set<String> = [
+            "income", "salary", "payroll", "paycheck", "bonus", "interest", "dividend", "refund"
+        ]
+        if !tokens.isEmpty, !incomeKeywords.intersection(tokens).isEmpty {
+            return getOrCreateIncomeGroup()
+        }
+
+        let expenseMap: [(keywords: [String], groupName: String)] = [
+            (["rent", "mortgage", "housing", "lease"], "Housing"),
+            (["grocery", "groceries", "supermarket", "market"], "Groceries"),
+            (["restaurant", "dining", "cafe", "coffee", "takeout"], "Dining"),
+            (["utility", "utilities", "electric", "water", "gas", "internet", "wifi"], "Utilities"),
+            (["transport", "transit", "uber", "lyft", "fuel", "gasoline", "parking"], "Transportation"),
+            (["insurance", "premium"], "Insurance"),
+            (["health", "medical", "pharmacy", "doctor", "dental"], "Healthcare"),
+            (["entertainment", "movie", "music", "stream", "netflix", "spotify"], "Entertainment"),
+            (["travel", "hotel", "airline", "flight"], "Travel"),
+            (["education", "tuition", "school", "books"], "Education"),
+            (["child", "kids", "childcare", "daycare"], "Kids"),
+            (["phone", "cell", "mobile"], "Phone"),
+            (["home", "maintenance", "repair"], "Home"),
+            (["subscription", "membership"], "Subscriptions")
+        ]
+
+        for entry in expenseMap {
+            if entry.keywords.contains(where: { tokens.contains($0) || normalized.contains($0) }) {
+                return getOrCreateGroup(named: entry.groupName, type: .expense)
+            }
+        }
+
+        return getOrCreateDefaultExpensesGroup()
+    }
+
+    private func getOrCreateIncomeGroup() -> CategoryGroup {
+        if let existing = allGroups.first(where: { $0.type == .income }) {
+            return existing
+        }
+        let maxOrder = allGroups.map(\.order).max() ?? -1
+        let newGroup = CategoryGroup(name: "Income", order: maxOrder + 1, type: .income)
+        modelContext.insert(newGroup)
+        allGroups.append(newGroup)
+        _ = modelContext.safeSave(context: "ImportDataView.getOrCreateIncomeGroup", showErrorToUser: false)
+        return newGroup
+    }
+
+    private func getOrCreateGroup(named name: String, type: CategoryGroupType) -> CategoryGroup {
+        if let existing = allGroups.first(where: { $0.name.compare(name, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame && $0.type == type }) {
+            return existing
+        }
+        let maxOrder = allGroups.map(\.order).max() ?? -1
+        let newGroup = CategoryGroup(name: name, order: maxOrder + 1, type: type)
+        modelContext.insert(newGroup)
+        allGroups.append(newGroup)
+        _ = modelContext.safeSave(context: "ImportDataView.getOrCreateGroup", showErrorToUser: false)
+        return newGroup
+    }
+
 	    func startCreatingCategory(for raw: String, prefill: Bool) {
         newCategoryName = prefill ? raw : ""
-        newCategoryGroup = allGroups.first
+        newCategoryGroup = getOrCreateDefaultExpensesGroup()
         
         // Reset/Default group creation state
         isCreatingNewGroup = false

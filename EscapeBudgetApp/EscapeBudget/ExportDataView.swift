@@ -106,7 +106,7 @@ struct ExportDataView: View {
         NavigationStack {
             List {
 	                Section {
-	                    VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+	                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
 	                        Text("Export Transactions")
 	                            .appSectionTitleText()
 	                        Text("Export your transactions to CSV, with optional password protection.")
@@ -117,14 +117,14 @@ struct ExportDataView: View {
 	                            .appSecondaryBodyText()
 	                            .foregroundStyle(.secondary)
 	                    }
-	                    .padding(.vertical, AppTheme.Spacing.compact)
+	                    .padding(.vertical, AppDesign.Theme.Spacing.compact)
 	                }
 
 	                if isDemoMode {
 	                    Section {
 	                        HStack {
 	                            Image(systemName: "exclamationmark.triangle.fill")
-	                                .foregroundStyle(AppColors.warning(for: appColorMode))
+	                                .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
 	                            Text("Demo mode is active. Demo data will not be exported.")
 	                                .appSecondaryBodyText()
 	                        }
@@ -161,7 +161,7 @@ struct ExportDataView: View {
                 }
 
                 Section("Security") {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                         Toggle("Password-protected export", isOn: encryptedExportBinding)
                         Text("Encrypts the export file with your password.")
                             .appCaptionText()
@@ -177,11 +177,11 @@ struct ExportDataView: View {
                         if !exportPassword.isEmpty, exportPassword.count < 8 {
                             Text("Use at least 8 characters.")
                                 .appCaptionText()
-                                .foregroundStyle(AppColors.warning(for: appColorMode))
+                                .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                         } else if !exportPasswordConfirm.isEmpty, exportPasswordConfirm != exportPassword {
                             Text("Passwords don’t match.")
                                 .appCaptionText()
-                                .foregroundStyle(AppColors.danger(for: appColorMode))
+                                .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                         }
 
                         Text("If you forget this password, the export can’t be recovered.")
@@ -211,8 +211,8 @@ struct ExportDataView: View {
                 }
 
 	                Section("Escape Budget Backup") {
-	                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-	                        Text("Export a full backup of your accounts, budgets, tags, goals, rules, and transactions.")
+	                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                        Text("Export a full backup of your accounts, budgets, tags, goals, rules, transactions, and settings.")
 	                            .appSecondaryBodyText()
 	                            .foregroundStyle(.secondary)
 	                        Text("Restore it later via Settings → Data Management → Restore Backup.")

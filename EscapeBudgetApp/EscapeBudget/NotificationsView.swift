@@ -52,10 +52,10 @@ struct NotificationsView: View {
                                             Label("Delete All", systemImage: "trash")
                                         }
                                     } label: {
-                                        Image(systemName: "ellipsis.circle")
+                                        Image(systemName: "ellipsis")
                                             .imageScale(.large)
                                     }
-                                    .foregroundStyle(AppColors.tint(for: appColorMode))
+                                    .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                                     .confirmationDialog("Delete all notifications?", isPresented: $showingDeleteAllConfirmFromMenu, titleVisibility: .visible) {
                                         Button("Delete All", role: .destructive) {
                                             clearAllNotifications()
@@ -74,16 +74,9 @@ struct NotificationsView: View {
 
     private var notificationsList: some View {
         List {
-            if let topChrome {
-                topChrome
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
+            if topChrome != nil {
+                AppChromeListRow(topChrome: topChrome, scrollID: "NotificationsView.scroll")
             }
-            ScrollOffsetReader(coordinateSpace: "NotificationsView.scroll", id: "NotificationsView.scroll")
-                .listRowInsets(EdgeInsets())
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
 
             if notifications.isEmpty {
                 ContentUnavailableView(
@@ -109,7 +102,7 @@ struct NotificationsView: View {
                                     systemImage: notification.isRead ? "envelope" : "envelope.open"
                                 )
                             }
-                            .tint(AppColors.tint(for: appColorMode))
+                            .tint(AppDesign.Colors.tint(for: appColorMode))
                         }
                 }
             }
@@ -119,7 +112,7 @@ struct NotificationsView: View {
         .coordinateSpace(name: "NotificationsView.scroll")
         .safeAreaInset(edge: .bottom) {
             if !notifications.isEmpty {
-                HStack(spacing: AppTheme.Spacing.tight) {
+                HStack(spacing: AppDesign.Theme.Spacing.tight) {
                     Button(role: .destructive) {
                         showingDeleteAllConfirmFromBottom = true
                     } label: {
@@ -148,9 +141,9 @@ struct NotificationsView: View {
                     }
                     .appPrimaryCTA()
                 }
-                .padding(.horizontal, AppTheme.Spacing.medium)
-                .padding(.top, AppTheme.Spacing.small)
-                .padding(.bottom, AppTheme.Spacing.tight)
+                .padding(.horizontal, AppDesign.Theme.Spacing.medium)
+                .padding(.top, AppDesign.Theme.Spacing.small)
+                .padding(.bottom, AppDesign.Theme.Spacing.tight)
                 .background(.ultraThinMaterial)
             }
         }
@@ -208,15 +201,15 @@ struct NotificationRow: View {
     
     var iconColor: Color {
         switch notification.type {
-        case .info: return AppColors.info(for: appColorMode)
-        case .success: return AppColors.success(for: appColorMode)
-        case .warning: return AppColors.warning(for: appColorMode)
-        case .alert: return AppColors.danger(for: appColorMode)
+        case .info: return AppDesign.Colors.info(for: appColorMode)
+        case .success: return AppDesign.Colors.success(for: appColorMode)
+        case .warning: return AppDesign.Colors.warning(for: appColorMode)
+        case .alert: return AppDesign.Colors.danger(for: appColorMode)
         }
     }
     
     var body: some View {
-        HStack(alignment: .top, spacing: AppTheme.Spacing.medium) {
+        HStack(alignment: .top, spacing: AppDesign.Theme.Spacing.medium) {
             Image(systemName: notification.type.icon)
                 .appTitleText()
                 .foregroundStyle(iconColor)
@@ -224,7 +217,7 @@ struct NotificationRow: View {
                 .background(iconColor.opacity(0.1))
                 .clipShape(Circle())
             
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                 HStack {
                     Text(notification.title)
                         .appSectionTitleText()
@@ -234,7 +227,7 @@ struct NotificationRow: View {
                     
                     if !notification.isRead {
                         Circle()
-                            .fill(AppColors.tint(for: appColorMode))
+                            .fill(AppDesign.Colors.tint(for: appColorMode))
                             .frame(width: 8, height: 8)
                     }
                 }
@@ -245,12 +238,12 @@ struct NotificationRow: View {
                     .fixedSize(horizontal: false, vertical: true)
                 
                 Text(notification.date.formatted(.relative(presentation: .named)))
-                    .font(.caption2)
+                    .appCaption2Text()
                     .foregroundStyle(.secondary)
-                    .padding(.top, AppTheme.Spacing.hairline)
+                    .padding(.top, AppDesign.Theme.Spacing.hairline)
             }
         }
-        .padding(.vertical, AppTheme.Spacing.micro)
+        .padding(.vertical, AppDesign.Theme.Spacing.micro)
         .opacity(notification.isRead ? 0.6 : 1.0)
     }
 }

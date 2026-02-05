@@ -55,9 +55,9 @@ struct BillsDashboardView: View {
 
                     // Summary Card
                     Section {
-                        VStack(spacing: AppTheme.Spacing.tight) {
+                        VStack(spacing: AppDesign.Theme.Spacing.tight) {
                             HStack {
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                                     Text("Monthly Total")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
@@ -68,7 +68,7 @@ struct BillsDashboardView: View {
 
                                 Spacer()
 
-                                VStack(alignment: .trailing, spacing: AppTheme.Spacing.micro) {
+                                VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.micro) {
                                     Text("Active Bills")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
@@ -81,7 +81,7 @@ struct BillsDashboardView: View {
                             if upcomingThisWeekCount > 0 {
                                 HStack {
                                     Image(systemName: "exclamationmark.circle.fill")
-                                        .foregroundStyle(AppColors.warning(for: appColorMode))
+                                        .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                                     Text("\(upcomingThisWeekCount) bill\(upcomingThisWeekCount == 1 ? "" : "s") due this week")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
@@ -90,22 +90,22 @@ struct BillsDashboardView: View {
                                         .appSecondaryBodyText()
                                         .fontWeight(.medium)
                                 }
-                                .padding(.top, AppTheme.Spacing.xSmall)
+                                .padding(.top, AppDesign.Theme.Spacing.xSmall)
                             }
 
                             if overdueCount > 0 {
                                 HStack {
                                     Image(systemName: "exclamationmark.triangle.fill")
-                                        .foregroundStyle(AppColors.danger(for: appColorMode))
+                                        .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                                     Text("\(overdueCount) overdue bill\(overdueCount == 1 ? "" : "s")")
                                         .appCaptionText()
-                                        .foregroundStyle(AppColors.danger(for: appColorMode))
+                                        .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                                     Spacer()
                                 }
-                                .padding(.top, AppTheme.Spacing.xSmall)
+                                .padding(.top, AppDesign.Theme.Spacing.xSmall)
                             }
                         }
-                        .padding(.vertical, AppTheme.Spacing.compact)
+                        .padding(.vertical, AppDesign.Theme.Spacing.compact)
                     }
 
                     // Filter Picker
@@ -130,7 +130,7 @@ struct BillsDashboardView: View {
                                     } label: {
                                         Label("Mark Paid", systemImage: "checkmark.circle.fill")
                                     }
-                                    .tint(AppColors.success(for: appColorMode))
+                                    .tint(AppDesign.Colors.success(for: appColorMode))
                                 }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                     Button(role: .destructive) {
@@ -281,13 +281,13 @@ struct BillRow: View {
             return .secondary
         }
         if isOverdue {
-            return AppColors.danger(for: appColorMode)
+            return AppDesign.Colors.danger(for: appColorMode)
         }
         if daysUntilDue <= 3 {
-            return AppColors.warning(for: appColorMode)
+            return AppDesign.Colors.warning(for: appColorMode)
         }
         if daysUntilDue <= 7 {
-            return AppColors.tint(for: appColorMode)
+            return AppDesign.Colors.tint(for: appColorMode)
         }
         return .secondary
     }
@@ -296,7 +296,7 @@ struct BillRow: View {
         Button {
             showingEditSheet = true
         } label: {
-            HStack(spacing: AppTheme.Spacing.medium) {
+            HStack(spacing: AppDesign.Theme.Spacing.medium) {
                 // Category Icon
                 ZStack {
                     Circle()
@@ -304,12 +304,12 @@ struct BillRow: View {
                         .frame(width: 44, height: 44)
 
                     Image(systemName: iconForCategory(bill.category))
-                        .font(.system(size: 18))
+                        .appDisplayText(AppDesign.Theme.DisplaySize.medium, weight: .regular)
                         .foregroundStyle(urgencyColor)
                 }
 
                 // Content
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                     HStack {
                         Text(bill.name)
                             .appSectionTitleText()
@@ -326,7 +326,7 @@ struct BillRow: View {
                         }
                     }
 
-                    HStack(spacing: AppTheme.Spacing.xSmall) {
+                    HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                         Text(bill.recurrenceFrequency.rawValue)
                             .appCaptionText()
                             .foregroundStyle(.secondary)
@@ -349,7 +349,7 @@ struct BillRow: View {
                 Spacer(minLength: 0)
 
                 // Amount
-                VStack(alignment: .trailing, spacing: AppTheme.Spacing.micro) {
+                VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.micro) {
                     Text(bill.amount, format: .currency(code: currencyCode))
                         .appSectionTitleText()
                         .foregroundStyle(bill.isActive ? .primary : .secondary)
@@ -361,7 +361,7 @@ struct BillRow: View {
                     }
                 }
             }
-            .padding(.vertical, AppTheme.Spacing.compact)
+            .padding(.vertical, AppDesign.Theme.Spacing.compact)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

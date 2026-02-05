@@ -37,6 +37,7 @@ final class TransferPatternLearner {
         updateAmountRange(pattern: &pattern, debit: debit, credit: credit)
         updateTimingPattern(pattern: &pattern, debit: debit, credit: credit)
         updateTextPatterns(pattern: &pattern, debit: debit, credit: credit)
+        updateCalendarPattern(pattern: &pattern, debit: debit, credit: credit)
 
         // Save changes
         _ = modelContext.safeSave(
@@ -192,12 +193,44 @@ final class TransferPatternLearner {
         }
     }
 
+    private func updateCalendarPattern(pattern: inout TransferPattern, debit: Transaction, credit: Transaction) {
+        let calendar = Calendar.current
+        let day = normalizedDayOfMonth(from: debit.date, calendar: calendar)
+
+        pattern.dayOfMonthSampleCount += 1
+
+        guard let current = pattern.commonDayOfMonth else {
+            pattern.commonDayOfMonth = day
+            pattern.dayOfMonthMatchCount = 1
+            return
+        }
+
+        if current == day {
+            pattern.dayOfMonthMatchCount += 1
+        } else {
+            pattern.dayOfMonthMatchCount = max(0, pattern.dayOfMonthMatchCount - 1)
+            if pattern.dayOfMonthMatchCount == 0 {
+                pattern.commonDayOfMonth = day
+                pattern.dayOfMonthMatchCount = 1
+            }
+        }
+    }
+
     // MARK: - Helper Methods
 
     private func makeAccountPairID(from debit: Transaction, to credit: Transaction) -> String {
         let account1ID = debit.account?.persistentModelID.hashValue ?? 0
         let account2ID = credit.account?.persistentModelID.hashValue ?? 0
         return "\(min(account1ID, account2ID))-\(max(account1ID, account2ID))"
+    }
+
+    private func normalizedDayOfMonth(from date: Date, calendar: Calendar) -> Int {
+        let day = calendar.component(.day, from: date)
+        let daysInMonth = calendar.range(of: .day, in: .month, for: date)?.count ?? 31
+        if day >= max(1, daysInMonth - 1) {
+            return 0 // end-of-month bucket
+        }
+        return day
     }
 
     private func createPattern(for accountPairID: String) -> TransferPattern {

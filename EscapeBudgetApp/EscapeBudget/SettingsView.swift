@@ -16,8 +16,9 @@ struct SettingsView: View {
     @EnvironmentObject private var navigator: AppNavigator
     @EnvironmentObject private var authService: AuthenticationService
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.appColorMode) private var appColorMode
     @AppStorage("userAppearance") private var userAppearanceString = "System"
-    @AppStorage("appIconMode") private var appIconModeRawValue = AppIconMode.dark.rawValue
+    @AppStorage("appIconMode") private var appIconModeRawValue = AppIconMode.system.rawValue
     @AppStorage("appColorMode") private var appColorModeRawValue = AppColorMode.standard.rawValue
     @AppStorage("isDemoMode") private var isDemoMode = false
     @AppStorage("shouldShowWelcome") private var shouldShowWelcome = true
@@ -48,9 +49,19 @@ struct SettingsView: View {
     @State private var isRebuildingStats = false
     @State private var isEnablingBiometrics = false
     @State private var showBiometricError = false
+    @State private var showingPasscodeSetup = false
+    @State private var passcodeStage: PasscodeSetupStage = .create
+    @State private var passcodeDraft = ""
+    @State private var passcodeError = false
+    @State private var passcodeErrorMessage = "Passcodes didn't match. Try again."
     @State private var appearanceMode: String = "System"
     @State private var showingNotificationOptions = false
     @State private var hasInitializedServices = false
+
+    private enum PasscodeSetupStage {
+        case create
+        case confirm
+    }
     
     // Currency options
     let currencies = [
@@ -127,499 +138,30 @@ struct SettingsView: View {
         }
     }
 
-    @ViewBuilder
     private var settingsList: some View {
-        let baseList = List {
-            if let topChrome {
-                topChrome
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
+        settingsListView
+    }
+
+    private var settingsBaseList: some View {
+        List {
+            if topChrome != nil {
+                AppChromeListRow(topChrome: topChrome, scrollID: "SettingsView.scroll")
             }
-            // Demo Mode Section - Prominent at top
-            if isDemoMode {
-                Section {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
-                        HStack(spacing: AppTheme.Spacing.compact) {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
-                            Text("Demo Mode Active")
-                                .appSectionTitleText()
-                            Spacer()
-                            Button("Turn Off") {
-                                isDemoMode = false
-                            }
-                            .appSecondaryCTA()
-                            .controlSize(.small)
-                        }
-
-                        Text("You're viewing sample data. Your real data is safe and will return when you turn off demo mode.")
-                            .appCaptionText()
-                            .foregroundStyle(.secondary)
-
-                        Button {
-                            resetDemoData()
-                        } label: {
-                            Label("Reset Demo Data", systemImage: "arrow.clockwise")
-                        }
-                        .buttonStyle(.borderless)
-                    }
-                    .padding(.vertical, AppTheme.Spacing.micro)
-                } header: {
-                    Text("Demo")
-                }
-            }
-
-            Section("Account") {
-                if userAccountService.isSignedIn {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
-                        HStack {
-                            Label("Signed in with Apple", systemImage: "person.crop.circle.fill")
-                            Spacer()
-                            Text(userAccountService.credentialState == .authorized ? "Active" : "Check")
-                                .foregroundStyle(.secondary)
-                        }
-
-                        if let email = userAccountService.email, !email.isEmpty {
-                            LabeledContent("Email", value: email)
-                        } else {
-                            LabeledContent("Email", value: "Hidden by Apple")
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Button(role: .destructive) {
-                            userAccountService.signOut()
-                        } label: {
-                            Text("Sign Out")
-                        }
-                        .buttonStyle(.borderless)
-                    }
-                } else {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
-                        Text("Sign in to help protect your access to premium features and make future upgrades like restore + multi-device support possible.")
-                            .appCaptionText()
-                            .foregroundStyle(.secondary)
-
-                        SignInWithAppleButton(.signIn) { request in
-                            request.requestedScopes = [.email]
-                        } onCompletion: { result in
-                            userAccountService.handleSignInCompletion(result: result)
-                        }
-                        .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
-                        .frame(height: 44)
-                    }
-                    .padding(.vertical, AppTheme.Spacing.micro)
-                }
-            }
-
-            Section("Plan") {
-                switch premiumStatusService.plan {
-                case .premium:
-                    LabeledContent("Status", value: "Premium Active")
-                case .trial(let daysRemaining):
-                    LabeledContent("Status", value: "Trial • \(daysRemaining) days left")
-                case .free:
-                    LabeledContent("Status", value: "Free • Trial ended")
-                }
-
-                Button {
-                    // Placeholder for StoreKit paywall + restore purchases.
-                } label: {
-                    HStack {
-                        Label("Upgrade to Premium", systemImage: "crown")
-                        Spacer()
-                        Text("Coming soon")
-                            .appCaptionText()
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .disabled(true)
-            }
-
-            Section("Preferences") {
-                Picker(selection: $appLanguage) {
-                    ForEach(languages, id: \.self) { language in
-                        Text(language).tag(language)
-                    }
-                } label: {
-                    Label("Language", systemImage: "globe")
-                }
-
-                    NavigationLink {
-                        CurrencySelectionView(selectedCurrency: $currencyCode, currencies: currencies)
-                    } label: {
-                        HStack {
-                            Label {
-                                Text("Currency")
-                                    .fontWeight(.regular)
-                            } icon: {
-                                Image(systemName: "dollarsign.circle")
-                            }
-                            Spacer()
-                            if let currency = currencies.first(where: { $0.0 == currencyCode }) {
-                                Text(currency.0)
-                                    .foregroundStyle(.tint)
-                            }
-                        }
-                    }
-                }
-                
-                Section("Appearance") {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                        HStack {
-                            Image(systemName: "moon")
-                                .foregroundStyle(.primary)
-                                .frame(width: 20)
-                            Picker("App Theme", selection: Binding(
-                            get: { appearanceMode },
-                            set: { newValue in
-                                appearanceMode = newValue
-                                updateAppearance(newValue)
-                            }
-                        )) {
-                            Text("System").tag("System")
-                            Text("Light").tag("Light")
-                            Text("Dark").tag("Dark")
-                        }
-                        }
-                        Text("Choose whether the app follows your system appearance or stays in light/dark mode.")
-                            .appCaptionText()
-                            .foregroundStyle(.secondary)
-                    }
-
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                        HStack {
-                            Image(systemName: "app")
-                                .foregroundStyle(.primary)
-                                .frame(width: 20)
-                            Picker("App Icon", selection: Binding(
-                            get: { appIconModeRawValue },
-                            set: { newValue in
-                                appIconModeRawValue = newValue
-                                Task {
-                                    await AppIconController.apply(modeRawValue: newValue)
-                                }
-                            }
-                        )) {
-                            Text("System").tag(AppIconMode.system.rawValue)
-                            Text("Dark").tag("Dark")
-                            Text("Light").tag("Light")
-                        }
-                        }
-                        Text("Choose whether the icon follows your appearance or stays light/dark.")
-                            .appCaptionText()
-                            .foregroundStyle(.secondary)
-                    }
-
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                        HStack {
-                            Image(systemName: "paintpalette")
-                                .foregroundStyle(.primary)
-                                .frame(width: 20)
-                            Picker("App Colours", selection: $appColorModeRawValue) {
-                            ForEach(AppColorMode.allCases) { mode in
-                                Text(mode.rawValue).tag(mode.rawValue)
-                            }
-                        }
-                        }
-                        Text("Choose the color scheme for the app.")
-                            .appCaptionText()
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                
-                Section("Notifications") {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                        HStack {
-                            Label {
-                                Text("System Notifications")
-                                    .fontWeight(.regular)
-                            } icon: {
-                                Image(systemName: "bell")
-                            }
-                            Spacer()
-                            Text(notificationService.notificationsEnabled ? "Enabled" : "Off")
-                                .foregroundStyle(.secondary)
-                        }
-                        Button("Enable System Notifications") {
-                            Task {
-                                _ = await notificationService.requestAuthorization()
-                                if notificationService.notificationsEnabled, billReminders {
-                                    await notificationService.scheduleAllRecurringBillNotifications(
-                                        modelContext: modelContext,
-                                        daysBefore: notificationService.reminderDaysBefore
-                                    )
-                                }
-                            }
-                        }
-                        .buttonStyle(.borderless)
-
-                        Text("iOS notifications require permission. In-app notifications always appear in your Notifications feed.")
-                            .appCaptionText()
-                            .foregroundStyle(.secondary)
-                    }
-
-                    DisclosureGroup(
-                        isExpanded: $showingNotificationOptions,
-                        content: {
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                                Toggle("Show details in iOS notifications", isOn: $showSensitiveNotificationContent)
-                                Text("When off, notifications hide amounts, filenames, and other details on your lock screen.")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                            }
-                            .onChange(of: showSensitiveNotificationContent) { _, _ in
-                                Task {
-                                    if notificationService.notificationsEnabled, billReminders {
-                                        await notificationService.scheduleAllRecurringBillNotifications(
-                                            modelContext: modelContext,
-                                            daysBefore: notificationService.reminderDaysBefore
-                                        )
-                                    }
-                                }
-                            }
-
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                                Toggle("Budget Alerts", isOn: $budgetAlerts)
-                                Text("Get notified when approaching budget limits")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                                Toggle("Bill Reminders", isOn: $billReminders)
-                                Text("Receive reminders for upcoming recurring bills")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                                Toggle("Transfers Inbox", isOn: $transfersInboxNotifications)
-                                Text("Get notified when transfers need review")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                                Toggle("Import Complete", isOn: $importCompleteNotifications)
-                                Text("Get notified when data imports finish")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                                Toggle("Export Status", isOn: $exportStatusNotifications)
-                                Text("Get notified when exports are ready or fail")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                                Toggle("Backup & Restore", isOn: $backupRestoreNotifications)
-                                Text("Get notified when backups restore successfully or fail")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                                Toggle("Rule Applied", isOn: $ruleAppliedNotifications)
-                                Text("Get notified when retroactive rules complete")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                            }
-
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                                Toggle("Badge Achievements", isOn: $badgeAchievementNotifications)
-                                Text("Get notified when you earn a badge")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .padding(.top, AppTheme.Spacing.compact)
-                        },
-                        label: {
-                            Label {
-                                Text("Notification Options")
-                                    .fontWeight(.regular)
-                            } icon: {
-                                Image(systemName: "bell.badge")
-                            }
-                        }
-	                    )
-	                }
-
-	                // Demo Mode Toggle when NOT in demo mode
-	                if !isDemoMode {
-	                    Section("Demo") {
-	                        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
-                                Toggle(isOn: $isDemoMode) {
-                                    Label("Try Demo Mode", systemImage: "sparkles")
-                                }
-                                Text("Explore with sample data without affecting your real information")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(.vertical, AppTheme.Spacing.micro)
-                    }
-                }
-
-                Section("Privacy & Security") {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-                        Toggle(isOn: Binding(
-                            get: { authService.isBiometricsEnabled },
-                            set: { newValue in
-                                if newValue {
-                                    enableBiometrics()
-                                } else {
-                                    authService.disableBiometrics()
-                                }
-                            }
-                        )) {
-                            HStack {
-                                Label("\(authService.biometricType.displayName) Lock", systemImage: authService.biometricType.systemImage)
-                                if isEnablingBiometrics {
-                                    Spacer()
-                                    ProgressView()
-                                }
-                            }
-                        }
-                        .disabled(isEnablingBiometrics || authService.biometricType == .none)
-
-                        if authService.biometricType == .none {
-                            Text("Biometric authentication is not available on this device")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                        } else {
-                            Text("Require \(authService.biometricType.displayName) to unlock the app")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-
-                Section("Data Management") {
-                    NavigationLink {
-                        DataHealthView()
-                    } label: {
-                        HStack {
-                            Label("Data Health", systemImage: "heart.text.square")
-                            Spacer()
-                            Text(iCloudSyncEnabled ? "iCloud Sync On" : "Local")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    NavigationLink {
-                        SavedReceiptsView()
-                    } label: {
-                        Label("Saved Receipts", systemImage: "doc.text.image")
-                    }
-
-                    Button(action: { showingExportData = true }) {
-                        HStack {
-                            Label("Export Data", systemImage: "square.and.arrow.up")
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .foregroundStyle(.primary)
-
-                    Button(action: { showingImportData = true }) {
-                        HStack {
-                            Label("Import Data", systemImage: "square.and.arrow.down")
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .foregroundStyle(.primary)
-
-                    NavigationLink {
-                        AutoBackupSettingsView()
-                    } label: {
-                        HStack {
-                            HStack(spacing: AppTheme.Spacing.compact) {
-                                Image(systemName: "clock.arrow.circlepath")
-                                    .foregroundStyle(.primary)
-                                Text("Auto Backup")
-                                    .fontWeight(.regular)
-                            }
-                            Spacer()
-                            Text(AutoBackupService.destinationDisplayName() ?? "Off")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .foregroundStyle(.primary)
-
-                    Button(action: { showingRestoreBackup = true }) {
-                        HStack {
-                            Label("Restore Backup", systemImage: "arrow.counterclockwise")
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .foregroundStyle(.primary)
-
-                    Button {
-                        showingRebuildStatsConfirm = true
-                    } label: {
-                        HStack {
-                            Label("Rebuild Stats", systemImage: "arrow.triangle.2.circlepath")
-                            Spacer()
-                            if isRebuildingStats {
-                                ProgressView()
-                            } else {
-                                Image(systemName: "chevron.right")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                    .foregroundStyle(.primary)
-                    .disabled(isRebuildingStats)
-
-                    Button(action: { showingDeleteSheet = true }) {
-                        HStack {
-                            HStack(spacing: AppTheme.Spacing.compact) {
-                                Image(systemName: "trash")
-                                    .foregroundStyle(.primary)
-                                Text("Delete All Data")
-                                    .fontWeight(.regular)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .foregroundStyle(.primary)
-                }
-                
-                Section("About") {
-                    HStack {
-                        Text("Version")
-                        Spacer()
-                        Text("1.0.0")
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    HStack {
-                        Text("Build")
-                        Spacer()
-                        Text("2025.12.05")
-                            .foregroundStyle(.secondary)
-                    }
-                }
+            demoModeActiveSection
+            accountSection
+            planSection
+            preferencesSection
+            appearanceSection
+            notificationsSection
+            demoModeToggleSection
+            privacySecuritySection
+            dataManagementSection
+            aboutSection
         }
-        baseList
+    }
+
+    private var settingsListView: some View {
+        settingsBaseList
             .appListCompactSpacing()
             .environment(\.symbolRenderingMode, .monochrome)
             .tint(.primary)
@@ -661,6 +203,31 @@ struct SettingsView: View {
             .sheet(isPresented: $showingDeleteSheet) {
                 deleteSheet
             }
+            .sheet(isPresented: $showingPasscodeSetup, onDismiss: {
+                if !authService.isPasscodeEnabled {
+                    passcodeStage = .create
+                    passcodeDraft = ""
+                    passcodeError = false
+                    passcodeErrorMessage = "Passcodes didn't match. Try again."
+                }
+            }) {
+                NavigationStack {
+                    passcodeSetupSheet
+                        .navigationTitle("Passcode")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Cancel") {
+                                    passcodeStage = .create
+                                    passcodeDraft = ""
+                                    passcodeError = false
+                                    passcodeErrorMessage = "Passcodes didn't match. Try again."
+                                    showingPasscodeSetup = false
+                                }
+                            }
+                        }
+                }
+            }
             .onAppear {
                 appearanceMode = userAppearanceString
 
@@ -670,6 +237,544 @@ struct SettingsView: View {
                 premiumStatusService.ensureTrialStarted()
                 userAccountService.reloadFromStorage()
             }
+    }
+
+    @ViewBuilder
+    private var demoModeActiveSection: some View {
+        if isDemoMode {
+            Section {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
+                    HStack(spacing: AppDesign.Theme.Spacing.compact) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        Text("Demo Mode Active")
+                            .appSectionTitleText()
+                        Spacer()
+                        Button("Turn Off") {
+                            isDemoMode = false
+                        }
+                        .appSecondaryCTA()
+                        .controlSize(.small)
+                    }
+
+                    Text("You're viewing sample data. Your real data is safe and will return when you turn off demo mode.")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+
+                    Button {
+                        resetDemoData()
+                    } label: {
+                        Label("Reset Demo Data", systemImage: "arrow.clockwise")
+                    }
+                    .buttonStyle(.borderless)
+                }
+                .padding(.vertical, AppDesign.Theme.Spacing.micro)
+            } header: {
+                Text("Demo")
+            }
+        }
+    }
+
+    private var accountSection: some View {
+        Section("Account") {
+            if userAccountService.isSignedIn {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
+                    HStack {
+                        Label("Signed in with Apple", systemImage: "person.crop.circle.fill")
+                        Spacer()
+                        Text(userAccountService.credentialState == .authorized ? "Active" : "Check")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if let email = userAccountService.email, !email.isEmpty {
+                        LabeledContent("Email", value: email)
+                    } else {
+                        LabeledContent("Email", value: "Hidden by Apple")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Button(role: .destructive) {
+                        userAccountService.signOut()
+                    } label: {
+                        Text("Sign Out")
+                    }
+                    .buttonStyle(.borderless)
+                }
+            } else {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
+                    Text("Sign in to help protect your access to premium features and make future upgrades like restore + multi-device support possible.")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+
+                    SignInWithAppleButton(.signIn) { request in
+                        request.requestedScopes = [.email]
+                    } onCompletion: { result in
+                        userAccountService.handleSignInCompletion(result: result)
+                    }
+                    .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
+                    .frame(height: 44)
+                }
+                .padding(.vertical, AppDesign.Theme.Spacing.micro)
+            }
+        }
+    }
+
+    private var planSection: some View {
+        Section("Plan") {
+            switch premiumStatusService.plan {
+            case .premium:
+                LabeledContent("Status", value: "Premium Active")
+            case .trial(let daysRemaining):
+                LabeledContent("Status", value: "Trial • \(daysRemaining) days left")
+            case .free:
+                LabeledContent("Status", value: "Free • Trial ended")
+            }
+
+            Button {
+                // Placeholder for StoreKit paywall + restore purchases.
+            } label: {
+                HStack {
+                    Label("Upgrade to Premium", systemImage: "crown")
+                    Spacer()
+                    Text("Coming soon")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .disabled(true)
+        }
+    }
+
+    private var preferencesSection: some View {
+        Section("Preferences") {
+            Picker(selection: $appLanguage) {
+                ForEach(languages, id: \.self) { language in
+                    Text(language).tag(language)
+                }
+            } label: {
+                Label("Language", systemImage: "globe")
+            }
+
+            NavigationLink {
+                CurrencySelectionView(selectedCurrency: $currencyCode, currencies: currencies)
+            } label: {
+                HStack {
+                    Label {
+                        Text("Currency")
+                            .fontWeight(.regular)
+                    } icon: {
+                        Image(systemName: "dollarsign.circle")
+                    }
+                    Spacer()
+                    if let currency = currencies.first(where: { $0.0 == currencyCode }) {
+                        Text(currency.0)
+                            .foregroundStyle(.tint)
+                    }
+                }
+            }
+        }
+    }
+
+    private var appearanceSection: some View {
+        Section("Appearance") {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                HStack {
+                    Image(systemName: "moon")
+                        .foregroundStyle(.primary)
+                        .frame(width: 20)
+                    Picker("App Theme", selection: Binding(
+                        get: { appearanceMode },
+                        set: { newValue in
+                            appearanceMode = newValue
+                            updateAppearance(newValue)
+                        }
+                    )) {
+                        Text("System").tag("System")
+                        Text("Light").tag("Light")
+                        Text("Dark").tag("Dark")
+                    }
+                }
+                Text("Choose whether the app follows your system appearance or stays in light/dark mode.")
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                HStack {
+                    Image(systemName: "app")
+                        .foregroundStyle(.primary)
+                        .frame(width: 20)
+                    Picker("App Icon", selection: Binding(
+                        get: { appIconModeRawValue },
+                        set: { newValue in
+                            appIconModeRawValue = newValue
+                            Task {
+                                await AppIconController.apply(modeRawValue: newValue)
+                            }
+                        }
+                    )) {
+                        Text("System").tag(AppIconMode.system.rawValue)
+                        Text("Dark").tag("Dark")
+                        Text("Light").tag("Light")
+                    }
+                }
+                Text("Choose whether the icon follows your appearance or stays light/dark.")
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                HStack {
+                    Image(systemName: "paintpalette")
+                        .foregroundStyle(.primary)
+                        .frame(width: 20)
+                    Picker("App Colours", selection: $appColorModeRawValue) {
+                        ForEach(AppColorMode.allCases) { mode in
+                            Text(mode.rawValue).tag(mode.rawValue)
+                        }
+                    }
+                }
+                Text("Choose the color scheme for the app.")
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var notificationsSection: some View {
+        Section("Notifications") {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                HStack {
+                    Label {
+                        Text("System Notifications")
+                            .fontWeight(.regular)
+                    } icon: {
+                        Image(systemName: "bell")
+                    }
+                    Spacer()
+                    Text(notificationService.notificationsEnabled ? "Enabled" : "Off")
+                        .foregroundStyle(.secondary)
+                }
+                Button("Enable System Notifications") {
+                    Task {
+                        _ = await notificationService.requestAuthorization()
+                        if notificationService.notificationsEnabled, billReminders {
+                            await notificationService.scheduleAllRecurringBillNotifications(
+                                modelContext: modelContext,
+                                daysBefore: notificationService.reminderDaysBefore
+                            )
+                        }
+                    }
+                }
+                .buttonStyle(.borderless)
+
+                Text("iOS notifications require permission. In-app notifications always appear in your Notifications feed.")
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
+            }
+
+            DisclosureGroup(
+                isExpanded: $showingNotificationOptions,
+                content: {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                            Toggle("Show details in iOS notifications", isOn: $showSensitiveNotificationContent)
+                            Text("When off, notifications hide amounts, filenames, and other details on your lock screen.")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                        }
+                        .onChange(of: showSensitiveNotificationContent) { _, _ in
+                            Task {
+                                if notificationService.notificationsEnabled, billReminders {
+                                    await notificationService.scheduleAllRecurringBillNotifications(
+                                        modelContext: modelContext,
+                                        daysBefore: notificationService.reminderDaysBefore
+                                    )
+                                }
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                            Toggle("Budget Alerts", isOn: $budgetAlerts)
+                            Text("Get notified when approaching budget limits")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                        }
+
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                            Toggle("Bill Reminders", isOn: $billReminders)
+                            Text("Receive reminders for upcoming recurring bills")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                        }
+
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                            Toggle("Transfers Inbox", isOn: $transfersInboxNotifications)
+                            Text("Get notified when transfers need review")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                        }
+
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                            Toggle("Import Complete", isOn: $importCompleteNotifications)
+                            Text("Get notified when data imports finish")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                        }
+
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                            Toggle("Export Status", isOn: $exportStatusNotifications)
+                            Text("Get notified when exports are ready or fail")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                        }
+
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                            Toggle("Backup & Restore", isOn: $backupRestoreNotifications)
+                            Text("Get notified when backups restore successfully or fail")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                        }
+
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                            Toggle("Rule Applied", isOn: $ruleAppliedNotifications)
+                            Text("Get notified when retroactive rules complete")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                        }
+
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                            Toggle("Badge Achievements", isOn: $badgeAchievementNotifications)
+                            Text("Get notified when you earn a badge")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.top, AppDesign.Theme.Spacing.compact)
+                },
+                label: {
+                    Label {
+                        Text("Notification Options")
+                            .fontWeight(.regular)
+                    } icon: {
+                        Image(systemName: "bell.badge")
+                    }
+                }
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var demoModeToggleSection: some View {
+        if !isDemoMode {
+            Section("Demo") {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
+                    Toggle(isOn: $isDemoMode) {
+                        Label("Try Demo Mode", systemImage: "sparkles")
+                    }
+                    Text("Explore with sample data without affecting your real information")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, AppDesign.Theme.Spacing.micro)
+            }
+        }
+    }
+
+    private var privacySecuritySection: some View {
+        Section("Privacy & Security") {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                Toggle(isOn: Binding(
+                    get: { authService.isPasscodeEnabled },
+                    set: { newValue in
+                        if newValue {
+                            passcodeStage = .create
+                            passcodeDraft = ""
+                            passcodeError = false
+                            passcodeErrorMessage = "Passcodes didn't match. Try again."
+                            showingPasscodeSetup = true
+                        } else {
+                            authService.disablePasscode()
+                        }
+                    }
+                )) {
+                    Label("Passcode Lock", systemImage: "number.circle")
+                }
+
+                if authService.isPasscodeEnabled {
+                    Button("Change Passcode") {
+                        passcodeStage = .create
+                        passcodeDraft = ""
+                        passcodeError = false
+                        passcodeErrorMessage = "Passcodes didn't match. Try again."
+                        showingPasscodeSetup = true
+                    }
+                    .font(AppDesign.Theme.Typography.secondaryBody.weight(.semibold))
+                    .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
+                }
+
+                if authService.isPasscodeEnabled {
+                    Toggle(isOn: Binding(
+                        get: { authService.isBiometricsEnabled },
+                        set: { newValue in
+                            if newValue {
+                                enableBiometrics()
+                            } else {
+                                authService.disableBiometrics()
+                            }
+                        }
+                    )) {
+                        HStack {
+                            Label("\(authService.biometricType.displayName) Lock", systemImage: authService.biometricType.systemImage)
+                            if isEnablingBiometrics {
+                                Spacer()
+                                ProgressView()
+                            }
+                        }
+                    }
+                    .disabled(isEnablingBiometrics || authService.biometricType == .none)
+                }
+
+                if authService.biometricType == .none {
+                    Text("Biometric authentication is not available on this device")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                } else if !authService.isPasscodeEnabled {
+                    Text("Set a passcode to enable \(authService.biometricType.displayName)")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Unlock with your passcode or \(authService.biometricType.displayName)")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    private var dataManagementSection: some View {
+        Section("Data Management") {
+            NavigationLink {
+                DataHealthView()
+            } label: {
+                HStack {
+                    Label("Data Health", systemImage: "heart.text.square")
+                    Spacer()
+                    Text(iCloudSyncEnabled ? "iCloud Sync On" : "Local")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            NavigationLink {
+                SavedReceiptsView()
+            } label: {
+                Label("Saved Receipts", systemImage: "doc.text.image")
+            }
+
+            Button(action: { showingExportData = true }) {
+                HStack {
+                    Label("Export Data", systemImage: "square.and.arrow.up")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .foregroundStyle(.primary)
+
+            Button(action: { showingImportData = true }) {
+                HStack {
+                    Label("Import Data", systemImage: "square.and.arrow.down")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .foregroundStyle(.primary)
+
+            NavigationLink {
+                AutoBackupSettingsView()
+            } label: {
+                HStack {
+                    HStack(spacing: AppDesign.Theme.Spacing.compact) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .foregroundStyle(.primary)
+                        Text("Auto Backup")
+                            .fontWeight(.regular)
+                    }
+                    Spacer()
+                    Text(AutoBackupService.destinationDisplayName() ?? "Off")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .foregroundStyle(.primary)
+
+            Button(action: { showingRestoreBackup = true }) {
+                HStack {
+                    Label("Restore Backup", systemImage: "arrow.counterclockwise")
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .foregroundStyle(.primary)
+
+            Button {
+                showingRebuildStatsConfirm = true
+            } label: {
+                HStack {
+                    Label("Rebuild Stats", systemImage: "arrow.triangle.2.circlepath")
+                    Spacer()
+                    if isRebuildingStats {
+                        ProgressView()
+                    } else {
+                        Image(systemName: "chevron.right")
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .foregroundStyle(.primary)
+            .disabled(isRebuildingStats)
+
+            Button(action: { showingDeleteSheet = true }) {
+                HStack {
+                    HStack(spacing: AppDesign.Theme.Spacing.compact) {
+                        Image(systemName: "trash")
+                            .foregroundStyle(.primary)
+                        Text("Delete All Data")
+                            .fontWeight(.regular)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .foregroundStyle(.primary)
+        }
+    }
+
+    private var aboutSection: some View {
+        Section("About") {
+            HStack {
+                Text("Version")
+                Spacer()
+                Text("1.0.0")
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack {
+                Text("Build")
+                Spacer()
+                Text("2025.12.05")
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 
     private var deleteSheet: some View {
@@ -747,6 +852,41 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    private var passcodeSetupSheet: some View {
+        PasscodeEntryView(
+            title: passcodeStage == .create ? "Create Passcode" : "Confirm Passcode",
+            subtitle: passcodeStage == .create ? "Choose a 4-digit passcode" : "Re-enter your passcode",
+            showsBiometricButton: false,
+            biometricTitle: "",
+            onBiometricTap: {},
+            onComplete: { code in
+                switch passcodeStage {
+                case .create:
+                    passcodeDraft = code
+                    passcodeStage = .confirm
+                    passcodeError = false
+                case .confirm:
+                    if code == passcodeDraft {
+                        if authService.setPasscode(code) {
+                            showingPasscodeSetup = false
+                        } else {
+                            passcodeErrorMessage = "Passcode couldn't be saved."
+                            passcodeError = true
+                        }
+                    } else {
+                        passcodeErrorMessage = "Passcodes didn't match. Try again."
+                        passcodeError = true
+                        passcodeDraft = ""
+                        passcodeStage = .create
+                    }
+                }
+            },
+            showError: $passcodeError,
+            errorMessage: passcodeErrorMessage
+        )
+        .padding(.horizontal, AppDesign.Theme.Spacing.xxLarge)
     }
     
     @MainActor
@@ -864,7 +1004,7 @@ struct CurrencySelectionView: View {
                     dismiss()
                 } label: {
                     HStack {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                             Text(currency.2)
                                 .foregroundStyle(.primary)
                             Text("\(currency.0) • \(currency.1)")

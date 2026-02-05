@@ -31,6 +31,7 @@ final class TransferScoringModel {
         var oppositeSignBonus: Double = 15.0
         var correctOrderingBonus: Double = 8.0
         var roundNumberBonus: Double = 5.0
+        var dayOfMonthMatchBonus: Double = 8.0
 
         // Penalties
         var hoursBetweenPenalty: Double = -0.3  // per hour beyond 168 (1 week)
@@ -194,6 +195,13 @@ final class TransferScoringModel {
             bonus += Double(pattern.autoDetectedCount) * 2.0
         }
 
+        if pattern.dayOfMonthSampleCount >= 3,
+           let commonDay = pattern.commonDayOfMonth,
+           (matchesDayOfMonth(commonDay, date: features.transaction1.date) ||
+            matchesDayOfMonth(commonDay, date: features.transaction2.date)) {
+            bonus += weights.dayOfMonthMatchBonus
+        }
+
         // Penalty for recently rejected patterns
         if let lastRejection = pattern.lastRejectionDate {
             let daysSinceRejection = -lastRejection.timeIntervalSinceNow / (24 * 3600)
@@ -208,6 +216,16 @@ final class TransferScoringModel {
         }
 
         return bonus
+    }
+
+    private func matchesDayOfMonth(_ commonDay: Int, date: Date) -> Bool {
+        let calendar = Calendar.current
+        let day = calendar.component(.day, from: date)
+        let daysInMonth = calendar.range(of: .day, in: .month, for: date)?.count ?? 31
+        if commonDay == 0 {
+            return day >= max(1, daysInMonth - 1)
+        }
+        return day == commonDay
     }
 
     /// Determine confidence threshold for auto-linking

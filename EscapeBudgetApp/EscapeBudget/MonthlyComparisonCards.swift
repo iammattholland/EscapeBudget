@@ -38,7 +38,7 @@ struct MonthlySpendComparisonCard: View {
         result.append(MonthSeries(
             id: currentStart,
             title: Self.monthFormatter.string(from: currentStart),
-            color: AppColors.danger(for: appColorMode),
+            color: AppDesign.Colors.danger(for: appColorMode),
             data: spendingSeries(for: referenceDate)
         ))
 
@@ -53,9 +53,9 @@ struct MonthlySpendComparisonCard: View {
         }
 
         let additionalColors: [Color] = [
-            AppColors.tint(for: appColorMode),
-            AppColors.success(for: appColorMode),
-            AppColors.warning(for: appColorMode),
+            AppDesign.Colors.tint(for: appColorMode),
+            AppDesign.Colors.success(for: appColorMode),
+            AppDesign.Colors.warning(for: appColorMode),
             .purple, .pink, .teal, .indigo
         ]
         let additionalSeries = extraMonths.enumerated().map { index, month -> MonthSeries in
@@ -338,7 +338,7 @@ struct MonthlyIncomeComparisonCard: View {
         result.append(MonthSeries(
             id: currentStart,
             title: Self.monthFormatter.string(from: currentStart),
-            color: AppColors.success(for: appColorMode),
+            color: AppDesign.Colors.success(for: appColorMode),
             data: incomeSeries(for: referenceDate)
         ))
 
@@ -353,8 +353,8 @@ struct MonthlyIncomeComparisonCard: View {
         }
 
         let additionalColors: [Color] = [
-            AppColors.tint(for: appColorMode),
-            AppColors.warning(for: appColorMode),
+            AppDesign.Colors.tint(for: appColorMode),
+            AppDesign.Colors.warning(for: appColorMode),
             .purple, .pink, .teal, .indigo
         ]
         let additionalSeries = extraMonths.enumerated().map { index, month -> MonthSeries in

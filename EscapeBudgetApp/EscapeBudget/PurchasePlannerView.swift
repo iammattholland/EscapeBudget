@@ -39,16 +39,9 @@ struct PurchasePlannerView: View {
         Group {
             if filteredPurchases.isEmpty {
                 List {
-                    if let topChrome {
-                        topChrome
-                            .listRowInsets(EdgeInsets())
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
+                    if topChrome != nil {
+                        AppChromeListRow(topChrome: topChrome, scrollID: "PurchasePlannerView.scroll")
                     }
-                    ScrollOffsetReader(coordinateSpace: "PurchasePlannerView.scroll", id: "PurchasePlannerView.scroll")
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
 
                     EmptyDataCard(
                         systemImage: "cart",
@@ -68,22 +61,15 @@ struct PurchasePlannerView: View {
                 .coordinateSpace(name: "PurchasePlannerView.scroll")
             } else {
                 List {
-                    if let topChrome {
-                        topChrome
-                            .listRowInsets(EdgeInsets())
-                            .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
+                    if topChrome != nil {
+                        AppChromeListRow(topChrome: topChrome, scrollID: "PurchasePlannerView.scroll")
                     }
-                    ScrollOffsetReader(coordinateSpace: "PurchasePlannerView.scroll", id: "PurchasePlannerView.scroll")
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
 
                     // Summary Card
                     Section {
-                        VStack(spacing: AppTheme.Spacing.tight) {
+                        VStack(spacing: AppDesign.Theme.Spacing.tight) {
                             HStack {
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                                     Text("Total Planned")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
@@ -94,7 +80,7 @@ struct PurchasePlannerView: View {
 
                                 Spacer()
 
-                                VStack(alignment: .trailing, spacing: AppTheme.Spacing.micro) {
+                                VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.micro) {
                                     Text("Items")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
@@ -103,7 +89,7 @@ struct PurchasePlannerView: View {
                                 }
                             }
                         }
-                        .padding(.vertical, AppTheme.Spacing.compact)
+                        .padding(.vertical, AppDesign.Theme.Spacing.compact)
                     }
                     
                     // Filter Picker
@@ -161,7 +147,7 @@ struct PurchasePlannerView: View {
                         Label("Add Purchase", systemImage: "plus")
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Image(systemName: "ellipsis")
                         .imageScale(.large)
                 }
                 .tint(.black)
@@ -285,9 +271,9 @@ struct PurchasePlanRow: View {
 
     private var priorityColor: Color {
         switch purchase.priority {
-        case 1, 2: return AppColors.success(for: appColorMode)
-        case 3: return AppColors.warning(for: appColorMode)
-        case 4, 5: return AppColors.danger(for: appColorMode)
+        case 1, 2: return AppDesign.Colors.success(for: appColorMode)
+        case 3: return AppDesign.Colors.warning(for: appColorMode)
+        case 4, 5: return AppDesign.Colors.danger(for: appColorMode)
         default: return .gray
         }
     }
@@ -318,10 +304,10 @@ struct PurchasePlanRow: View {
     
     var body: some View {
         NavigationLink(destination: PurchasePlanDetailView(purchase: purchase)) {
-            HStack(spacing: AppTheme.Spacing.medium) {
+            HStack(spacing: AppDesign.Theme.Spacing.medium) {
                 // Category Icon
                 ZStack {
-                    RoundedRectangle(cornerRadius: AppTheme.Radius.compact)
+                    RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact)
                         .fill(categoryColor.opacity(0.15))
                         .frame(width: 56, height: 56)
 
@@ -339,7 +325,7 @@ struct PurchasePlanRow: View {
                                     .foregroundStyle(.white)
                                     .background(
                                         Circle()
-                                            .fill(AppColors.success(for: appColorMode))
+                                            .fill(AppDesign.Colors.success(for: appColorMode))
                                             .frame(width: 18, height: 18)
                                     )
                                     .offset(x: 8, y: 8)
@@ -350,7 +336,7 @@ struct PurchasePlanRow: View {
                 }
 
                 // Content
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                     HStack {
                         Text(purchase.itemName)
                             .appSectionTitleText()
@@ -360,10 +346,10 @@ struct PurchasePlanRow: View {
 
                         // Priority stars
                         if purchase.priority > 3 {
-                            HStack(spacing: AppTheme.Spacing.hairline) {
+                            HStack(spacing: AppDesign.Theme.Spacing.hairline) {
                                 ForEach(0..<min(purchase.priority - 2, 3), id: \.self) { _ in
                                     Image(systemName: "star.fill")
-                                        .font(.caption2)
+                                        .appCaption2Text()
                                 }
                             }
                             .foregroundStyle(priorityColor)
@@ -378,7 +364,7 @@ struct PurchasePlanRow: View {
                     if let insight = affordabilityInsight {
                         Text(insight)
                             .appCaptionText()
-                            .foregroundStyle(insight.contains("now") ? AppColors.success(for: appColorMode) : .secondary)
+                            .foregroundStyle(insight.contains("now") ? AppDesign.Colors.success(for: appColorMode) : .secondary)
                     } else if let purchaseDate = purchase.purchaseDate, !purchase.isPurchased {
                         let daysUntil = Calendar.current.dateComponents([.day], from: Date(), to: purchaseDate).day ?? 0
                         if daysUntil > 0 && daysUntil <= 30 {
@@ -391,7 +377,7 @@ struct PurchasePlanRow: View {
 
                 Spacer(minLength: 0)
             }
-            .padding(.vertical, AppTheme.Spacing.compact)
+            .padding(.vertical, AppDesign.Theme.Spacing.compact)
         }
     }
 }
@@ -428,7 +414,7 @@ struct AddPurchasePlanView: View {
                         }
                     }
                     
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                         Text("Priority: \(priority)")
                             .appSecondaryBodyText()
                         Slider(value: Binding(
@@ -522,13 +508,13 @@ struct PurchasePlanDetailView: View {
                 HStack {
                     Text("Priority")
                     Spacer()
-                    HStack(spacing: AppTheme.Spacing.hairline) {
+                    HStack(spacing: AppDesign.Theme.Spacing.hairline) {
                         ForEach(0..<purchase.priority, id: \.self) { _ in
                             Image(systemName: "star.fill")
                                 .appCaptionText()
                         }
                     }
-                    .foregroundStyle(AppColors.warning(for: appColorMode))
+                    .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                 }
             }
             
@@ -558,7 +544,7 @@ struct PurchasePlanDetailView: View {
             if let notes = purchase.notes {
                 Section("Notes") {
                     Text(notes)
-                        .font(AppTheme.Typography.body)
+                        .font(AppDesign.Theme.Typography.body)
                 }
             }
             
@@ -579,7 +565,7 @@ struct PurchasePlanDetailView: View {
                             Text("Mark as Purchased")
                         }
                         .frame(maxWidth: .infinity)
-                        .foregroundStyle(AppColors.success(for: appColorMode))
+                        .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                     }
                 }
             }

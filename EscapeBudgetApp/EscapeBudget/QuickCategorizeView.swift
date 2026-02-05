@@ -18,8 +18,8 @@ struct QuickCategorizeView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                VStack(spacing: AppTheme.Spacing.medium) {
-                    HStack(spacing: AppTheme.Spacing.medium) {
+                VStack(spacing: AppDesign.Theme.Spacing.medium) {
+                    HStack(spacing: AppDesign.Theme.Spacing.medium) {
                         Button(action: triggerSkip) {
                             SwipeOptionLabel(text: "Skip", color: .gray, icon: "arrow.left")
                         }
@@ -29,7 +29,7 @@ struct QuickCategorizeView: View {
                             Button {
                                 onCategorize(top)
                             } label: {
-                                SwipeOptionLabel(text: top.name, color: AppColors.tint(for: appColorMode), icon: "arrow.up")
+                                SwipeOptionLabel(text: top.name, color: AppDesign.Colors.tint(for: appColorMode), icon: "arrow.up")
                             }
                             .buttonStyle(.plain)
                         }
@@ -39,12 +39,12 @@ struct QuickCategorizeView: View {
                         Button {
                             onManual()
                         } label: {
-                            SwipeOptionLabel(text: "Pick", color: AppColors.warning(for: appColorMode), icon: "arrow.right")
+                            SwipeOptionLabel(text: "Pick", color: AppDesign.Colors.warning(for: appColorMode), icon: "arrow.right")
                         }
                         .buttonStyle(.plain)
                     }
-                    .padding(.horizontal, AppTheme.Spacing.xLarge)
-                    .padding(.top, AppTheme.Spacing.hero)
+                    .padding(.horizontal, AppDesign.Theme.Spacing.xLarge)
+                    .padding(.top, AppDesign.Theme.Spacing.hero)
                     
                     Spacer()
                     
@@ -52,39 +52,39 @@ struct QuickCategorizeView: View {
                         Button {
                             onCategorize(bottom)
                         } label: {
-                            SwipeOptionLabel(text: bottom.name, color: AppColors.success(for: appColorMode), icon: "arrow.down")
+                            SwipeOptionLabel(text: bottom.name, color: AppDesign.Colors.success(for: appColorMode), icon: "arrow.down")
                         }
                         .buttonStyle(.plain)
-                        .padding(.bottom, AppTheme.Spacing.emptyState)
+                        .padding(.bottom, AppDesign.Theme.Spacing.emptyState)
                     }
                 }
                 .zIndex(0)
                 
                 // Card
-                VStack(spacing: AppTheme.Spacing.tight) {
+                VStack(spacing: AppDesign.Theme.Spacing.tight) {
                     Text(displayTitle(for: transaction))
-                        .font(.title)
+                        .appTitle1Text()
                         .fontWeight(.bold)
                         .multilineTextAlignment(.center)
                         .minimumScaleFactor(0.5)
                         .lineLimit(3)
 
                     Text(transaction.amount, format: .currency(code: currencyCode))
-                        .font(.system(size: 32, weight: .heavy))
-                        .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                        .appDisplayText(AppDesign.Theme.DisplaySize.xxxLarge, weight: .heavy)
+                        .foregroundStyle(transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)
                         .minimumScaleFactor(0.5)
                         .lineLimit(1)
 
                     Text(transaction.date, format: .dateTime.month().day().year())
-                        .font(AppTheme.Typography.body)
+                        .font(AppDesign.Theme.Typography.body)
                         .foregroundStyle(.secondary)
                 }
-                .padding(AppTheme.Spacing.screenHorizontal)
+                .padding(AppDesign.Theme.Spacing.screenHorizontal)
                 .frame(width: geometry.size.width * 0.6, height: geometry.size.height * 0.45) // smaller card
                 .background(Color(.systemBackground))
-                .cornerRadius(AppTheme.Radius.large)
+                .cornerRadius(AppDesign.Theme.Radius.large)
                 .overlay(
-                    RoundedRectangle(cornerRadius: AppTheme.Radius.large)
+                    RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.large)
                         .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
                 )
                 .shadow(color: Color.black.opacity(0.1), radius: 15, x: 0, y: 5)
@@ -240,7 +240,7 @@ struct SwipeOptionLabel: View {
     let icon: String // System image name
     
     var body: some View {
-        VStack(spacing: AppTheme.Spacing.micro) {
+        VStack(spacing: AppDesign.Theme.Spacing.micro) {
             Image(systemName: icon)
                 .appTitleText()
                 .fontWeight(.bold)
@@ -251,10 +251,10 @@ struct SwipeOptionLabel: View {
                 .multilineTextAlignment(.center)
         }
         .foregroundStyle(.white)
-        .padding(.vertical, AppTheme.Spacing.small)
-        .padding(.horizontal, AppTheme.Spacing.medium)
+        .padding(.vertical, AppDesign.Theme.Spacing.small)
+        .padding(.horizontal, AppDesign.Theme.Spacing.medium)
         .background(color)
-        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.card, style: .continuous))
         .shadow(radius: 4)
         .frame(maxWidth: 120) // Constrain width so it doesn't takeover
     }
@@ -306,7 +306,7 @@ struct QuickCategorizeSessionView: View {
                     VStack {
                         Image(systemName: "checkmark.seal.fill")
                             .appIconHero()
-                            .foregroundStyle(AppColors.success(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                             .padding()
                         Text("All Done!")
                             .appTitleText()
@@ -354,7 +354,7 @@ struct QuickCategorizeSessionView: View {
                                 showingManualPicker = false
                             } label: {
                                 Label("Transfer", systemImage: "arrow.left.arrow.right")
-                                    .foregroundStyle(AppColors.tint(for: appColorMode))
+                                    .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                             }
                             .disabled(currentIndex >= sortedTransactions.count)
 

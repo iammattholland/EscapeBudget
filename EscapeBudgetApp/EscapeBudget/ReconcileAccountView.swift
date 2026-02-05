@@ -85,7 +85,7 @@ struct ReconcileAccountView: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(AppColors.danger(for: appColorMode))
+                        .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                 }
             }
         }
@@ -104,11 +104,11 @@ struct ReconcileAccountView: View {
 
     private var actualBalanceSection: some View {
         Section("Actual Balance") {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                 Text("Enter the current balance shown by your bank. Escape Budget will create an adjustment transaction to match it.")
                     .appCaptionText()
                     .foregroundStyle(.secondary)
-                HStack(spacing: AppTheme.Spacing.xSmall) {
+                HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                     Text(currencySymbol(for: currencyCode))
                         .foregroundStyle(.secondary)
                     TextField("0.00", text: $actualBalanceInput)
@@ -125,7 +125,7 @@ struct ReconcileAccountView: View {
             summaryRow(title: "Entered actual", value: parsedActualBalance ?? 0, tint: parsedActualBalance == nil ? .secondary : .primary)
 
             let value = delta ?? 0
-            let tint: Color = value == 0 ? .secondary : (value >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
+            let tint: Color = value == 0 ? .secondary : (value >= 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
             summaryRow(title: "Adjustment", value: value, tint: tint)
         }
     }

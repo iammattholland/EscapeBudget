@@ -75,9 +75,9 @@ struct DateRangePicker: View {
                 }
             }
         } label: {
-            HStack(spacing: AppTheme.Spacing.compact) {
+            HStack(spacing: AppDesign.Theme.Spacing.compact) {
                 Image(systemName: selectedRange.icon)
-                    .font(AppTheme.Typography.secondaryBody)
+                    .font(AppDesign.Theme.Typography.secondaryBody)
                 
                 Text(displayText)
                     .appSecondaryBodyText()
@@ -87,10 +87,10 @@ struct DateRangePicker: View {
                     .appCaptionText()
                     .fontWeight(.semibold)
             }
-            .padding(.horizontal, AppTheme.Spacing.cardPadding)
-            .padding(.vertical, AppTheme.Spacing.small)
+            .padding(.horizontal, AppDesign.Theme.Spacing.cardPadding)
+            .padding(.vertical, AppDesign.Theme.Spacing.small)
             .background(
-                RoundedRectangle(cornerRadius: AppTheme.Radius.compact)
+                RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact)
                     .fill(Color(.systemBackground))
                     .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
             )
@@ -127,10 +127,10 @@ struct MonthYearPicker: View {
 
     
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.medium) {
+        HStack(spacing: AppDesign.Theme.Spacing.medium) {
             Button(action: previousMonth) {
                 Image(systemName: "chevron.left")
-                    .font(AppTheme.Typography.body)
+                    .font(AppDesign.Theme.Typography.body)
                     .fontWeight(.semibold)
                     .frame(width: 32, height: 32)
                     .background(Circle().fill(Color(.systemGray6)))
@@ -142,16 +142,16 @@ struct MonthYearPicker: View {
             
             Button(action: nextMonth) {
                 Image(systemName: "chevron.right")
-                    .font(AppTheme.Typography.body)
+                    .font(AppDesign.Theme.Typography.body)
                     .fontWeight(.semibold)
                     .frame(width: 32, height: 32)
                     .background(Circle().fill(Color(.systemGray6)))
             }
         }
-        .padding(.horizontal, AppTheme.Spacing.tight)
-        .padding(.vertical, AppTheme.Spacing.compact)
+        .padding(.horizontal, AppDesign.Theme.Spacing.tight)
+        .padding(.vertical, AppDesign.Theme.Spacing.compact)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.card, style: .continuous)
                 .fill(Color(.systemBackground))
                 .shadow(color: .black.opacity(0.05), radius: 8, y: 2)
         )
@@ -277,7 +277,7 @@ struct DateRangeSummaryView: View {
     }
     
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.micro) {
+        HStack(spacing: AppDesign.Theme.Spacing.micro) {
             Text(formattedRange)
                 .appCaptionText()
                 .foregroundStyle(.secondary)
@@ -292,7 +292,7 @@ struct DateRangeSummaryView: View {
 }
 
 #Preview {
-    VStack(spacing: AppTheme.Spacing.large) {
+    VStack(spacing: AppDesign.Theme.Spacing.large) {
         DateRangePicker(
             selectedRange: .constant(.thisMonth),
             customStartDate: .constant(Date()),

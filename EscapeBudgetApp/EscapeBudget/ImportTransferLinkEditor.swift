@@ -17,8 +17,8 @@ struct ImportTransferLinkEditor: View {
             if legs.count >= 2 {
                 Section("Linked Transfer") {
                     ForEach(legs) { tx in
-	                        HStack(spacing: AppTheme.Spacing.tight) {
-	                            VStack(alignment: .leading, spacing: AppTheme.Spacing.nano) {
+	                        HStack(spacing: AppDesign.Theme.Spacing.tight) {
+	                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.nano) {
 	                                Text(accountNameFor(tx))
 	                                    .appSecondaryBodyText()
 	                                    .fontWeight(.semibold)
@@ -38,7 +38,7 @@ struct ImportTransferLinkEditor: View {
                                 .fontWeight(.semibold)
                                 .monospacedDigit()
                         }
-                        .padding(.vertical, AppTheme.Spacing.hairline)
+                        .padding(.vertical, AppDesign.Theme.Spacing.hairline)
                     }
                 }
 

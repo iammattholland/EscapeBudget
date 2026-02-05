@@ -44,7 +44,7 @@ struct BulkEditTransactionsView: View {
                 if let errorMessage {
                     Section {
                         Text(errorMessage)
-                            .foregroundStyle(AppColors.danger(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                     }
                 }
 
@@ -75,8 +75,8 @@ struct BulkEditTransactionsView: View {
                             Spacer()
                             let limit = TransactionTextLimits.maxMemoLength
                             Text("\(min(memo.count, limit))/\(limit)")
-                                .font(.caption2)
-                                .foregroundStyle(memo.count >= limit ? AppColors.warning(for: appColorMode) : .secondary)
+                                .appCaption2Text()
+                                .foregroundStyle(memo.count >= limit ? AppDesign.Colors.warning(for: appColorMode) : .secondary)
                                 .monospacedDigit()
                         }
                     }
@@ -160,7 +160,7 @@ struct BulkEditTransactionsView: View {
                     Toggle("Mark as Transfers", isOn: $convertToTransfer)
                         .disabled(!supportsConvertToTransfer)
                     if convertToTransfer {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                             Label {
                                 Text("This will convert \(standardTransactionCount) transaction(s) to unmatched transfers and remove their categories.")
                                     .appCaptionText()

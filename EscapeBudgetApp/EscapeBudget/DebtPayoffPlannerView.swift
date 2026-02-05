@@ -51,21 +51,21 @@ struct DebtPayoffPlannerView: View {
 
                     // Summary Card
                     Section {
-                        VStack(spacing: AppTheme.Spacing.tight) {
+                        VStack(spacing: AppDesign.Theme.Spacing.tight) {
                             HStack {
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                                     Text("Total Debt")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
                                     Text(totalDebt, format: .currency(code: currencyCode))
                                         .appTitleText()
                                         .fontWeight(.bold)
-                                        .foregroundStyle(AppColors.danger(for: appColorMode))
+                                        .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                                 }
 
                                 Spacer()
 
-                                VStack(alignment: .trailing, spacing: AppTheme.Spacing.micro) {
+                                VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.micro) {
                                     Text("Monthly Payment")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
@@ -83,14 +83,14 @@ struct DebtPayoffPlannerView: View {
                                     Text(debtFreeDate, format: .dateTime.month().year())
                                         .appSecondaryBodyText()
                                         .fontWeight(.medium)
-                                        .foregroundStyle(AppColors.success(for: appColorMode))
+                                        .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                                 }
                             }
 
                             ProgressView(value: overallPayoffProgress)
-                                .tint(AppColors.tint(for: appColorMode))
+                                .tint(AppDesign.Colors.tint(for: appColorMode))
                         }
-                        .padding(.vertical, AppTheme.Spacing.compact)
+                        .padding(.vertical, AppDesign.Theme.Spacing.compact)
                     }
 
                     // Debts List
@@ -105,7 +105,7 @@ struct DebtPayoffPlannerView: View {
                                         } label: {
                                             Label("Payment", systemImage: "minus.circle.fill")
                                         }
-                                        .tint(AppColors.success(for: appColorMode))
+                                        .tint(AppDesign.Colors.success(for: appColorMode))
                                     }
                                 }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -248,12 +248,12 @@ struct DebtRow: View {
     @Environment(\.appColorMode) private var appColorMode
 
     private var color: Color {
-        Color(hex: debt.colorHex) ?? AppColors.danger(for: appColorMode)
+        Color(hex: debt.colorHex) ?? AppDesign.Colors.danger(for: appColorMode)
     }
 
     var body: some View {
         NavigationLink(destination: DebtDetailView(debt: debt)) {
-            HStack(spacing: AppTheme.Spacing.medium) {
+            HStack(spacing: AppDesign.Theme.Spacing.medium) {
                 // Circular Progress Ring
                 ZStack {
                     Circle()
@@ -269,7 +269,7 @@ struct DebtRow: View {
                     if debt.isPaidOff {
                         Image(systemName: "checkmark")
                             .appTitleText()
-                            .foregroundStyle(AppColors.success(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                     } else {
                         Text("\(Int(debt.payoffProgressPercentage))%")
                             .appCaptionText()
@@ -279,25 +279,25 @@ struct DebtRow: View {
                 }
 
                 // Content
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                     HStack {
                         Text(debt.name)
                             .appSectionTitleText()
                         if debt.linkedAccount != nil {
                             Image(systemName: "link")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
                     }
 
-                    HStack(spacing: AppTheme.Spacing.xSmall) {
+                    HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                         Text(debt.effectiveBalance, format: .currency(code: currencyCode))
                             .appSecondaryBodyText()
                             .foregroundStyle(.secondary)
 
                         if debt.isSyncedWithAccount {
                             Image(systemName: "arrow.triangle.2.circlepath")
-                                .font(.caption2)
+                                .appCaption2Text()
                                 .foregroundStyle(.secondary)
                         }
 
@@ -306,20 +306,20 @@ struct DebtRow: View {
                                 .foregroundStyle(.tertiary)
                             Text("\(debt.interestRatePercentage, format: .number.precision(.fractionLength(1)))% APR")
                                 .appCaptionText()
-                                .foregroundStyle(debt.isHighInterest ? AppColors.danger(for: appColorMode) : .secondary)
+                                .foregroundStyle(debt.isHighInterest ? AppDesign.Colors.danger(for: appColorMode) : .secondary)
                         }
                     }
 
                     if let insight = debt.smartInsight {
                         Text(insight)
                             .appCaptionText()
-                            .foregroundStyle(debt.isPaidOff ? AppColors.success(for: appColorMode) : color)
+                            .foregroundStyle(debt.isPaidOff ? AppDesign.Colors.success(for: appColorMode) : color)
                     }
                 }
 
                 Spacer(minLength: 0)
             }
-            .padding(.vertical, AppTheme.Spacing.compact)
+            .padding(.vertical, AppDesign.Theme.Spacing.compact)
         }
     }
 }

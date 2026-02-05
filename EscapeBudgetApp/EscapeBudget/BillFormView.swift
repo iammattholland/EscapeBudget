@@ -84,7 +84,7 @@ struct BillFormView: View {
                         LabeledContent("Yearly Cost") {
                             Text(projection.yearly, format: .currency(code: currencyCode))
                                 .fontWeight(.medium)
-                                .foregroundStyle(AppColors.danger(for: appColorMode))
+                                .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                         }
                     }
                 }

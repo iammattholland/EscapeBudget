@@ -4,6 +4,7 @@ import SwiftUI
 struct BulkMoveCategoriesSheet: View {
     let categoryIDs: [PersistentIdentifier]
     let requiredType: CategoryGroupType
+    let onComplete: () -> Void
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -14,17 +15,37 @@ struct BulkMoveCategoriesSheet: View {
     @State private var searchText = ""
     @State private var newGroupName = ""
     @State private var isCreatingGroup = false
+    @State private var targetType: CategoryGroupType
+
+    init(
+        categoryIDs: [PersistentIdentifier],
+        requiredType: CategoryGroupType,
+        onComplete: @escaping () -> Void = {}
+    ) {
+        self.categoryIDs = categoryIDs
+        self.requiredType = requiredType
+        self.onComplete = onComplete
+        _targetType = State(initialValue: requiredType == .income ? .income : .expense)
+    }
+
+    private var availableTargetTypes: [CategoryGroupType] {
+        [.expense, .income]
+    }
+
+    private var recentGroups: [CategoryGroup] {
+        RecentBudgetGroupStore.resolve(from: categoryGroups, requiredType: targetType)
+    }
 
     private var eligibleGroups: [CategoryGroup] {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         return categoryGroups
-            .filter { $0.type == requiredType }
+            .filter { $0.type == targetType }
             .filter { trimmed.isEmpty ? true : $0.name.localizedCaseInsensitiveContains(trimmed) }
             .sorted { $0.order < $1.order }
     }
 
     private var canCreateNewGroup: Bool {
-        requiredType != .transfer
+        targetType != .transfer
     }
 
     private var selectedCategories: [Category] {
@@ -38,6 +59,40 @@ struct BulkMoveCategoriesSheet: View {
                     LabeledContent("Selected") {
                         Text("\(selectedCategories.count)")
                             .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section("Destination Type") {
+                    Picker("Destination Type", selection: $targetType) {
+                        ForEach(availableTargetTypes, id: \.self) { type in
+                            Text(type.rawValue).tag(type)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                if !recentGroups.isEmpty {
+                    Section("Recent") {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: AppDesign.Theme.Spacing.small) {
+                                ForEach(recentGroups) { group in
+                                    Button {
+                                        moveCategories(to: group)
+                                    } label: {
+                                        Text(group.name)
+                                            .font(AppDesign.Theme.Typography.secondaryBody.weight(.semibold))
+                                            .padding(.horizontal, AppDesign.Theme.Spacing.cardPadding)
+                                            .padding(.vertical, AppDesign.Theme.Spacing.small)
+                                            .background(Color(.systemGray6))
+                                            .cornerRadius(AppDesign.Theme.Radius.button)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.vertical, AppDesign.Theme.Spacing.micro)
+                        }
+                        .listRowInsets(EdgeInsets())
+                        .padding(.horizontal, AppDesign.Theme.Spacing.medium)
                     }
                 }
 
@@ -107,7 +162,9 @@ struct BulkMoveCategoriesSheet: View {
                 modelContext.safeSave(context: "BulkMoveCategoriesSheet.moveCategories.fallback")
             }
 
+            RecentBudgetGroupStore.record(group: destinationGroup)
             dismiss()
+            onComplete()
         }
     }
 
@@ -127,7 +184,7 @@ struct BulkMoveCategoriesSheet: View {
                 modelContext: modelContext,
                 name: trimmedName,
                 order: maxOrder + 1,
-                type: requiredType
+                type: targetType
             )
             try undoRedoManager.execute(addCommand)
 
@@ -138,7 +195,7 @@ struct BulkMoveCategoriesSheet: View {
                 modelContext.safeSave(context: "BulkMoveCategoriesSheet.createGroupAndMove.missingGroup.fallback")
             }
         } catch {
-            let newGroup = CategoryGroup(name: trimmedName, order: maxOrder + 1, type: requiredType)
+            let newGroup = CategoryGroup(name: trimmedName, order: maxOrder + 1, type: targetType)
             modelContext.insert(newGroup)
             modelContext.safeSave(context: "BulkMoveCategoriesSheet.createGroupAndMove.insertGroup.fallback")
             moveCategories(to: newGroup)

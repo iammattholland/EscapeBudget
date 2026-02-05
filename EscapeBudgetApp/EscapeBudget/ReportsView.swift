@@ -26,15 +26,15 @@ enum ReportType: String, CaseIterable, Identifiable {
     func color(for mode: AppColorMode) -> Color {
         switch self {
         case .overview: return .purple
-        case .spending: return AppColors.danger(for: mode)
-        case .income: return AppColors.success(for: mode)
-        case .trends: return AppColors.tint(for: mode)
-        case .accounts: return AppColors.warning(for: mode)
+        case .spending: return AppDesign.Colors.danger(for: mode)
+        case .income: return AppDesign.Colors.success(for: mode)
+        case .trends: return AppDesign.Colors.tint(for: mode)
+        case .accounts: return AppDesign.Colors.warning(for: mode)
         }
     }
 
     var color: Color {
-        color(for: AppColors.currentModeFromDefaults())
+        color(for: AppDesign.Colors.currentModeFromDefaults())
     }
 }
 
@@ -107,20 +107,12 @@ struct ReportsView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: AppTheme.Spacing.xLarge) {
-                    // Date Range Selector
-                    dateRangeHeader
-                    
-                    // Report Type Cards
-                    reportTypeCards
-                    
-                    // Main Content Based on Selected Type
-                    reportContent
-                }
-                .appAdaptiveScreenPadding()
-                .appConstrainContentWidth()
-            }
+            reportsContainer
+        }
+    }
+
+    private var reportsContainer: some View {
+        reportsScrollView
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Reports")
             .onAppear {
@@ -128,6 +120,26 @@ struct ReportsView: View {
                     animateCharts = true
                 }
             }
+    }
+
+    private var reportsScrollView: some View {
+        ScrollView {
+            reportsStack
+                .appAdaptiveScreenPadding()
+                .appConstrainContentWidth()
+        }
+    }
+
+    private var reportsStack: some View {
+        VStack(spacing: AppDesign.Theme.Spacing.xLarge) {
+            // Date Range Selector
+            dateRangeHeader
+            
+            // Report Type Cards
+            reportTypeCards
+            
+            // Main Content Based on Selected Type
+            reportContent
         }
     }
     
@@ -154,7 +166,7 @@ struct ReportsView: View {
     
     private var reportTypeCards: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: AppTheme.Spacing.medium) {
+            HStack(spacing: AppDesign.Theme.Spacing.medium) {
                 ForEach(ReportType.allCases) { type in
                     ReportTypeCard(
                         type: type,
@@ -166,7 +178,7 @@ struct ReportsView: View {
                     }
                 }
             }
-            .padding(.horizontal, AppTheme.Spacing.micro)
+            .padding(.horizontal, AppDesign.Theme.Spacing.micro)
         }
     }
     
@@ -191,14 +203,14 @@ struct ReportsView: View {
     // MARK: - Overview Report
     
     private var overviewReport: some View {
-        VStack(spacing: AppTheme.Spacing.large) {
+        VStack(spacing: AppDesign.Theme.Spacing.large) {
             // Summary Cards
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppTheme.Spacing.medium) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppDesign.Theme.Spacing.medium) {
                 SummaryCard(
                     title: "Income",
                     value: totalIncome,
                     icon: "arrow.up.circle.fill",
-                    color: AppColors.success(for: appColorMode),
+                    color: AppDesign.Colors.success(for: appColorMode),
                     animate: animateCharts
                 )
                 
@@ -206,7 +218,7 @@ struct ReportsView: View {
                     title: "Spending",
                     value: totalSpending,
                     icon: "arrow.down.circle.fill",
-                    color: AppColors.danger(for: appColorMode),
+                    color: AppDesign.Colors.danger(for: appColorMode),
                     animate: animateCharts
                 )
                 
@@ -214,7 +226,7 @@ struct ReportsView: View {
                     title: "Net Flow",
                     value: netFlow,
                     icon: "arrow.left.arrow.right.circle.fill",
-                    color: netFlow >= 0 ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode),
+                    color: netFlow >= 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode),
                     animate: animateCharts
                 )
                 
@@ -222,14 +234,14 @@ struct ReportsView: View {
                     title: "Total Balance",
                     value: totalBalance,
                     icon: "banknote.fill",
-                    color: AppColors.tint(for: appColorMode),
+                    color: AppDesign.Colors.tint(for: appColorMode),
                     animate: animateCharts
                 )
             }
             
             // Income vs Spending Chart
             GlassCard {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
                     Text("Income vs Spending")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -241,23 +253,23 @@ struct ReportsView: View {
                                 innerRadius: .ratio(0.6),
                                 angularInset: 2
                             )
-                            .foregroundStyle(AppColors.success(for: appColorMode).gradient)
-                            .cornerRadius(AppTheme.Radius.xSmall)
+                            .foregroundStyle(AppDesign.Colors.success(for: appColorMode).gradient)
+                            .cornerRadius(AppDesign.Theme.Radius.xSmall)
                             
                             SectorMark(
                                 angle: .value("Amount", animateCharts ? Double(truncating: totalSpending as NSNumber) : 0),
                                 innerRadius: .ratio(0.6),
                                 angularInset: 2
                             )
-                            .foregroundStyle(AppColors.danger(for: appColorMode).gradient)
-                            .cornerRadius(AppTheme.Radius.xSmall)
+                            .foregroundStyle(AppDesign.Colors.danger(for: appColorMode).gradient)
+                            .cornerRadius(AppDesign.Theme.Radius.xSmall)
                         }
                         .frame(height: 200)
                         .chartLegend(position: .bottom)
                         
-                        HStack(spacing: AppTheme.Spacing.xLarge) {
-                            LegendItem(color: AppColors.success(for: appColorMode), label: "Income", value: totalIncome)
-                            LegendItem(color: AppColors.danger(for: appColorMode), label: "Spending", value: totalSpending)
+                        HStack(spacing: AppDesign.Theme.Spacing.xLarge) {
+                            LegendItem(color: AppDesign.Colors.success(for: appColorMode), label: "Income", value: totalIncome)
+                            LegendItem(color: AppDesign.Colors.danger(for: appColorMode), label: "Spending", value: totalSpending)
                         }
                     } else {
                         EmptyStateView(message: "No transactions in this period")
@@ -267,7 +279,7 @@ struct ReportsView: View {
             
             // Recent Transactions Preview
             GlassCard {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
                     Text("Recent Activity")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -294,23 +306,27 @@ struct ReportsView: View {
     // MARK: - Spending Report
     
     private var spendingReport: some View {
-        VStack(spacing: AppTheme.Spacing.large) {
+        VStack(spacing: AppDesign.Theme.Spacing.large) {
             // Total Spending Header
             GlassCard {
-                VStack(spacing: AppTheme.Spacing.compact) {
+                VStack(spacing: AppDesign.Theme.Spacing.compact) {
                     Text("Total Spending")
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
                     
                     Text(totalSpending, format: .currency(code: currencyCode))
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColors.danger(for: appColorMode).gradient)
+                        .appDisplayText(
+                            AppDesign.Theme.DisplaySize.xxxxLarge,
+                            weight: .bold,
+                            design: .rounded
+                        )
+                        .foregroundStyle(AppDesign.Colors.danger(for: appColorMode).gradient)
                 }
             }
             
             // Spending by Category
             GlassCard {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
                     Text("Spending by Category")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -327,12 +343,12 @@ struct ReportsView: View {
                                 angularInset: 1.5
                             )
 	                        .foregroundStyle(item.color.gradient)
-	                        .cornerRadius(AppTheme.Radius.tag)
+	                        .cornerRadius(AppDesign.Theme.Radius.tag)
 	                    }
                         .frame(height: 220)
                         
                         // Category breakdown
-                        VStack(spacing: AppTheme.Spacing.tight) {
+                        VStack(spacing: AppDesign.Theme.Spacing.tight) {
                             ForEach(categoryData.sorted { $0.amount > $1.amount }) { category in
                                 CategoryRow(
                                     name: category.name,
@@ -349,7 +365,7 @@ struct ReportsView: View {
             
             // Top Spending Transactions
             GlassCard {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
                     Text("Top Spending")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -377,23 +393,27 @@ struct ReportsView: View {
     // MARK: - Income Report
     
     private var incomeReport: some View {
-        VStack(spacing: AppTheme.Spacing.large) {
+        VStack(spacing: AppDesign.Theme.Spacing.large) {
             // Total Income Header
             GlassCard {
-                VStack(spacing: AppTheme.Spacing.compact) {
+                VStack(spacing: AppDesign.Theme.Spacing.compact) {
                     Text("Total Income")
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
                     
                     Text(totalIncome, format: .currency(code: currencyCode))
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColors.success(for: appColorMode).gradient)
+                        .appDisplayText(
+                            AppDesign.Theme.DisplaySize.xxxxLarge,
+                            weight: .bold,
+                            design: .rounded
+                        )
+                        .foregroundStyle(AppDesign.Colors.success(for: appColorMode).gradient)
                 }
             }
             
             // Income Sources
             GlassCard {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
                     Text("Income Sources")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -408,8 +428,8 @@ struct ReportsView: View {
                                 x: .value("Amount", animateCharts ? Double(truncating: item.amount as NSNumber) : 0),
                                 y: .value("Source", item.name)
                             )
-	                        .foregroundStyle(AppColors.success(for: appColorMode).gradient)
-	                        .cornerRadius(AppTheme.Radius.tag)
+	                        .foregroundStyle(AppDesign.Colors.success(for: appColorMode).gradient)
+	                        .cornerRadius(AppDesign.Theme.Radius.tag)
 	                    }
                         .frame(height: CGFloat(incomeSources.count * 50 + 20))
                         .chartXAxis {
@@ -417,7 +437,7 @@ struct ReportsView: View {
                                 AxisValueLabel {
                                     if let amount = value.as(Double.self) {
                                         Text(Decimal(amount), format: .currency(code: currencyCode).precision(.fractionLength(0)))
-                                            .font(.caption2)
+                                            .appCaption2Text()
                                     }
                                 }
                             }
@@ -428,7 +448,7 @@ struct ReportsView: View {
             
             // Top Income Transactions
             GlassCard {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
                     Text("Top Income")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -456,10 +476,10 @@ struct ReportsView: View {
     // MARK: - Trends Report
     
     private var trendsReport: some View {
-        VStack(spacing: AppTheme.Spacing.large) {
+        VStack(spacing: AppDesign.Theme.Spacing.large) {
             // Daily Cash Flow Chart
             GlassCard {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
                     Text("Cash Flow Over Time")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -474,7 +494,7 @@ struct ReportsView: View {
                                 x: .value("Date", day.date),
                                 y: .value("Income", animateCharts ? Double(truncating: day.income as NSNumber) : 0)
                             )
-                            .foregroundStyle(AppColors.success(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                             .lineStyle(StrokeStyle(lineWidth: 2.5))
                             .symbol(Circle())
                             .symbolSize(30)
@@ -483,7 +503,7 @@ struct ReportsView: View {
                                 x: .value("Date", day.date),
                                 y: .value("Spending", animateCharts ? Double(truncating: day.spending as NSNumber) : 0)
                             )
-                            .foregroundStyle(AppColors.danger(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                             .lineStyle(StrokeStyle(lineWidth: 2.5))
                             .symbol(Circle())
                             .symbolSize(30)
@@ -492,7 +512,7 @@ struct ReportsView: View {
                                 x: .value("Date", day.date),
                                 y: .value("Income", animateCharts ? Double(truncating: day.income as NSNumber) : 0)
                             )
-                            .foregroundStyle(AppColors.success(for: appColorMode).opacity(0.1))
+                            .foregroundStyle(AppDesign.Colors.success(for: appColorMode).opacity(0.1))
                         }
                         .frame(height: 250)
                         .chartXAxis {
@@ -501,13 +521,13 @@ struct ReportsView: View {
                             }
                         }
                         
-                        HStack(spacing: AppTheme.Spacing.xLarge) {
-                            HStack(spacing: AppTheme.Spacing.xSmall) {
-                                Circle().fill(AppColors.success(for: appColorMode)).frame(width: 8, height: 8)
+                        HStack(spacing: AppDesign.Theme.Spacing.xLarge) {
+                            HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
+                                Circle().fill(AppDesign.Colors.success(for: appColorMode)).frame(width: 8, height: 8)
                                 Text("Income").appCaptionText().foregroundStyle(.secondary)
                             }
-                            HStack(spacing: AppTheme.Spacing.xSmall) {
-                                Circle().fill(AppColors.danger(for: appColorMode)).frame(width: 8, height: 8)
+                            HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
+                                Circle().fill(AppDesign.Colors.danger(for: appColorMode)).frame(width: 8, height: 8)
                                 Text("Spending").appCaptionText().foregroundStyle(.secondary)
                             }
                         }
@@ -517,7 +537,7 @@ struct ReportsView: View {
             
             // Net Flow Trend
             GlassCard {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
                     Text("Net Flow Trend")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -533,8 +553,8 @@ struct ReportsView: View {
 	                                x: .value("Date", day.date),
 	                                y: .value("Net", animateCharts ? Double(truncating: netFlow as NSNumber) : 0)
 	                            )
-	                            .foregroundStyle(netFlow >= 0 ? AppColors.success(for: appColorMode).gradient : AppColors.danger(for: appColorMode).gradient)
-	                            .cornerRadius(AppTheme.Radius.mini)
+	                            .foregroundStyle(netFlow >= 0 ? AppDesign.Colors.success(for: appColorMode).gradient : AppDesign.Colors.danger(for: appColorMode).gradient)
+	                            .cornerRadius(AppDesign.Theme.Radius.mini)
 	                        }
                         .frame(height: 180)
                     }
@@ -543,14 +563,14 @@ struct ReportsView: View {
             
             // Statistics
             GlassCard {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
                     Text("Statistics")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
                     
                     let stats = calculateStatistics()
                     
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppTheme.Spacing.medium) {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppDesign.Theme.Spacing.medium) {
                         StatRow(label: "Avg Daily Spending", value: stats.avgDailySpending)
                         StatRow(label: "Avg Transaction", value: stats.avgTransaction)
                         StatRow(label: "Total Transactions", count: stats.transactionCount)
@@ -564,23 +584,27 @@ struct ReportsView: View {
     // MARK: - Accounts Report
     
     private var accountsReport: some View {
-        VStack(spacing: AppTheme.Spacing.large) {
+        VStack(spacing: AppDesign.Theme.Spacing.large) {
             // Total Balance
             GlassCard {
-                VStack(spacing: AppTheme.Spacing.compact) {
+                VStack(spacing: AppDesign.Theme.Spacing.compact) {
                     Text("Total Balance")
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
                     
                     Text(totalBalance, format: .currency(code: currencyCode))
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundStyle(totalBalance >= 0 ? AppColors.tint(for: appColorMode).gradient : AppColors.danger(for: appColorMode).gradient)
+                        .appDisplayText(
+                            AppDesign.Theme.DisplaySize.xxxxLarge,
+                            weight: .bold,
+                            design: .rounded
+                        )
+                        .foregroundStyle(totalBalance >= 0 ? AppDesign.Colors.tint(for: appColorMode).gradient : AppDesign.Colors.danger(for: appColorMode).gradient)
                 }
             }
             
             // Account Distribution Chart
             GlassCard {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
                     Text("Account Distribution")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -595,7 +619,7 @@ struct ReportsView: View {
                                 angularInset: 2
                             )
                             .foregroundStyle(account.type.color.gradient)
-                            .cornerRadius(AppTheme.Radius.xSmall)
+                            .cornerRadius(AppDesign.Theme.Radius.xSmall)
                         }
                         .frame(height: 220)
                     }
@@ -604,7 +628,7 @@ struct ReportsView: View {
             
             // Account List
             GlassCard {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.medium) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
                     Text("Account Details")
                         .appSectionTitleText()
                         .fontWeight(.semibold)
@@ -634,11 +658,11 @@ struct ReportsView: View {
     
     private func buildCategorySpending() -> [CategorySpending] {
         let colors: [Color] = [
-            AppColors.danger(for: appColorMode),
-            AppColors.warning(for: appColorMode),
+            AppDesign.Colors.danger(for: appColorMode),
+            AppDesign.Colors.warning(for: appColorMode),
             .yellow,
-            AppColors.success(for: appColorMode),
-            AppColors.tint(for: appColorMode),
+            AppDesign.Colors.success(for: appColorMode),
+            AppDesign.Colors.tint(for: appColorMode),
             .purple,
             .pink,
             .teal
@@ -667,7 +691,7 @@ struct ReportsView: View {
             sourceTotals[sourceName, default: 0] += transaction.amount
         }
         
-        return sourceTotals.map { CategorySpending(name: $0.key, amount: $0.value, color: AppColors.success(for: appColorMode)) }
+        return sourceTotals.map { CategorySpending(name: $0.key, amount: $0.value, color: AppDesign.Colors.success(for: appColorMode)) }
             .sorted { $0.amount > $1.amount }
             .prefix(10)
             .map { $0 }
@@ -715,9 +739,9 @@ struct ReportTypeCard: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: AppTheme.Spacing.compact) {
+            VStack(spacing: AppDesign.Theme.Spacing.compact) {
                 Image(systemName: type.icon)
-                    .font(.system(size: 24))
+                    .appDisplayText(AppDesign.Theme.DisplaySize.xLarge, weight: .regular)
                     .foregroundStyle(isSelected ? .white : type.color(for: appColorMode))
                 
                 Text(type.rawValue)
@@ -727,7 +751,7 @@ struct ReportTypeCard: View {
             }
             .frame(width: 80, height: 80)
             .background(
-                RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+                RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.card, style: .continuous)
                     .fill(isSelected ? AnyShapeStyle(type.color(for: appColorMode).gradient) : AnyShapeStyle(Color(.systemBackground)))
                     .shadow(color: isSelected ? type.color(for: appColorMode).opacity(0.4) : .black.opacity(0.05), radius: isSelected ? 8 : 4, y: isSelected ? 4 : 2)
             )
@@ -745,10 +769,10 @@ struct GlassCard<Content: View>: View {
     
     var body: some View {
         content
-            .padding(AppTheme.Spacing.large)
+            .padding(AppDesign.Theme.Spacing.large)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: AppTheme.Radius.large)
+                RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.large)
                     .fill(Color(.systemBackground))
                     .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
             )
@@ -764,7 +788,7 @@ private struct SummaryCard: View {
     @AppStorage("currencyCode") private var currencyCode = "USD"
     
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
             HStack {
                 Image(systemName: icon)
                     .appTitleText()
@@ -772,21 +796,25 @@ private struct SummaryCard: View {
                 Spacer()
             }
             
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                 Text(title)
                     .appCaptionText()
                     .foregroundStyle(.secondary)
                 
                 Text(value, format: .currency(code: currencyCode))
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .appDisplayText(
+                        AppDesign.Theme.DisplaySize.medium,
+                        weight: .bold,
+                        design: .rounded
+                    )
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
         }
-        .padding(AppTheme.Spacing.cardPadding)
+        .padding(AppDesign.Theme.Spacing.cardPadding)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.card, style: .continuous)
                 .fill(Color(.systemBackground))
                 .shadow(color: .black.opacity(0.06), radius: 8, y: 3)
         )
@@ -803,12 +831,12 @@ struct LegendItem: View {
     @AppStorage("currencyCode") private var currencyCode = "USD"
     
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.compact) {
+        HStack(spacing: AppDesign.Theme.Spacing.compact) {
             Circle()
                 .fill(color)
                 .frame(width: 10, height: 10)
             
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                 Text(label)
                     .appCaptionText()
                     .foregroundStyle(.secondary)
@@ -831,33 +859,33 @@ struct TransactionRowView: View {
     @State private var editingRule: AutoRule?
     
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.tight) {
+        HStack(spacing: AppDesign.Theme.Spacing.tight) {
             if let rank = showRank {
                 Text("\(rank)")
                     .appCaptionText()
                     .fontWeight(.bold)
                     .foregroundStyle(.white)
                     .frame(width: 24, height: 24)
-                    .background(Circle().fill(AppColors.tint(for: appColorMode)))
+                    .background(Circle().fill(AppDesign.Colors.tint(for: appColorMode)))
             }
             
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                 Text(transaction.payee)
                     .appSecondaryBodyText()
                     .fontWeight(.medium)
                 
-                HStack(spacing: AppTheme.Spacing.compact) {
+                HStack(spacing: AppDesign.Theme.Spacing.compact) {
                     Text(transaction.date, format: .dateTime.month(.abbreviated).day())
                         .appCaptionText()
                         .foregroundStyle(.secondary)
                     
                     if let category = transaction.category {
                         Text(category.name)
-                            .font(.caption2)
-                            .padding(.horizontal, AppTheme.Spacing.xSmall)
-                            .padding(.vertical, AppTheme.Spacing.hairline)
-                            .background(Capsule().fill(AppColors.tint(for: appColorMode).opacity(0.1)))
-                            .foregroundStyle(AppColors.tint(for: appColorMode))
+                            .appCaption2Text()
+                            .padding(.horizontal, AppDesign.Theme.Spacing.xSmall)
+                            .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+                            .background(Capsule().fill(AppDesign.Colors.tint(for: appColorMode).opacity(0.1)))
+                            .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                     }
                 }
             }
@@ -867,7 +895,7 @@ struct TransactionRowView: View {
             Text(transaction.amount, format: .currency(code: currencyCode))
                 .appSecondaryBodyText()
                 .fontWeight(.semibold)
-                .foregroundStyle(transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                .foregroundStyle(transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)
         }
         .contextMenu {
             Button {
@@ -922,7 +950,7 @@ private struct TransactionRuleProvenanceSheet: View {
         NavigationStack {
             List {
                 Section("Transaction") {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                         Text(transaction.payee)
                             .appSectionTitleText()
                         Text(transaction.date, format: .dateTime.year().month().day())
@@ -932,7 +960,7 @@ private struct TransactionRuleProvenanceSheet: View {
                             .appSecondaryBodyText()
                             .monospacedDigit()
                     }
-                    .padding(.vertical, AppTheme.Spacing.micro)
+                    .padding(.vertical, AppDesign.Theme.Spacing.micro)
                 }
 
                 Section("Rule Changes") {
@@ -945,7 +973,7 @@ private struct TransactionRuleProvenanceSheet: View {
                         .listRowSeparator(.hidden)
                     } else {
                         ForEach(applications.prefix(12)) { app in
-                            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                                 HStack {
                                     Text(app.rule?.name ?? "Deleted Rule")
                                         .appSecondaryBodyText()
@@ -953,14 +981,14 @@ private struct TransactionRuleProvenanceSheet: View {
                                     Spacer()
                                     if app.wasOverridden {
                                         Text("Overridden")
-                                            .font(.caption2)
-                                            .padding(.horizontal, AppTheme.Spacing.xSmall)
-                                            .padding(.vertical, AppTheme.Spacing.hairline)
+                                            .appCaption2Text()
+                                            .padding(.horizontal, AppDesign.Theme.Spacing.xSmall)
+                                            .padding(.vertical, AppDesign.Theme.Spacing.hairline)
                                             .background(Color(.tertiarySystemFill))
-                                            .cornerRadius(AppTheme.Radius.mini)
+                                            .cornerRadius(AppDesign.Theme.Radius.mini)
                                     } else if let rule = app.rule {
                                         Button("Edit") { editingRule = rule }
-                                            .font(.caption.weight(.semibold))
+                                            .appCaptionStrongText()
                                     }
                                 }
 
@@ -973,7 +1001,7 @@ private struct TransactionRuleProvenanceSheet: View {
                                     .appCaptionText()
                                     .foregroundStyle(.tertiary)
                             }
-                            .padding(.vertical, AppTheme.Spacing.micro)
+                            .padding(.vertical, AppDesign.Theme.Spacing.micro)
                         }
                     }
                 }
@@ -1006,9 +1034,9 @@ struct CategoryRow: View {
     }
     
     var body: some View {
-        VStack(spacing: AppTheme.Spacing.compact) {
+        VStack(spacing: AppDesign.Theme.Spacing.compact) {
             HStack {
-                HStack(spacing: AppTheme.Spacing.compact) {
+                HStack(spacing: AppDesign.Theme.Spacing.compact) {
                     Circle()
                         .fill(color)
                         .frame(width: 10, height: 10)
@@ -1025,10 +1053,10 @@ struct CategoryRow: View {
             
 	            GeometryReader { geometry in
 	                ZStack(alignment: .leading) {
-	                    RoundedRectangle(cornerRadius: AppTheme.Radius.mini)
+	                    RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.mini)
 	                        .fill(Color(.systemGray5))
 	                    
-	                    RoundedRectangle(cornerRadius: AppTheme.Radius.mini)
+	                    RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.mini)
 	                        .fill(color.gradient)
 	                        .frame(width: animate ? geometry.size.width * percentage : 0)
 	                        .animation(.easeOut(duration: 0.8).delay(0.2), value: animate)
@@ -1046,7 +1074,7 @@ struct StatRow: View {
     @AppStorage("currencyCode") private var currencyCode = "USD"
     
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
             Text(label)
                 .appCaptionText()
                 .foregroundStyle(.secondary)
@@ -1062,9 +1090,9 @@ struct StatRow: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(AppTheme.Spacing.tight)
+        .padding(AppDesign.Theme.Spacing.tight)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.compact)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact)
                 .fill(Color(.systemGray6))
         )
     }
@@ -1079,17 +1107,17 @@ struct AccountRowView: View {
     @Environment(\.appColorMode) private var appColorMode
     
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.cardGap) {
+        HStack(spacing: AppDesign.Theme.Spacing.cardGap) {
             Image(systemName: account.type.icon)
                 .appTitleText()
                 .foregroundStyle(color.gradient)
                 .frame(width: 44, height: 44)
                 .background(
-                    RoundedRectangle(cornerRadius: AppTheme.Radius.compact)
+                    RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact)
                         .fill(color.opacity(0.1))
                 )
             
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                 Text(account.name)
                     .appSecondaryBodyText()
                     .fontWeight(.medium)
@@ -1104,7 +1132,7 @@ struct AccountRowView: View {
             Text(account.balance, format: .currency(code: currencyCode))
                 .appSecondaryBodyText()
                 .fontWeight(.semibold)
-                .foregroundStyle(account.balance >= 0 ? .primary : AppColors.danger(for: appColorMode))
+                .foregroundStyle(account.balance >= 0 ? .primary : AppDesign.Colors.danger(for: appColorMode))
         }
         .opacity(animate ? 1 : 0)
         .offset(x: animate ? 0 : 20)
@@ -1118,9 +1146,9 @@ struct EmptyStateView: View {
     let message: String
     
     var body: some View {
-        VStack(spacing: AppTheme.Spacing.tight) {
+        VStack(spacing: AppDesign.Theme.Spacing.tight) {
             Image(systemName: "chart.bar.doc.horizontal")
-                .font(.system(size: 40))
+                .appDisplayText(AppDesign.Theme.DisplaySize.mega, weight: .regular)
                 .foregroundStyle(.secondary.opacity(0.5))
             
             Text(message)
@@ -1128,7 +1156,7 @@ struct EmptyStateView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, AppTheme.Spacing.sectionVertical)
+        .padding(.vertical, AppDesign.Theme.Spacing.sectionVertical)
     }
 }
 

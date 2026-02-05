@@ -28,9 +28,9 @@ struct TransactionTagsPickerView: View {
                     Button {
                         toggle(tag)
                     } label: {
-                        HStack(spacing: AppTheme.Spacing.tight) {
+                        HStack(spacing: AppDesign.Theme.Spacing.tight) {
                             Circle()
-                                .fill(Color(hex: tag.colorHex) ?? AppColors.tint(for: appColorMode))
+                                .fill(Color(hex: tag.colorHex) ?? AppDesign.Colors.tint(for: appColorMode))
                                 .frame(width: 14, height: 14)
 
                             Text(tag.name)
@@ -40,7 +40,7 @@ struct TransactionTagsPickerView: View {
 
                             if isSelected(tag) {
                                 Image(systemName: "checkmark")
-                                    .foregroundStyle(AppColors.success(for: appColorMode))
+                                    .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                             }
                         }
                     }
@@ -57,7 +57,7 @@ struct TransactionTagsPickerView: View {
                         } label: {
                             Label("Edit", systemImage: "pencil")
                         }
-                        .tint(AppColors.tint(for: appColorMode))
+                        .tint(AppDesign.Colors.tint(for: appColorMode))
                     }
                 }
                 .onMove(perform: moveTags)
@@ -194,7 +194,7 @@ private struct CreateTransactionTagView: View {
     @State private var selectedColorHex: String = TagColorPalette.defaultHex
     @State private var customColor: Color = .blue
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: AppTheme.Spacing.tight), count: 5)
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.tight), count: 5)
 
     var body: some View {
         Form {
@@ -204,10 +204,10 @@ private struct CreateTransactionTagView: View {
             }
 
             Section("Color") {
-                LazyVGrid(columns: columns, spacing: AppTheme.Spacing.tight) {
+                LazyVGrid(columns: columns, spacing: AppDesign.Theme.Spacing.tight) {
                     ForEach(TagColorPalette.options(for: appColorMode), id: \.hex) { option in
                         Circle()
-                            .fill(Color(hex: option.hex) ?? AppColors.tint(for: appColorMode))
+                            .fill(Color(hex: option.hex) ?? AppDesign.Colors.tint(for: appColorMode))
                             .frame(width: 28, height: 28)
                             .overlay(
                                 Circle()
@@ -219,7 +219,7 @@ private struct CreateTransactionTagView: View {
                             .accessibilityLabel(Text(option.name))
                     }
                 }
-                .padding(.vertical, AppTheme.Spacing.micro)
+                .padding(.vertical, AppDesign.Theme.Spacing.micro)
 
                 ColorPicker("Color Wheel", selection: $customColor, supportsOpacity: false)
                     .onChange(of: customColor) { _, newValue in
@@ -249,7 +249,7 @@ private struct CreateTransactionTagView: View {
         }
         .onAppear {
             if customColor == .blue {
-                customColor = AppColors.tint(for: appColorMode)
+                customColor = AppDesign.Colors.tint(for: appColorMode)
             }
         }
     }
@@ -293,7 +293,7 @@ private struct EditTransactionTagView: View {
     @State private var selectedColorHex: String = TagColorPalette.defaultHex
     @State private var customColor: Color = .blue
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: AppTheme.Spacing.tight), count: 5)
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.tight), count: 5)
 
     var body: some View {
         Form {
@@ -303,10 +303,10 @@ private struct EditTransactionTagView: View {
             }
 
             Section("Color") {
-                LazyVGrid(columns: columns, spacing: AppTheme.Spacing.tight) {
+                LazyVGrid(columns: columns, spacing: AppDesign.Theme.Spacing.tight) {
                     ForEach(TagColorPalette.options(for: appColorMode), id: \.hex) { option in
                         Circle()
-                            .fill(Color(hex: option.hex) ?? AppColors.tint(for: appColorMode))
+                            .fill(Color(hex: option.hex) ?? AppDesign.Colors.tint(for: appColorMode))
                             .frame(width: 28, height: 28)
                             .overlay(
                                 Circle()
@@ -321,7 +321,7 @@ private struct EditTransactionTagView: View {
                             .accessibilityLabel(Text(option.name))
                     }
                 }
-                .padding(.vertical, AppTheme.Spacing.micro)
+                .padding(.vertical, AppDesign.Theme.Spacing.micro)
 
                 ColorPicker("Color Wheel", selection: $customColor, supportsOpacity: false)
                     .onChange(of: customColor) { _, newValue in
@@ -351,7 +351,7 @@ private struct EditTransactionTagView: View {
             if let initial = Color(hex: tag.colorHex) {
                 customColor = initial
             } else if customColor == .blue {
-                customColor = AppColors.tint(for: appColorMode)
+                customColor = AppDesign.Colors.tint(for: appColorMode)
             }
         }
     }
@@ -380,12 +380,12 @@ struct TransactionTagChip: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        let fallback = AppColors.tint(for: appColorMode)
+        let fallback = AppDesign.Colors.tint(for: appColorMode)
         Text(tag.name)
-            .font(.caption.weight(.semibold))
+            .appCaptionStrongText()
             .foregroundStyle(.primary)
-            .padding(.horizontal, AppTheme.Spacing.small)
-            .padding(.vertical, AppTheme.Spacing.micro)
+            .padding(.horizontal, AppDesign.Theme.Spacing.small)
+            .padding(.vertical, AppDesign.Theme.Spacing.micro)
             .background(
                 Capsule().fill((Color(hex: tag.colorHex) ?? fallback).opacity(0.18))
             )

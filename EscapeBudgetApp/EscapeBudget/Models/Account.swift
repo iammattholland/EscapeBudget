@@ -8,6 +8,8 @@ final class Account: DemoDataTrackable {
     var typeRawValue: String
     var balance: Decimal
     var transactions: [Transaction]?
+    /// Transfers that are intended for this account but not yet matched to a specific transaction.
+    var intendedTransferTransactions: [Transaction]?
     var notes: String?
     /// When the user first created / set up this account in the app.
     /// Optional for backwards compatibility with older stores.
@@ -77,9 +79,9 @@ enum AccountType: String, Codable, CaseIterable, Identifiable {
     
     func color(for mode: AppColorMode) -> Color {
         switch self {
-        case .chequing: return AppColors.tint(for: mode)
-        case .savings: return AppColors.success(for: mode)
-        case .creditCard: return AppColors.warning(for: mode)
+        case .chequing: return AppDesign.Colors.tint(for: mode)
+        case .savings: return AppDesign.Colors.success(for: mode)
+        case .creditCard: return AppDesign.Colors.warning(for: mode)
         case .investment: return .purple
         case .lineOfCredit: return .teal
         case .mortgage: return .indigo
@@ -89,6 +91,6 @@ enum AccountType: String, Codable, CaseIterable, Identifiable {
     }
 
     var color: Color {
-        color(for: AppColors.currentModeFromDefaults())
+        color(for: AppDesign.Colors.currentModeFromDefaults())
     }
 }

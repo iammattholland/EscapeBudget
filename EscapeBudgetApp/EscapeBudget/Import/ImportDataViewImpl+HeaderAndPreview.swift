@@ -7,8 +7,8 @@ import UIKit
 extension ImportDataViewImpl {
     // MARK: - Header Selection View
     var headerSelectionView: some View {
-        VStack(spacing: AppTheme.Spacing.medium) {
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+        VStack(spacing: AppDesign.Theme.Spacing.medium) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                 Text("Select Header Row")
                     .appSectionTitleText()
                 Text("Tap the row that contains column names (Date, Amount, etc.)")
@@ -16,11 +16,11 @@ extension ImportDataViewImpl {
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal)
+            .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
 
             headerPreviewTable
             
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                 Text("Date Format (Optional)")
                     .appSecondaryBodyText()
                     .fontWeight(.semibold)
@@ -44,9 +44,12 @@ extension ImportDataViewImpl {
             }
             .padding()
             .background(Color(.secondarySystemGroupedBackground))
-            .cornerRadius(AppTheme.Radius.button)
-            .padding(.horizontal)
+            .cornerRadius(AppDesign.Theme.Radius.button)
+            .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
+
+            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color(.systemGroupedBackground))
     }
     
@@ -57,10 +60,10 @@ extension ImportDataViewImpl {
                     HStack(spacing: 0) {
                         // Row Number
                         Text("\(rowIndex + 1)")
-                            .font(.caption2)
+                            .appCaption2Text()
                             .foregroundStyle(.secondary)
                             .frame(width: 30, alignment: .center)
-                            .padding(.vertical, AppTheme.Spacing.compact)
+                            .padding(.vertical, AppDesign.Theme.Spacing.compact)
                             .background(Color(.systemGray6))
                         
                         // Columns
@@ -69,14 +72,14 @@ extension ImportDataViewImpl {
                                 .appCaptionText()
                                 .lineLimit(1)
                                 .frame(width: 140, alignment: .leading)
-                                .padding(.vertical, AppTheme.Spacing.compact)
-                                .padding(.horizontal, AppTheme.Spacing.compact)
+                                .padding(.vertical, AppDesign.Theme.Spacing.compact)
+                                .padding(.horizontal, AppDesign.Theme.Spacing.compact)
                                 .background(rowBackground(for: rowIndex))
                                 .contentShape(Rectangle())
                         }
                     }
                     .background(rowBackground(for: rowIndex))
-                    .border(rowIndex == headerRowIndex ? AppColors.tint(for: appColorMode) : Color.clear, width: 2)
+                    .border(rowIndex == headerRowIndex ? AppDesign.Colors.tint(for: appColorMode) : Color.clear, width: 2)
                     .onTapGesture {
                         headerRowIndex = rowIndex
                     }
@@ -85,17 +88,17 @@ extension ImportDataViewImpl {
 	        }
 	        .frame(maxHeight: 300)
 	        .background(Color(.systemBackground))
-	        .cornerRadius(AppTheme.Radius.xSmall)
+	        .cornerRadius(AppDesign.Theme.Radius.xSmall)
 	        .overlay(
-	            RoundedRectangle(cornerRadius: AppTheme.Radius.xSmall)
+	            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.xSmall)
 	                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
 	        )
-	        .padding(.horizontal)
+	        .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
 	    }
     
     func rowBackground(for index: Int) -> Color {
         if index == headerRowIndex {
-            return AppColors.tint(for: appColorMode).opacity(0.1)
+            return AppDesign.Colors.tint(for: appColorMode).opacity(0.1)
         }
         return index % 2 == 0 ? Color(.systemBackground) : Color(.systemGray6).opacity(0.5)
     }
@@ -123,7 +126,7 @@ extension ImportDataViewImpl {
                          let valid = canAdvanceToPreview
                          if !valid {
                              Text("Please map at least Date and Amount columns.")
-                                 .foregroundStyle(AppColors.danger(for: appColorMode))
+                                 .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                          }
                      }
                  }
@@ -171,9 +174,28 @@ extension ImportDataViewImpl {
                         .foregroundStyle(.secondary)
                 }
 
-                LabeledContent("Amount Signs") {
-                    Text(signConvention?.rawValue ?? "Will ask on import")
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                    Text("Amount Signs")
+                        .appCaptionText()
                         .foregroundStyle(.secondary)
+                    Picker("Amount Signs", selection: $signConvention) {
+                        Text("Select").tag(Optional<AmountSignConvention>.none)
+                        ForEach(AmountSignConvention.allCases) { convention in
+                            Text(convention.rawValue).tag(Optional(convention))
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+
+                    if let convention = signConvention {
+                        Text(convention.detail)
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Required before import.")
+                            .appCaptionText()
+                            .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
+                    }
                 }
             }
 
@@ -207,7 +229,7 @@ extension ImportDataViewImpl {
                     } else {
                         Text("Row \(i + headerRowIndex + 2): Invalid / Skipped")
                             .appCaptionText()
-                            .foregroundStyle(AppColors.danger(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                     }
                 }
             }

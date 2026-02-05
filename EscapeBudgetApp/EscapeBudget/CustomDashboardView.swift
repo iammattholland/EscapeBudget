@@ -23,43 +23,41 @@ struct CustomDashboardView: View {
     
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: AppTheme.Spacing.medium) {
-                ScrollOffsetReader(coordinateSpace: scrollCoordinateSpace, id: scrollCoordinateSpace)
-                if let topChrome {
-                    topChrome
-                }
-                // Header
-                ForEach(widgets) { widget in
-                    CustomWidgetContainer(widget: widget) {
-                        selectedWidget = widget
+            AppChromeStack(topChrome: topChrome, scrollID: scrollCoordinateSpace) {
+                LazyVStack(spacing: AppDesign.Theme.Spacing.medium) {
+                    // Header
+                    ForEach(widgets) { widget in
+                        CustomWidgetContainer(widget: widget) {
+                            selectedWidget = widget
+                        }
+                    }
+                    
+                    Button(action: {
+                        selectedWidget = nil
+                        showingAddWidget = true
+                    }) {
+                        VStack(spacing: AppDesign.Theme.Spacing.compact) {
+                            Image(systemName: "plus.circle.fill")
+                                .appIconLarge()
+                                .foregroundStyle(AppDesign.Colors.tint(for: appColorMode).gradient)
+                            Text("Add Widget")
+                                .font(AppDesign.Theme.Typography.sectionTitle)
+                                .foregroundStyle(.primary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 150)
+                        .background(
+                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.card, style: .continuous)
+                                .fill(.background)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.card, style: .continuous)
+                                .stroke(Color(.separator).opacity(0.35))
+                        )
                     }
                 }
-                
-                Button(action: {
-                    selectedWidget = nil
-                    showingAddWidget = true
-                }) {
-                    VStack(spacing: AppTheme.Spacing.compact) {
-                        Image(systemName: "plus.circle.fill")
-                            .appIconLarge()
-                            .foregroundStyle(AppColors.tint(for: appColorMode).gradient)
-                        Text("Add Widget")
-                            .font(AppTheme.Typography.sectionTitle)
-                            .foregroundStyle(.primary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 150)
-                    .background(
-                        RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
-                            .fill(.background)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
-                            .stroke(Color(.separator).opacity(0.35))
-                    )
-                }
+                .padding()
             }
-            .padding()
         }
         .coordinateSpace(name: scrollCoordinateSpace)
         .background(Color(.systemGroupedBackground))
@@ -84,10 +82,10 @@ struct CustomWidgetContainer: View {
     @State private var showingDeleteAlert = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
             HStack {
                 Text(widget.title)
-                    .font(AppTheme.Typography.sectionTitle)
+                    .font(AppDesign.Theme.Typography.sectionTitle)
                 Spacer()
                 
                 Menu {
@@ -102,9 +100,7 @@ struct CustomWidgetContainer: View {
                 } label: {
                     Image(systemName: "ellipsis")
                         .appCaptionText()
-                        .padding(AppTheme.Spacing.compact)
-                        .background(Color(.systemGray6))
-                        .clipShape(Circle())
+                        .foregroundStyle(.secondary)
                 }
             }
             

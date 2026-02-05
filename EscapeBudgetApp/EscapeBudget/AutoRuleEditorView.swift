@@ -227,7 +227,7 @@ struct AutoRuleEditorView: View {
                 } footer: {
                     if !hasConditions {
                         Text("Add at least one condition to match transactions.")
-                            .foregroundStyle(AppColors.warning(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                     }
                 }
 
@@ -288,7 +288,7 @@ struct AutoRuleEditorView: View {
                                     Spacer()
                                     if actionTags.contains(tag) {
                                         Image(systemName: "checkmark")
-                                            .foregroundStyle(AppColors.tint(for: appColorMode))
+                                            .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                                     }
                                 }
                                 .contentShape(Rectangle())
@@ -346,7 +346,7 @@ struct AutoRuleEditorView: View {
                 } footer: {
                     if !hasActions {
                         Text("Add at least one action to apply to matching transactions.")
-                            .foregroundStyle(AppColors.warning(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                     }
                 }
 
@@ -376,7 +376,7 @@ struct AutoRuleEditorView: View {
                 }
 
                 Section {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                         TextField("Payee to exclude (e.g. AMZN*123)", text: $payeeExceptionPayeeInput)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
@@ -680,16 +680,16 @@ struct ConditionToggleLabel: View {
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .foregroundStyle(isEnabled ? AppColors.tint(for: appColorMode) : .secondary)
+                .foregroundStyle(isEnabled ? AppDesign.Colors.tint(for: appColorMode) : .secondary)
                 .frame(width: 24)
 
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                 Text(title)
                     .foregroundStyle(isEnabled ? .primary : .secondary)
                 if let summary = summary {
                     Text(summary)
                         .appCaptionText()
-                        .foregroundStyle(AppColors.tint(for: appColorMode))
+                        .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                 }
             }
 
@@ -697,7 +697,7 @@ struct ConditionToggleLabel: View {
 
             if isEnabled {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(AppColors.success(for: appColorMode))
+                    .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                     .appCaptionText()
             }
         }
@@ -714,16 +714,16 @@ struct ActionToggleLabel: View {
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .foregroundStyle(isEnabled ? AppColors.warning(for: appColorMode) : .secondary)
+                .foregroundStyle(isEnabled ? AppDesign.Colors.warning(for: appColorMode) : .secondary)
                 .frame(width: 24)
 
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                 Text(title)
                     .foregroundStyle(isEnabled ? .primary : .secondary)
                 if let summary = summary {
                     Text(summary)
                         .appCaptionText()
-                        .foregroundStyle(AppColors.warning(for: appColorMode))
+                        .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                 }
             }
 
@@ -731,7 +731,7 @@ struct ActionToggleLabel: View {
 
             if isEnabled {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(AppColors.success(for: appColorMode))
+                    .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                     .appCaptionText()
             }
         }
@@ -760,10 +760,10 @@ struct PreviewMatchesSheet: View {
                         Section {
                             ForEach(transactions) { tx in
                                 HStack {
-                                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                                         Text(tx.payee)
-                                            .font(AppTheme.Typography.body)
-                                        HStack(spacing: AppTheme.Spacing.compact) {
+                                            .font(AppDesign.Theme.Typography.body)
+                                        HStack(spacing: AppDesign.Theme.Spacing.compact) {
                                             Text(tx.date.formatted(date: .abbreviated, time: .omitted))
                                             if let account = tx.account {
                                                 Text("• \(account.name)")
@@ -774,7 +774,7 @@ struct PreviewMatchesSheet: View {
                                     }
                                     Spacer()
                                     Text(tx.amount, format: .currency(code: currencyCode))
-                                        .foregroundStyle(tx.amount >= 0 ? AppColors.success(for: appColorMode) : .primary)
+                                        .foregroundStyle(tx.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)
                                 }
                                 .contextMenu {
                                     if let onExcludePayee {

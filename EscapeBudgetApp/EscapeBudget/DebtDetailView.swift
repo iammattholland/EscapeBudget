@@ -10,14 +10,14 @@ struct DebtDetailView: View {
     @State private var showingEditSheet = false
 
     private var color: Color {
-        Color(hex: debt.colorHex) ?? AppColors.danger(for: appColorMode)
+        Color(hex: debt.colorHex) ?? AppDesign.Colors.danger(for: appColorMode)
     }
 
     var body: some View {
         List {
             // Progress Section
             Section {
-                VStack(spacing: AppTheme.Spacing.medium) {
+                VStack(spacing: AppDesign.Theme.Spacing.medium) {
                     // Large Progress Ring
                     ZStack {
                         Circle()
@@ -30,17 +30,21 @@ struct DebtDetailView: View {
                             .frame(width: 160, height: 160)
                             .rotationEffect(.degrees(-90))
 
-                        VStack(spacing: AppTheme.Spacing.micro) {
+                        VStack(spacing: AppDesign.Theme.Spacing.micro) {
                             if debt.isPaidOff {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 48))
-                                    .foregroundStyle(AppColors.success(for: appColorMode))
+                                    .appDisplayText(AppDesign.Theme.DisplaySize.hero, weight: .regular)
+                                    .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                                 Text("Paid Off!")
                                     .appSectionTitleText()
-                                    .foregroundStyle(AppColors.success(for: appColorMode))
+                                    .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                             } else {
                                 Text("\(Int(debt.payoffProgressPercentage))%")
-                                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                                    .appDisplayText(
+                                        AppDesign.Theme.DisplaySize.xxxxLarge,
+                                        weight: .bold,
+                                        design: .rounded
+                                    )
                                     .foregroundStyle(color)
                                 Text("paid off")
                                     .appCaptionText()
@@ -49,7 +53,7 @@ struct DebtDetailView: View {
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, AppTheme.Spacing.medium)
+                    .padding(.vertical, AppDesign.Theme.Spacing.medium)
                 }
             }
             .listRowBackground(Color.clear)
@@ -57,13 +61,13 @@ struct DebtDetailView: View {
             // Balance Section
             Section("Balance") {
                 LabeledContent("Current Balance") {
-                    HStack(spacing: AppTheme.Spacing.xSmall) {
+                    HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                         Text(debt.effectiveBalance, format: .currency(code: currencyCode))
                             .fontWeight(.semibold)
-                            .foregroundStyle(debt.isPaidOff ? AppColors.success(for: appColorMode) : AppColors.danger(for: appColorMode))
+                            .foregroundStyle(debt.isPaidOff ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
                         if debt.isSyncedWithAccount {
                             Image(systemName: "arrow.triangle.2.circlepath")
-                                .font(.caption)
+                                .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -82,7 +86,7 @@ struct DebtDetailView: View {
 
                 LabeledContent("Amount Paid") {
                     Text(debt.originalBalance - debt.effectiveBalance, format: .currency(code: currencyCode))
-                        .foregroundStyle(AppColors.success(for: appColorMode))
+                        .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                 }
             }
 
@@ -90,7 +94,7 @@ struct DebtDetailView: View {
             Section("Interest & Payments") {
                 LabeledContent("Interest Rate (APR)") {
                     Text("\(debt.interestRatePercentage, format: .number.precision(.fractionLength(2)))%")
-                        .foregroundStyle(debt.isHighInterest ? AppColors.danger(for: appColorMode) : .primary)
+                        .foregroundStyle(debt.isHighInterest ? AppDesign.Colors.danger(for: appColorMode) : .primary)
                 }
 
                 LabeledContent("Minimum Payment") {
@@ -100,7 +104,7 @@ struct DebtDetailView: View {
                 if debt.extraPayment > 0 {
                     LabeledContent("Extra Payment") {
                         Text(debt.extraPayment, format: .currency(code: currencyCode))
-                            .foregroundStyle(AppColors.success(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                     }
                 }
 
@@ -124,7 +128,7 @@ struct DebtDetailView: View {
                         LabeledContent("Debt-Free Date") {
                             Text(payoffDate, format: .dateTime.month().year())
                                 .fontWeight(.medium)
-                                .foregroundStyle(AppColors.success(for: appColorMode))
+                                .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                         }
                     }
 
@@ -132,7 +136,7 @@ struct DebtDetailView: View {
                         LabeledContent("Total Interest to Pay") {
                             Text(totalInterest, format: .currency(code: currencyCode))
                                 .fontWeight(.medium)
-                                .foregroundStyle(AppColors.danger(for: appColorMode))
+                                .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                         }
                     }
                 }
@@ -211,7 +215,7 @@ struct DebtWhatIfView: View {
     var body: some View {
         List {
             Section {
-                VStack(spacing: AppTheme.Spacing.medium) {
+                VStack(spacing: AppDesign.Theme.Spacing.medium) {
                     Text("Extra Monthly Payment")
                         .appCaptionText()
                         .foregroundStyle(.secondary)
@@ -219,37 +223,37 @@ struct DebtWhatIfView: View {
                     Text(Decimal(extraPaymentAmount), format: .currency(code: currencyCode))
                         .appTitleText()
                         .fontWeight(.bold)
-                        .foregroundStyle(AppColors.tint(for: appColorMode))
+                        .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
 
                     Slider(value: $extraPaymentAmount, in: 0...maxExtraPayment, step: 10)
-                        .tint(AppColors.tint(for: appColorMode))
+                        .tint(AppDesign.Colors.tint(for: appColorMode))
                 }
-                .padding(.vertical, AppTheme.Spacing.compact)
+                .padding(.vertical, AppDesign.Theme.Spacing.compact)
             }
 
             if let projection = projection, let original = originalProjection {
                 Section("With Extra Payment") {
                     LabeledContent("Time to Payoff") {
-                        HStack(spacing: AppTheme.Spacing.xSmall) {
+                        HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                             Text(DebtPayoffCalculator.formatMonths(projection.monthsToPayoff))
                                 .fontWeight(.semibold)
                             if projection.monthsToPayoff < original.monthsToPayoff {
                                 Text("(\(original.monthsToPayoff - projection.monthsToPayoff) months faster)")
                                     .appCaptionText()
-                                    .foregroundStyle(AppColors.success(for: appColorMode))
+                                    .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                             }
                         }
                     }
 
                     LabeledContent("Total Interest") {
-                        VStack(alignment: .trailing, spacing: AppTheme.Spacing.micro) {
+                        VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.micro) {
                             Text(projection.totalInterestPaid, format: .currency(code: currencyCode))
                                 .fontWeight(.semibold)
                             if projection.totalInterestPaid < original.totalInterestPaid {
                                 let saved = original.totalInterestPaid - projection.totalInterestPaid
                                 Text("Save \(saved, format: .currency(code: currencyCode))")
                                     .appCaptionText()
-                                    .foregroundStyle(AppColors.success(for: appColorMode))
+                                    .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                             }
                         }
                     }
@@ -257,7 +261,7 @@ struct DebtWhatIfView: View {
                     LabeledContent("Debt-Free Date") {
                         Text(projection.payoffDate, format: .dateTime.month().year())
                             .fontWeight(.semibold)
-                            .foregroundStyle(AppColors.success(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                     }
                 }
 

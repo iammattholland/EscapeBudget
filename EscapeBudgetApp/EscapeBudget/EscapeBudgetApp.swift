@@ -59,10 +59,16 @@ struct EscapeBudgetApp: App {
         // Normalize list spacing across the app.
         UITableView.appearance().sectionHeaderTopPadding = 0
 #endif
+        let defaults = UserDefaults.standard
+        if defaults.object(forKey: "userAppearance") == nil {
+            defaults.set("System", forKey: "userAppearance")
+        }
+        if defaults.object(forKey: "appIconMode") == nil {
+            defaults.set(AppIconMode.system.rawValue, forKey: "appIconMode")
+        }
         let isUITesting = ProcessInfo.processInfo.arguments.contains("ui_testing")
         // UI tests: force a stable starting state (no onboarding, demo data, deterministic processing).
         if isUITesting {
-            let defaults = UserDefaults.standard
             defaults.set(false, forKey: "shouldShowWelcome")
             defaults.set(true, forKey: "isDemoMode")
             defaults.set(true, forKey: "transactions.applyAutoRulesOnManual")
@@ -126,7 +132,7 @@ struct EscapeBudgetApp: App {
                     ImportDataView()
                 }
                 .preferredColorScheme(appearanceColorScheme)
-                .tint(AppColors.tint(for: appColorMode))
+                .tint(AppDesign.Colors.tint(for: appColorMode))
                 .environment(\.appColorMode, appColorMode)
                 .environment(\.undoRedoManager, undoRedoManager)
                 .environmentObject(errorCenter)
@@ -199,7 +205,7 @@ struct EscapeBudgetApp: App {
                 }
 
                 // Lock screen overlay when authentication required
-                if authService.isLocked && authService.isBiometricsEnabled {
+                if authService.isLocked && (authService.isBiometricsEnabled || authService.isPasscodeEnabled) {
                     LockScreenView(authService: authService)
                         .transition(.opacity)
                         .zIndex(1)
@@ -407,7 +413,7 @@ enum AppIconController {
 
         let currentAlternateIcon = UIApplication.shared.alternateIconName
         let inferredMode: AppIconMode =
-            (currentAlternateIcon == lightIconName || currentAlternateIcon == legacyLightIconName) ? .light : .dark
+            (currentAlternateIcon == lightIconName || currentAlternateIcon == legacyLightIconName) ? .light : .system
         UserDefaults.standard.set(inferredMode.rawValue, forKey: appIconModeDefaultsKey)
     }
 
@@ -471,7 +477,8 @@ enum AppIconController {
 }
 
 private struct AppIconSettingsApplier: ViewModifier {
-    @AppStorage("appIconMode") private var appIconModeRawValue = AppIconMode.dark.rawValue
+    @AppStorage("appIconMode") private var appIconModeRawValue = AppIconMode.system.rawValue
+    @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
         content
@@ -481,6 +488,12 @@ private struct AppIconSettingsApplier: ViewModifier {
             .onChange(of: appIconModeRawValue) { _, newValue in
                 Task {
                     await AppIconController.apply(modeRawValue: newValue)
+                }
+            }
+            .onChange(of: colorScheme) { _, _ in
+                guard appIconModeRawValue == AppIconMode.system.rawValue else { return }
+                Task {
+                    await AppIconController.apply(modeRawValue: appIconModeRawValue)
                 }
             }
     }

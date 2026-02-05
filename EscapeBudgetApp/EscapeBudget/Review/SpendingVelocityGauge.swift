@@ -32,15 +32,15 @@ struct SpendingVelocityGauge: View {
     // MARK: - Colors
 
     private var greenColor: Color {
-        AppColors.success(for: appColorMode)
+        AppDesign.Colors.success(for: appColorMode)
     }
 
     private var yellowColor: Color {
-        AppColors.warning(for: appColorMode)
+        AppDesign.Colors.warning(for: appColorMode)
     }
 
     private var redColor: Color {
-        AppColors.danger(for: appColorMode)
+        AppDesign.Colors.danger(for: appColorMode)
     }
 
     private var trackColor: Color {
@@ -201,23 +201,23 @@ struct SpendingVelocityGauge: View {
     HStack(spacing: 30) {
         VStack {
             SpendingVelocityGauge(velocityRatio: 0.3, size: 60)
-            Text("0.3x").font(.caption)
+            Text("0.3x").appCaptionText()
         }
         VStack {
             SpendingVelocityGauge(velocityRatio: 0.85, size: 60)
-            Text("0.85x").font(.caption)
+            Text("0.85x").appCaptionText()
         }
         VStack {
             SpendingVelocityGauge(velocityRatio: 1.0, size: 60)
-            Text("1.0x").font(.caption)
+            Text("1.0x").appCaptionText()
         }
         VStack {
             SpendingVelocityGauge(velocityRatio: 1.15, size: 60)
-            Text("1.15x").font(.caption)
+            Text("1.15x").appCaptionText()
         }
         VStack {
             SpendingVelocityGauge(velocityRatio: 1.8, size: 60)
-            Text("1.8x").font(.caption)
+            Text("1.8x").appCaptionText()
         }
     }
     .padding()

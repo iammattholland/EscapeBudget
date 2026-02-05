@@ -139,7 +139,7 @@ struct AutoRulesView: View {
                                 } label: {
                                     Label("Duplicate", systemImage: "doc.on.doc")
                                 }
-                                .tint(AppColors.tint(for: appColorMode))
+                                .tint(AppDesign.Colors.tint(for: appColorMode))
 
                                 Button {
                                     ruleToApplyRetroactively = rule
@@ -193,14 +193,14 @@ struct AutoRulesView: View {
     // MARK: - Empty State
 
     private var emptyStateView: some View {
-        VStack(spacing: AppTheme.Spacing.large) {
+        VStack(spacing: AppDesign.Theme.Spacing.large) {
             Spacer()
 
             Image(systemName: "wand.and.stars")
                 .appIconHero()
-                .foregroundStyle(AppColors.tint(for: appColorMode).opacity(0.6))
+                .foregroundStyle(AppDesign.Colors.tint(for: appColorMode).opacity(0.6))
 
-            VStack(spacing: AppTheme.Spacing.compact) {
+            VStack(spacing: AppDesign.Theme.Spacing.compact) {
                 Text("No Auto Rules Yet")
                     .appTitleText()
                     .fontWeight(.semibold)
@@ -209,7 +209,7 @@ struct AutoRulesView: View {
                     .appSecondaryBodyText()
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, AppTheme.Spacing.xxLarge)
+                    .padding(.horizontal, AppDesign.Theme.Spacing.xxLarge)
             }
 
             Button {
@@ -224,7 +224,7 @@ struct AutoRulesView: View {
             Spacer()
 
             // Tips Section
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.tight) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                 Text("What can Auto Rules do?")
                     .appSectionTitleText()
 
@@ -248,8 +248,8 @@ struct AutoRulesView: View {
             }
             .padding()
             .background(Color(.secondarySystemGroupedBackground))
-            .cornerRadius(AppTheme.Radius.small)
-            .padding(.horizontal)
+            .cornerRadius(AppDesign.Theme.Radius.small)
+            .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
 
             Spacer()
         }
@@ -311,31 +311,31 @@ struct RuleRowView: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.tight) {
+        HStack(spacing: AppDesign.Theme.Spacing.tight) {
             // Enable Toggle
             Toggle("", isOn: Binding(
                 get: { rule.isEnabled },
                 set: { onToggle($0) }
             ))
             .labelsHidden()
-            .toggleStyle(SwitchToggleStyle(tint: AppColors.tint(for: appColorMode)))
+            .toggleStyle(SwitchToggleStyle(tint: AppDesign.Colors.tint(for: appColorMode)))
 
             // Rule Info
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                 HStack {
                     Text(rule.name)
-                        .font(AppTheme.Typography.body)
+                        .font(AppDesign.Theme.Typography.body)
                         .fontWeight(.medium)
                         .foregroundStyle(rule.isEnabled ? .primary : .secondary)
 
 	                    if rule.timesApplied > 0 {
 	                        Text("\(rule.timesApplied)×")
-	                            .font(.caption2)
-	                            .padding(.horizontal, AppTheme.Spacing.xSmall)
-	                            .padding(.vertical, AppTheme.Spacing.hairline)
-	                            .background(AppColors.tint(for: appColorMode).opacity(0.1))
-	                            .foregroundStyle(AppColors.tint(for: appColorMode))
-	                            .cornerRadius(AppTheme.Radius.mini)
+	                            .appCaption2Text()
+	                            .padding(.horizontal, AppDesign.Theme.Spacing.xSmall)
+	                            .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+	                            .background(AppDesign.Colors.tint(for: appColorMode).opacity(0.1))
+	                            .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
+	                            .cornerRadius(AppDesign.Theme.Radius.mini)
 	                    }
 	                }
 
@@ -345,7 +345,7 @@ struct RuleRowView: View {
                     .lineLimit(1)
 
                 // Action icons
-                HStack(spacing: AppTheme.Spacing.compact) {
+                HStack(spacing: AppDesign.Theme.Spacing.compact) {
                     if rule.actionRenamePayee != nil && !rule.actionRenamePayee!.isEmpty {
                         ActionBadge(icon: "person.text.rectangle", label: "Rename")
                     }
@@ -370,7 +370,7 @@ struct RuleRowView: View {
                 .appCaptionText()
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, AppTheme.Spacing.micro)
+        .padding(.vertical, AppDesign.Theme.Spacing.micro)
         .contentShape(Rectangle())
         .onTapGesture { onTap() }
     }
@@ -383,17 +383,17 @@ struct ActionBadge: View {
     let label: String
 
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.nano) {
+        HStack(spacing: AppDesign.Theme.Spacing.nano) {
             Image(systemName: icon)
-                .font(.caption2)
+                .appCaption2Text()
             Text(label)
-                .font(.caption2)
+                .appCaption2Text()
         }
 	        .foregroundStyle(.secondary)
-	        .padding(.horizontal, AppTheme.Spacing.xSmall)
-	        .padding(.vertical, AppTheme.Spacing.hairline)
+	        .padding(.horizontal, AppDesign.Theme.Spacing.xSmall)
+	        .padding(.vertical, AppDesign.Theme.Spacing.hairline)
 	        .background(Color(.tertiarySystemFill))
-	        .cornerRadius(AppTheme.Radius.mini)
+	        .cornerRadius(AppDesign.Theme.Radius.mini)
 	    }
 }
 
@@ -406,13 +406,13 @@ struct TipRow: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        HStack(alignment: .top, spacing: AppTheme.Spacing.tight) {
+        HStack(alignment: .top, spacing: AppDesign.Theme.Spacing.tight) {
             Image(systemName: icon)
-                .font(AppTheme.Typography.body)
-                .foregroundStyle(AppColors.tint(for: appColorMode))
+                .font(AppDesign.Theme.Typography.body)
+                .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                 .frame(width: 24)
 
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                 Text(title)
                     .appSecondaryBodyText()
                     .fontWeight(.medium)

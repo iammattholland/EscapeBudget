@@ -62,12 +62,12 @@ struct TransferMatchPickerView: View {
             if let errorMessage {
                 Section {
                     Text(errorMessage)
-                        .foregroundStyle(AppColors.danger(for: appColorMode))
+                        .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                 }
             }
 
             Section {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                     Text("Amount")
                         .appCaptionText()
                         .foregroundStyle(.secondary)
@@ -80,7 +80,7 @@ struct TransferMatchPickerView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .padding(.vertical, AppTheme.Spacing.micro)
+                .padding(.vertical, AppDesign.Theme.Spacing.micro)
 
                 Picker("Search window", selection: $window) {
                     Text("7d").tag(TransferLinker.SearchWindow.days(7))
@@ -135,8 +135,8 @@ struct TransferMatchPickerView: View {
                             showingConfirm = true
                         } label: {
                             HStack {
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
-                                    HStack(spacing: AppTheme.Spacing.xSmall) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
+                                    HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                                         Text(candidate.account?.name ?? "No Account")
                                             .appSectionTitleText()
                                         if isBestMatch {
@@ -149,7 +149,7 @@ struct TransferMatchPickerView: View {
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
                                     Text("\(Int(min(score, 100)))% match")
-                                        .font(.caption2)
+                                        .appCaption2Text()
                                         .foregroundStyle(score >= 80 ? .green : score >= 60 ? .orange : .secondary)
                                 }
                                 Spacer()
@@ -291,7 +291,7 @@ struct TransferMatchPickerView: View {
                             Button {
                                 showingCreateTrackingConfirm = true
                             } label: {
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                                     Label("Create External Account", systemImage: "plus.circle")
                                         .fontWeight(.semibold)
                                     Text("Creates an account in Accounts so you can track transfers to/from it.")
@@ -477,13 +477,13 @@ private struct TransferMatchConfirmView: View {
 
     @ViewBuilder
     private func transferRow(title: String, transaction: Transaction) -> some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
             Text(title)
-                .font(.caption.weight(.semibold))
+                .appCaptionStrongText()
                 .foregroundStyle(.secondary)
 
             HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                     Text(transaction.payee)
                         .appSectionTitleText()
 
@@ -501,7 +501,7 @@ private struct TransferMatchConfirmView: View {
 
                 Spacer()
 
-                VStack(alignment: .trailing, spacing: AppTheme.Spacing.hairline) {
+                VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.hairline) {
                     Text(transaction.amount, format: .currency(code: currencyCode))
                         .appSectionTitleText()
                         .monospacedDigit()
@@ -511,6 +511,6 @@ private struct TransferMatchConfirmView: View {
                 }
             }
         }
-        .padding(.vertical, AppTheme.Spacing.micro)
+        .padding(.vertical, AppDesign.Theme.Spacing.micro)
     }
 }

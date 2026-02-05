@@ -67,7 +67,7 @@ struct ReviewView: View {
     }
 
     private var reviewTopChrome: some View {
-        VStack(spacing: AppTheme.Spacing.compact) {
+        VStack(spacing: AppDesign.Theme.Spacing.compact) {
             TopChromeTabs(
                 selection: $selectedSection,
                 tabs: ReportSection.allCases.map { .init(id: $0, title: $0.rawValue) },

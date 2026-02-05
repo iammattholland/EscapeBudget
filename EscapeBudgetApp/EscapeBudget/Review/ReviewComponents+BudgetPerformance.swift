@@ -148,7 +148,7 @@ struct BudgetPerformanceView: View {
                     systemImage: "exclamationmark.triangle.fill",
                     title: "Top over budget",
                     value: "\(topOverBudgetCategory.category.name) • \(topOverBudgetCategory.overBy.formatted(.currency(code: currencyCode)))",
-                    tint: AppColors.danger(for: appColorMode),
+                    tint: AppDesign.Colors.danger(for: appColorMode),
                     action: { categoryToFix = topOverBudgetCategory.category }
                 )
             )
@@ -161,7 +161,7 @@ struct BudgetPerformanceView: View {
                     systemImage: "chart.pie.fill",
                     title: "Most left",
                     value: "\(biggestLeftCategory.category.name) • \(biggestLeftCategory.left.formatted(.currency(code: currencyCode)))",
-                    tint: AppColors.success(for: appColorMode),
+                    tint: AppDesign.Colors.success(for: appColorMode),
                     action: { categoryToFix = biggestLeftCategory.category }
                 )
             )
@@ -177,7 +177,7 @@ struct BudgetPerformanceView: View {
                     value: (delta > 0)
                         ? "Over by \(delta.formatted(.currency(code: currencyCode)))"
                         : "Left \(abs(delta).formatted(.currency(code: currencyCode)))",
-                    tint: delta > 0 ? AppColors.warning(for: appColorMode) : AppColors.success(for: appColorMode),
+                    tint: delta > 0 ? AppDesign.Colors.warning(for: appColorMode) : AppDesign.Colors.success(for: appColorMode),
                     action: nil
                 )
             )
@@ -255,13 +255,8 @@ struct BudgetPerformanceView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: AppTheme.Spacing.cardGap) {
-                ScrollOffsetReader(coordinateSpace: "BudgetPerformanceView.scroll", id: "BudgetPerformanceView.scroll")
-                if let topChrome {
-                    topChrome
-                }
-
-                VStack(spacing: AppTheme.Spacing.cardGap) {
+            AppChromeStack(topChrome: topChrome, scrollID: "BudgetPerformanceView.scroll") {
+                VStack(spacing: AppDesign.Theme.Spacing.cardGap) {
                     BudgetReviewSectionCard {
                         BudgetReviewSummaryCard(
                             currencyCode: currencyCode,
@@ -301,18 +296,18 @@ struct BudgetPerformanceView: View {
                                                 activity: activityFor(category: category),
                                                 transactionCount: transactionsFor(category: category).count
                                             )
-                                            .padding(.vertical, AppTheme.Spacing.hairline)
+                                            .padding(.vertical, AppDesign.Theme.Spacing.hairline)
                                         }
                                         .buttonStyle(.plain)
 
                                         if index != group.sortedCategories.count - 1 {
                                             Divider()
-                                                .padding(.leading, AppTheme.Spacing.indentXL)
+                                                .padding(.leading, AppDesign.Theme.Spacing.indentXL)
                                                 .opacity(0.35)
                                         }
                                     }
                                 }
-                                .padding(.top, AppTheme.Spacing.compact)
+                                .padding(.top, AppDesign.Theme.Spacing.compact)
                             }
                         }
                     } else {
@@ -321,8 +316,8 @@ struct BudgetPerformanceView: View {
                         }
                     }
                 }
-                .padding(.horizontal, AppTheme.Spacing.medium)
-                .padding(.vertical, AppTheme.Spacing.tight)
+                .padding(.horizontal, AppDesign.Theme.Spacing.medium)
+                .padding(.vertical, AppDesign.Theme.Spacing.tight)
             }
         }
         .coordinateSpace(name: "BudgetPerformanceView.scroll")
@@ -416,7 +411,7 @@ private struct BudgetInsightsEmptyStateCard: View {
             )
         )
         .frame(maxWidth: .infinity)
-        .padding(.vertical, AppTheme.Spacing.tight)
+        .padding(.vertical, AppDesign.Theme.Spacing.tight)
     }
 }
 
@@ -443,22 +438,22 @@ private struct BudgetReviewSummaryCard: View {
     }
 
     private var progressColor: Color {
-        if assigned <= 0 { return AppColors.tint(for: appColorMode) }
+        if assigned <= 0 { return AppDesign.Colors.tint(for: appColorMode) }
 
         // Green up to 75%, orange 76-99%, red 100%+
         if progress <= 0.75 {
-            return AppColors.success(for: appColorMode)
+            return AppDesign.Colors.success(for: appColorMode)
         } else if progress < 1.0 {
-            return AppColors.warning(for: appColorMode)
+            return AppDesign.Colors.warning(for: appColorMode)
         } else {
-            return AppColors.danger(for: appColorMode)
+            return AppDesign.Colors.danger(for: appColorMode)
         }
     }
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: AppTheme.Spacing.cardGap) {
-	            HStack(alignment: .top, spacing: AppTheme.Spacing.tight) {
-	                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.cardGap) {
+	            HStack(alignment: .top, spacing: AppDesign.Theme.Spacing.tight) {
+	                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                    Text("Budget Review")
 	                        .appSectionTitleText()
 
@@ -474,11 +469,11 @@ private struct BudgetReviewSummaryCard: View {
 
             LazyVGrid(
                 columns: [
-                    GridItem(.flexible(), spacing: AppTheme.Spacing.small),
-                    GridItem(.flexible(), spacing: AppTheme.Spacing.small),
-                    GridItem(.flexible(), spacing: AppTheme.Spacing.small)
+                    GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small),
+                    GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small),
+                    GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small)
                 ],
-                spacing: AppTheme.Spacing.small
+                spacing: AppDesign.Theme.Spacing.small
             ) {
                 BudgetReviewMetricTile(
                     title: "Assigned",
@@ -496,7 +491,7 @@ private struct BudgetReviewSummaryCard: View {
                     title: "Left",
                     value: remaining,
                     currencyCode: currencyCode,
-                    valueColor: remaining >= 0 ? .secondary : AppColors.danger(for: appColorMode)
+                    valueColor: remaining >= 0 ? .secondary : AppDesign.Colors.danger(for: appColorMode)
                 )
             }
         }
@@ -510,26 +505,26 @@ private struct BudgetReviewMetricTile: View {
     let valueColor: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
             Text(title)
                 .appCaptionText()
                 .foregroundStyle(.secondary)
 
             Text(value, format: .currency(code: currencyCode))
-                .font(AppTheme.Typography.secondaryBody)
+                .font(AppDesign.Theme.Typography.secondaryBody)
                 .fontWeight(.semibold)
                 .foregroundStyle(valueColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.75)
         }
-        .padding(AppTheme.Spacing.small)
+        .padding(AppDesign.Theme.Spacing.small)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact, style: .continuous)
                 .fill(Color(.systemBackground))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.compact, style: .continuous)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.compact, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.05), lineWidth: 1)
         )
     }
@@ -572,15 +567,15 @@ private struct BudgetReviewGroupCardHeader: View {
     }
 
     private var progressColor: Color {
-        if assigned <= 0 { return AppColors.tint(for: appColorMode) }
+        if assigned <= 0 { return AppDesign.Colors.tint(for: appColorMode) }
 
         // Green up to 75%, orange 76-99%, red 100%+
         if progress <= 0.75 {
-            return AppColors.success(for: appColorMode)
+            return AppDesign.Colors.success(for: appColorMode)
         } else if progress < 1.0 {
-            return AppColors.warning(for: appColorMode)
+            return AppDesign.Colors.warning(for: appColorMode)
         } else {
-            return AppColors.danger(for: appColorMode)
+            return AppDesign.Colors.danger(for: appColorMode)
         }
     }
 
@@ -594,19 +589,19 @@ private struct BudgetReviewGroupCardHeader: View {
 	    private var leftPill: some View {
 	        BudgetReviewMetricPill(
 	            text: Text("Left: \(remaining.formatted(.currency(code: currencyCode)))"),
-	            tint: remaining >= 0 ? .secondary : AppColors.danger(for: appColorMode)
+	            tint: remaining >= 0 ? .secondary : AppDesign.Colors.danger(for: appColorMode)
 	        )
 	    }
 
     private var pillsRow: some View {
-        HStack(spacing: AppTheme.Spacing.compact) {
+        HStack(spacing: AppDesign.Theme.Spacing.compact) {
             spentPill
             leftPill
         }
     }
 
 	    var body: some View {
-	        VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
 	            Text(groupName)
 	                .appSectionTitleText()
 	                .lineLimit(1)
@@ -615,7 +610,7 @@ private struct BudgetReviewGroupCardHeader: View {
             ViewThatFits(in: .horizontal) {
                 pillsRow
 
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                     spentPill
                     leftPill
                 }
@@ -639,8 +634,8 @@ private struct BudgetReviewMetricPill: View {
             .minimumScaleFactor(0.75)
             .allowsTightening(true)
             .monospacedDigit()
-            .padding(.vertical, AppTheme.Spacing.xSmall)
-            .padding(.horizontal, AppTheme.Spacing.small)
+            .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
+            .padding(.horizontal, AppDesign.Theme.Spacing.small)
             .background(
                 Capsule()
                     .fill(tint.opacity(0.10))
@@ -679,44 +674,47 @@ struct BudgetProgressRow: View {
     
     private var progressColor: Color {
         if isIncome {
-            return AppColors.tint(for: appColorMode)
+            return AppDesign.Colors.tint(for: appColorMode)
         }
 
         // Green up to 75%, orange 76-99%, red 100%+
         if percentageProgress <= 0.75 {
-            return AppColors.success(for: appColorMode)
+            return AppDesign.Colors.success(for: appColorMode)
         } else if percentageProgress < 1.0 {
-            return AppColors.warning(for: appColorMode)
+            return AppDesign.Colors.warning(for: appColorMode)
         } else {
-            return AppColors.danger(for: appColorMode)
+            return AppDesign.Colors.danger(for: appColorMode)
         }
     }
     
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.tight) {
+        HStack(spacing: AppDesign.Theme.Spacing.tight) {
             // Category icon
             Circle()
                 .fill(progressColor.opacity(0.15))
                 .frame(width: 40, height: 40)
                 .overlay(
                     Text(category.icon ?? String(category.name.prefix(1)).uppercased())
-                        .font(.system(size: category.icon != nil ? 20 : 16, weight: .semibold))
+                        .appDisplayText(
+                            category.icon != nil ? AppDesign.Theme.DisplaySize.large : AppDesign.Theme.DisplaySize.small,
+                            weight: .semibold
+                        )
                         .foregroundStyle(progressColor)
                 )
             
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                 HStack {
                     Text(category.name)
-                        .font(AppTheme.Typography.body)
+                        .font(AppDesign.Theme.Typography.body)
                         .fontWeight(.medium)
                     
                     if transactionCount > 0 {
                         Text("\(transactionCount)")
-                            .font(.caption2)
+                            .appCaption2Text()
                             .fontWeight(.medium)
                             .foregroundStyle(.secondary)
-                            .padding(.vertical, AppTheme.Spacing.hairline)
-                            .padding(.horizontal, AppTheme.Spacing.compact)
+                            .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+                            .padding(.horizontal, AppDesign.Theme.Spacing.compact)
                             .background(Capsule().fill(Color(.systemGray6)))
                     }
                     
@@ -731,11 +729,11 @@ struct BudgetProgressRow: View {
                 // Progress bar
 	                GeometryReader { geometry in
 	                    ZStack(alignment: .leading) {
-	                        RoundedRectangle(cornerRadius: AppTheme.Radius.mini)
+	                        RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.mini)
 	                            .fill(Color(.systemGray5))
 	                            .frame(height: 8)
 	                        
-	                        RoundedRectangle(cornerRadius: AppTheme.Radius.mini)
+	                        RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.mini)
 	                            .fill(progressColor.gradient)
 	                            .frame(width: geometry.size.width * percentageProgress, height: 8)
 	                    }
@@ -776,7 +774,7 @@ struct BudgetProgressRow: View {
                 }
             }
         }
-        .padding(.vertical, AppTheme.Spacing.compact)
+        .padding(.vertical, AppDesign.Theme.Spacing.compact)
     }
 }
 

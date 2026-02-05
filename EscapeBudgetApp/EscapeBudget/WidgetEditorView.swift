@@ -32,7 +32,7 @@ struct WidgetEditorView: View {
                         } label: {
                             HStack {
                                 Image(systemName: "wand.and.stars")
-                                    .foregroundStyle(AppColors.tint(for: appColorMode))
+                                    .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                                 Text("Browse Suggested Widgets")
                                     .foregroundStyle(.primary)
                                 Spacer()
@@ -218,10 +218,10 @@ struct SuggestedWidgetsView: View {
                             Button {
                                 onSelect(template)
                             } label: {
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                                     HStack {
                                         Image(systemName: iconFor(dataType: template.dataType))
-                                            .foregroundStyle(AppColors.tint(for: appColorMode))
+                                            .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                                             .frame(width: 24)
 
                                         Text(template.title)
@@ -238,9 +238,9 @@ struct SuggestedWidgetsView: View {
                                     Text(template.dataType.description)
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
-                                        .padding(.leading, AppTheme.Spacing.xxLarge)
+                                        .padding(.leading, AppDesign.Theme.Spacing.xxLarge)
                                 }
-                                .padding(.vertical, AppTheme.Spacing.micro)
+                                .padding(.vertical, AppDesign.Theme.Spacing.micro)
                             }
                         }
                     }

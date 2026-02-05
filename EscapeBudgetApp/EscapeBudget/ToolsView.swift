@@ -8,12 +8,12 @@ struct ToolsView: View {
             ScrollView {
                 ScrollOffsetReader(coordinateSpace: "ToolsView.scroll", id: "ToolsView.scroll")
 
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.xLarge) {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xLarge) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                         Text("Available Now")
                             .appSectionTitleText()
 
-                        VStack(spacing: AppTheme.Spacing.cardGap) {
+                        VStack(spacing: AppDesign.Theme.Spacing.cardGap) {
                             NavigationLink {
                                 SpendingChallengesView()
                             } label: {
@@ -56,11 +56,11 @@ struct ToolsView: View {
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                         Text("Planned Features")
                             .appSectionTitleText()
 
-                        VStack(spacing: AppTheme.Spacing.cardGap) {
+                        VStack(spacing: AppDesign.Theme.Spacing.cardGap) {
                             ToolCard(
                                 title: "Receipt Scanner",
                                 subtitle: "Capture receipts and auto-extract merchant, date, totals, and line items."
@@ -76,9 +76,9 @@ struct ToolsView: View {
                         }
                     }
                 }
-                .padding(.horizontal, AppTheme.Spacing.screenHorizontal)
-                .padding(.top, AppTheme.Spacing.micro)
-                .padding(.bottom, AppTheme.Spacing.large)
+                .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
+                .padding(.top, AppDesign.Theme.Spacing.micro)
+                .padding(.bottom, AppDesign.Theme.Spacing.large)
             }
             .appConstrainContentWidth()
             .coordinateSpace(name: "ToolsView.scroll")
@@ -99,7 +99,7 @@ private struct ToolCard: View {
     let subtitle: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
             Text(title)
                 .appSectionTitleText()
             Text(subtitle)

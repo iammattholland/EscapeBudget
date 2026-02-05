@@ -14,6 +14,7 @@ struct AccountDetailView: View {
     @State private var showingReconcileSheet = false
     @State private var showingEditAccountSheet = false
     @State private var showingDeleteAccountConfirm = false
+    @State private var showingAccountActions = false
     
     var sortedTransactions: [Transaction] {
         account.transactions?.sorted { $0.date > $1.date } ?? []
@@ -32,7 +33,7 @@ struct AccountDetailView: View {
                     }
                     Spacer()
                     Text(transaction.amount, format: .currency(code: currencyCode))
-                        .foregroundStyle(transaction.isTransfer ? .primary : (transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary))
+                        .foregroundStyle(transaction.isTransfer ? .primary : (transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary))
                 }
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -44,42 +45,10 @@ struct AccountDetailView: View {
         .navigationTitle(account.name)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Menu {
-                    Button {
-                        showingEditAccountSheet = true
-                    } label: {
-                        Label("Edit Account", systemImage: "pencil")
-                    }
-
-                    Divider()
-
-                    Button {
-                        showingAddTransaction = true
-                    } label: {
-                        Label("Add Transaction", systemImage: "plus")
-                    }
-
-                    Button {
-                        showingImportSheet = true
-                    } label: {
-                        Label("Add Statement", systemImage: "square.and.arrow.down")
-                    }
-
-                    Button {
-                        showingReconcileSheet = true
-                    } label: {
-                        Label("Reconcile Account", systemImage: "checkmark.circle")
-                    }
-
-                    Divider()
-
-                    Button(role: .destructive) {
-                        showingDeleteAccountConfirm = true
-                    } label: {
-                        Label("Delete Account", systemImage: "trash")
-                    }
+                Button {
+                    showingAccountActions = true
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    Image(systemName: "ellipsis")
                         .imageScale(.large)
                 }
             }
@@ -107,6 +76,24 @@ struct AccountDetailView: View {
         .sheet(isPresented: $showingEditAccountSheet) {
             NavigationStack {
                 AccountEditSheet(account: account, currencyCode: currencyCode)
+            }
+        }
+        .sheet(isPresented: $showingAccountActions) {
+            NavigationStack {
+                AccountActionsSheet(
+                    onEditAccount: { showingEditAccountSheet = true },
+                    onAddTransaction: { showingAddTransaction = true },
+                    onAddStatement: { showingImportSheet = true },
+                    onReconcile: { showingReconcileSheet = true },
+                    onDelete: { showingDeleteAccountConfirm = true }
+                )
+                .navigationTitle("Account Actions")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") { showingAccountActions = false }
+                    }
+                }
             }
         }
     }
@@ -173,6 +160,55 @@ struct AccountDetailView: View {
     }
 }
 
+private struct AccountActionsSheet: View {
+    let onEditAccount: () -> Void
+    let onAddTransaction: () -> Void
+    let onAddStatement: () -> Void
+    let onReconcile: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        List {
+            Section {
+                Button {
+                    onEditAccount()
+                } label: {
+                    Label("Edit Account", systemImage: "pencil")
+                }
+            }
+
+            Section("Add") {
+                Button {
+                    onAddTransaction()
+                } label: {
+                    Label("Add Transaction", systemImage: "plus")
+                }
+
+                Button {
+                    onAddStatement()
+                } label: {
+                    Label("Add Statement", systemImage: "square.and.arrow.down")
+                }
+
+                Button {
+                    onReconcile()
+                } label: {
+                    Label("Reconcile Account", systemImage: "checkmark.circle")
+                }
+            }
+
+            Section("Danger") {
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Label("Delete Account", systemImage: "trash")
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+    }
+}
+
 private struct AccountEditSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -188,7 +224,7 @@ private struct AccountEditSheet: View {
     var body: some View {
         Form {
             Section("Details") {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                     Text("Name")
                         .appCaptionText()
                         .foregroundStyle(.secondary)

@@ -45,14 +45,14 @@ struct DataHealthView: View {
     var body: some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                     Text("Data Health")
                         .appSectionTitleText()
                     Text("A quick overview of your data, storage, and safety net settings.")
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, AppTheme.Spacing.micro)
+                .padding(.vertical, AppDesign.Theme.Spacing.micro)
             }
 
             Section("Sync") {
@@ -81,9 +81,9 @@ struct DataHealthView: View {
                 }
 
                 if !lastSyncError.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                         Text("Last error")
-                            .font(.caption.weight(.semibold))
+                            .appCaptionStrongText()
                             .foregroundStyle(.secondary)
                         Text(lastSyncError)
                             .appCaptionText()
@@ -241,12 +241,12 @@ struct DataHealthView: View {
     }
 
     private func auditRow(title: String, value: String) -> some View {
-        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
             Text(title)
-                .font(.caption.weight(.semibold))
+                .appCaptionStrongText()
                 .foregroundStyle(.secondary)
             Text(value)
-                .font(AppTheme.Typography.secondaryBody)
+                .font(AppDesign.Theme.Typography.secondaryBody)
                 .foregroundStyle(.primary)
                 .textSelection(.enabled)
         }

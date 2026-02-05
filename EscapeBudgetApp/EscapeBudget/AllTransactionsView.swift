@@ -71,6 +71,7 @@ struct AllTransactionsView: View {
     @State private var showingTransferMatch = false
     @State private var transferBaseTransactionID: PersistentIdentifier?
     @State private var showingTransfersInbox = false
+    @State private var showingTransactionsActions = false
 
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "EscapeBudget", category: "Transactions")
 
@@ -92,11 +93,8 @@ struct AllTransactionsView: View {
 
     @ViewBuilder
     private func topChromeRow() -> some View {
-        if let topChrome {
-            topChrome
-                .listRowInsets(EdgeInsets())
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
+        if topChrome != nil {
+            AppChromeListRow(topChrome: topChrome, scrollID: "AllTransactionsView.scroll")
         }
     }
     
@@ -183,6 +181,37 @@ struct AllTransactionsView: View {
             .sheet(isPresented: $showingAutoRules) { autoRulesSheet }
             .sheet(isPresented: $showingTransferMatch) { transferMatchSheet }
             .sheet(isPresented: $showingAccountPicker) { accountPickerSheet }
+            .sheet(isPresented: $showingTransactionsActions) {
+                NavigationStack {
+                    TransactionsActionsSheet(
+                        canUndo: undoRedoManager.canUndo,
+                        canRedo: undoRedoManager.canRedo,
+                        isBulkEditing: isBulkEditing,
+                        filterIsActive: filter.isActive,
+                        showTags: $showTransactionTags,
+                        onUndo: { do { try undoRedoManager.undo() } catch { } },
+                        onRedo: { do { try undoRedoManager.redo() } catch { } },
+                        onAddTransaction: { navigator.addTransaction() },
+                        onAddTransfer: { showingAddTransfer = true },
+                        onImport: {
+                            selectedAccountForImport = nil
+                            showingAccountPicker = true
+                        },
+                        onTransfersInbox: { showingTransfersInbox = true },
+                        onFilter: { showingFilter = true },
+                        onClearFilter: { filter = TransactionFilter() },
+                        onBulkEdit: { enterBulkEdit() },
+                        onAutoRules: { showingAutoRules = true }
+                    )
+                    .navigationTitle("Transactions Menu")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") { showingTransactionsActions = false }
+                        }
+                    }
+                }
+            }
             .sheet(isPresented: $navigator.showingUncategorizedTransactions, onDismiss: {
                 Task { await refreshUncategorizedCount() }
             }) { uncategorizedSheet }
@@ -210,79 +239,12 @@ struct AllTransactionsView: View {
 	            }
 	        }
 	        ToolbarItem(placement: .navigationBarTrailing) {
-		        Menu {
-		                Button {
-		                    do { try undoRedoManager.undo() } catch { }
-		                } label: {
-		                    Label("Undo", systemImage: "arrow.uturn.backward")
-		                }
-		                .disabled(!undoRedoManager.canUndo)
-
-	                Button {
-	                    do { try undoRedoManager.redo() } catch { }
-	                } label: {
-	                    Label("Redo", systemImage: "arrow.uturn.forward")
-	                }
-	                .disabled(!undoRedoManager.canRedo)
-
-	                Divider()
-
-		                Button { navigator.addTransaction() } label: {
-		                    Label("Add Transaction", systemImage: "plus.circle")
-		                }
-
-		                Button { showingAddTransfer = true } label: {
-		                    Label("Add Transfer", systemImage: "arrow.left.arrow.right.circle")
-		                }
-
-                        Button {
-                            selectedAccountForImport = nil
-                            showingAccountPicker = true
-                        } label: {
-                            Label("Import Statement", systemImage: "square.and.arrow.down")
-                        }
-
-	                    Button { showingTransfersInbox = true } label: {
-	                        Label("Transfer Inbox", systemImage: "tray.full")
-	                    }
-
-	                Divider()
-
-	                Button { showingFilter = true } label: {
-	                    Label(filter.isActive ? "Filter (Active)" : "Filter", systemImage: "line.3.horizontal.decrease.circle")
-	                }
-
-	                if filter.isActive {
-	                    Button(role: .destructive) {
-	                        filter = TransactionFilter()
-	                        // No reload needed - @Query updates automatically
-	                    } label: {
-	                        Label("Clear Filter", systemImage: "xmark.circle")
-	                    }
-	                }
-
-	                Divider()
-
-	                Button { enterBulkEdit() } label: {
-	                    Label(isBulkEditing ? "Bulk Edit (Active)" : "Bulk Edit", systemImage: "checkmark.circle")
-	                }
-
-	                Divider()
-
-		                Button { showingAutoRules = true } label: {
-		                    Label("Auto Rules", systemImage: "wand.and.stars")
-		                }
-                        .accessibilityIdentifier("transactions.menu.autoRules")
-
-	                Divider()
-
-	                Toggle(isOn: $showTransactionTags) {
-	                    Label("Show Tags", systemImage: "tag")
-	                }
-		            } label: {
-		                Image(systemName: "ellipsis.circle")
-		                    .imageScale(.large)
-		            }
+                Button {
+                    showingTransactionsActions = true
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .imageScale(.large)
+                }
                     .accessibilityLabel("Transactions Menu")
                     .accessibilityIdentifier("transactions.menu")
 		        }
@@ -505,7 +467,7 @@ struct AllTransactionsView: View {
 		                        header: Text(section.title)
 		                            .appSectionTitleText()
 		                            .textCase(nil)
-		                            .padding(.vertical, AppTheme.Spacing.compact)
+		                            .padding(.vertical, AppDesign.Theme.Spacing.compact)
 		                            .id(section.id)
 		                    ) {
 		                        ForEach(section.transactions) { transaction in
@@ -597,7 +559,7 @@ struct AllTransactionsView: View {
 	                    onInteractionBegan: handleMonthIndexDragBegan,
 	                    onInteractionEnded: handleMonthIndexDragEnded
 	                )
-	                .padding(.trailing, AppTheme.Spacing.micro)
+	                .padding(.trailing, AppDesign.Theme.Spacing.micro)
 	            }
 	        }
 	    }
@@ -615,7 +577,7 @@ struct AllTransactionsView: View {
     private var bulkEditBar: some View {
         VStack(spacing: 0) {
             Divider()
-            HStack(spacing: AppTheme.Spacing.tight) {
+            HStack(spacing: AppDesign.Theme.Spacing.tight) {
                 Button("Done") {
                     exitBulkEdit()
                 }
@@ -642,8 +604,8 @@ struct AllTransactionsView: View {
                 .appPrimaryCTA()
                 .disabled(selectedTransactionIDs.isEmpty)
             }
-            .padding(.horizontal)
-            .padding(.vertical, AppTheme.Spacing.small)
+            .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
+            .padding(.vertical, AppDesign.Theme.Spacing.small)
             .background(.ultraThinMaterial)
         }
     }
@@ -1036,7 +998,7 @@ struct TransactionFilterView: View {
                         
                         if showingSuggestions && !matchingPayees.isEmpty {
                             Divider()
-                                .padding(.vertical, AppTheme.Spacing.compact)
+                                .padding(.vertical, AppDesign.Theme.Spacing.compact)
                             
                             ForEach(matchingPayees.prefix(5), id: \.self) { payee in
                                 Button(action: {
@@ -1045,7 +1007,7 @@ struct TransactionFilterView: View {
                                 }) {
                                     Text(payee)
                                         .foregroundStyle(.primary)
-                                        .padding(.vertical, AppTheme.Spacing.micro)
+                                        .padding(.vertical, AppDesign.Theme.Spacing.micro)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                                 .buttonStyle(.plain)
@@ -1238,6 +1200,105 @@ private struct CategoryFilterPickerView: View {
     }
 }
 
+private struct TransactionsActionsSheet: View {
+    let canUndo: Bool
+    let canRedo: Bool
+    let isBulkEditing: Bool
+    let filterIsActive: Bool
+    @Binding var showTags: Bool
+    let onUndo: () -> Void
+    let onRedo: () -> Void
+    let onAddTransaction: () -> Void
+    let onAddTransfer: () -> Void
+    let onImport: () -> Void
+    let onTransfersInbox: () -> Void
+    let onFilter: () -> Void
+    let onClearFilter: () -> Void
+    let onBulkEdit: () -> Void
+    let onAutoRules: () -> Void
+
+    var body: some View {
+        List {
+            Section("Create") {
+                Button {
+                    onAddTransaction()
+                } label: {
+                    Label("Add Transaction", systemImage: "plus.circle")
+                }
+
+                Button {
+                    onAddTransfer()
+                } label: {
+                    Label("Add Transfer", systemImage: "arrow.left.arrow.right.circle")
+                }
+
+                Button {
+                    onImport()
+                } label: {
+                    Label("Import Statement", systemImage: "square.and.arrow.down")
+                }
+            }
+
+            Section("Tools") {
+                Button {
+                    onTransfersInbox()
+                } label: {
+                    Label("Transfer Inbox", systemImage: "tray.full")
+                }
+
+                Button {
+                    onFilter()
+                } label: {
+                    Label(filterIsActive ? "Filter (Active)" : "Filter", systemImage: "line.3.horizontal.decrease.circle")
+                }
+
+                if filterIsActive {
+                    Button(role: .destructive) {
+                        onClearFilter()
+                    } label: {
+                        Label("Clear Filter", systemImage: "xmark.circle")
+                    }
+                }
+
+                Button {
+                    onBulkEdit()
+                } label: {
+                    Label(isBulkEditing ? "Bulk Edit (Active)" : "Bulk Edit", systemImage: "checkmark.circle")
+                }
+
+                Button {
+                    onAutoRules()
+                } label: {
+                    Label("Auto Rules", systemImage: "wand.and.stars")
+                }
+                .accessibilityIdentifier("transactions.menu.autoRules")
+            }
+
+            Section("Display") {
+                Toggle(isOn: $showTags) {
+                    Label("Show Tags", systemImage: "tag")
+                }
+            }
+
+            Section("History") {
+                Button {
+                    onUndo()
+                } label: {
+                    Label("Undo", systemImage: "arrow.uturn.backward")
+                }
+                .disabled(!canUndo)
+
+                Button {
+                    onRedo()
+                } label: {
+                    Label("Redo", systemImage: "arrow.uturn.forward")
+                }
+                .disabled(!canRedo)
+            }
+        }
+    }
+}
+
 private struct UncategorizedTransactionsSheetContent: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
@@ -1253,7 +1314,7 @@ private struct UncategorizedTransactionsSheetContent: View {
     var body: some View {
         Group {
             if isLoading {
-                VStack(spacing: AppTheme.Spacing.tight) {
+                VStack(spacing: AppDesign.Theme.Spacing.tight) {
                     ProgressView()
                     Text("Loading…")
                         .foregroundStyle(.secondary)
@@ -1261,17 +1322,17 @@ private struct UncategorizedTransactionsSheetContent: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(.systemGroupedBackground))
 		            } else if let errorMessage {
-		                VStack(spacing: AppTheme.Spacing.tight) {
+		                VStack(spacing: AppDesign.Theme.Spacing.tight) {
 		                    Image(systemName: "exclamationmark.triangle.fill")
 		                        .appIconMedium()
-		                        .foregroundStyle(AppColors.warning(for: appColorMode))
+		                        .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
 		                    Text("Unable to load transactions")
 		                        .appSectionTitleText()
 		                    Text(errorMessage)
 		                        .appSecondaryBodyText()
 		                        .foregroundStyle(.secondary)
 		                        .multilineTextAlignment(.center)
-		                        .padding(.horizontal)
+		                        .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
 		                    Button("Done") { onDismiss() }
                         .appPrimaryCTA()
                 }
@@ -1334,18 +1395,18 @@ private struct UncategorizedTransactionsSheetContent: View {
 	        HStack {
             if isBulkEditing {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? AppColors.tint(for: appColorMode) : .secondary)
+                    .foregroundStyle(isSelected ? AppDesign.Colors.tint(for: appColorMode) : .secondary)
                     .appTitleText()
             }
             AccountIcon(account: transaction.account)
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
-	                HStack(spacing: AppTheme.Spacing.xSmall) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+	                HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
 	                    Text(primaryTitle)
 	                        .appSectionTitleText()
 
 	                    if showsSplitIcon {
 	                        Text("⇔")
-	                            .font(.caption.bold())
+	                            .appCaptionStrongText()
                             .foregroundStyle(.purple)
                     }
 
@@ -1379,13 +1440,13 @@ private struct UncategorizedTransactionsSheetContent: View {
                 }
 
                 if showTags, let tags = transaction.tags, !tags.isEmpty {
-                    HStack(spacing: AppTheme.Spacing.xSmall) {
+                    HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
                         ForEach(tags.sorted(by: { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }).prefix(3)) { tag in
                             TransactionTagChip(tag: tag)
                         }
                         if tags.count > 3 {
                             Text("+\(tags.count - 3)")
-                                .font(.caption.weight(.semibold))
+                                .appCaptionStrongText()
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -1394,7 +1455,7 @@ private struct UncategorizedTransactionsSheetContent: View {
             Spacer()
 	            VStack(alignment: .trailing) {
 	                Text(transaction.amount, format: .currency(code: currencyCode))
-	                    .foregroundStyle((transaction.isTransfer || transaction.isAdjustment) ? .primary : (transaction.amount >= 0 ? AppColors.success(for: appColorMode) : .primary))
+	                    .foregroundStyle((transaction.isTransfer || transaction.isAdjustment) ? .primary : (transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary))
 	                Text(transaction.date, format: .dateTime.month().day())
 	                    .appCaptionText()
 	                    .foregroundStyle(.secondary)
@@ -1447,25 +1508,25 @@ private struct UncategorizedTransactionsSheetContent: View {
 	                if transaction.isIgnored {
 	                    Text("Ignored")
 	                        .appCaptionText()
-	                        .foregroundStyle(AppColors.warning(for: appColorMode))
-	                        .padding(.horizontal, AppTheme.Spacing.compact)
-	                        .padding(.vertical, AppTheme.Spacing.hairline)
-	                        .background(Capsule().fill(AppColors.warning(for: appColorMode).opacity(0.12)))
+	                        .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
+	                        .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+	                        .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+	                        .background(Capsule().fill(AppDesign.Colors.warning(for: appColorMode).opacity(0.12)))
 	                } else if let category = transaction.category {
 		                Text(category.name)
 		                    .appCaptionText()
 	                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, AppTheme.Spacing.compact)
-                    .padding(.vertical, AppTheme.Spacing.hairline)
+                    .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+                    .padding(.vertical, AppDesign.Theme.Spacing.hairline)
                     .background(Capsule().fill(Color.secondary.opacity(0.1)))
             } else {
                 Text("Uncategorized")
                     .appCaptionText()
-                    .foregroundStyle(AppColors.warning(for: appColorMode))
+                    .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                     .lineLimit(1)
-                    .padding(.horizontal, AppTheme.Spacing.compact)
-                    .padding(.vertical, AppTheme.Spacing.hairline)
-                    .background(Capsule().fill(AppColors.warning(for: appColorMode).opacity(0.1)))
+                    .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+                    .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+                    .background(Capsule().fill(AppDesign.Colors.warning(for: appColorMode).opacity(0.1)))
                     .fixedSize()
             }
         }
@@ -1477,49 +1538,50 @@ private struct UncategorizedTransactionsSheetContent: View {
 	            if transaction.isIgnored {
 	                Text("Ignored")
 	                    .appCaptionText()
-	                    .foregroundStyle(AppColors.warning(for: appColorMode))
+	                    .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
 	                    .lineLimit(1)
-	                    .padding(.horizontal, AppTheme.Spacing.compact)
-	                    .padding(.vertical, AppTheme.Spacing.hairline)
-	                    .background(Capsule().fill(AppColors.warning(for: appColorMode).opacity(0.12)))
+	                    .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+	                    .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+	                    .background(Capsule().fill(AppDesign.Colors.warning(for: appColorMode).opacity(0.12)))
 	                    .fixedSize()
 	            } else if let category = transaction.category {
 	                Text(category.name)
 	                    .appCaptionText()
 	                    .foregroundStyle(.secondary)
 	                    .lineLimit(1)
-                    .padding(.horizontal, AppTheme.Spacing.compact)
-                    .padding(.vertical, AppTheme.Spacing.hairline)
+                    .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+                    .padding(.vertical, AppDesign.Theme.Spacing.hairline)
                     .background(Capsule().fill(Color.secondary.opacity(0.1)))
                     .fixedSize()
             } else {
                 Text("Uncategorized")
                     .appCaptionText()
-                    .foregroundStyle(AppColors.warning(for: appColorMode))
+                    .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                     .lineLimit(1)
-                    .padding(.horizontal, AppTheme.Spacing.compact)
-                    .padding(.vertical, AppTheme.Spacing.hairline)
-                    .background(Capsule().fill(AppColors.warning(for: appColorMode).opacity(0.1)))
+                    .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+                    .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+                    .background(Capsule().fill(AppDesign.Colors.warning(for: appColorMode).opacity(0.1)))
                     .fixedSize()
             }
         }
     }
 
     private var transferBadge: some View {
-        Text("Transfer")
+        let isMatched = transaction.transferID != nil
+        return Text(isMatched ? "Transfer" : "Unmatched Transfer")
             .appCaptionText()
-            .foregroundStyle(AppColors.tint(for: appColorMode))
-            .padding(.horizontal, AppTheme.Spacing.compact)
-            .padding(.vertical, AppTheme.Spacing.hairline)
-            .background(Capsule().fill(AppColors.tint(for: appColorMode).opacity(0.1)))
+            .foregroundStyle(isMatched ? AppDesign.Colors.tint(for: appColorMode) : AppDesign.Colors.warning(for: appColorMode))
+            .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+            .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+            .background(Capsule().fill((isMatched ? AppDesign.Colors.tint(for: appColorMode) : AppDesign.Colors.warning(for: appColorMode)).opacity(0.1)))
     }
 
     private var adjustmentBadge: some View {
         Text("Adjustment")
             .appCaptionText()
             .foregroundStyle(.secondary)
-            .padding(.horizontal, AppTheme.Spacing.compact)
-            .padding(.vertical, AppTheme.Spacing.hairline)
+            .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+            .padding(.vertical, AppDesign.Theme.Spacing.hairline)
             .background(Capsule().fill(Color(.tertiarySystemFill)))
     }
 }
@@ -1534,7 +1596,7 @@ private struct AccountIcon: View {
                 .fill(color.opacity(0.18))
             Image(systemName: iconName)
                 .foregroundStyle(color)
-                .font(.system(size: 14, weight: .semibold))
+                .appDisplayText(AppDesign.Theme.DisplaySize.xSmall, weight: .semibold)
         }
         .frame(width: 30, height: 30)
         .accessibilityHidden(true)
@@ -1570,9 +1632,9 @@ private struct TagFilterPickerView: View {
                     Button {
                         toggle(tag)
                     } label: {
-                        HStack(spacing: AppTheme.Spacing.tight) {
+                        HStack(spacing: AppDesign.Theme.Spacing.tight) {
                             Circle()
-                                .fill(Color(hex: tag.colorHex) ?? AppColors.tint(for: appColorMode))
+                                .fill(Color(hex: tag.colorHex) ?? AppDesign.Colors.tint(for: appColorMode))
                                 .frame(width: 14, height: 14)
 
                             Text(tag.name)
@@ -1582,7 +1644,7 @@ private struct TagFilterPickerView: View {
 
                             if isSelected(tag) {
                                 Image(systemName: "checkmark")
-                                    .foregroundStyle(AppColors.success(for: appColorMode))
+                                    .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                             }
                         }
                     }
@@ -1629,19 +1691,19 @@ private struct UncategorizedBanner: View {
     @Environment(\.appColorMode) private var appColorMode
 
     var body: some View {
-        HStack(spacing: AppTheme.Spacing.tight) {
+        HStack(spacing: AppDesign.Theme.Spacing.tight) {
             ZStack {
                 Circle()
-                    .fill(AppColors.warning(for: appColorMode).opacity(0.16))
+                    .fill(AppDesign.Colors.warning(for: appColorMode).opacity(0.16))
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(AppColors.warning(for: appColorMode))
-                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
+                    .appDisplayText(AppDesign.Theme.DisplaySize.small, weight: .bold)
             }
             .frame(width: 34, height: 34)
 
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                 Text("Needs Categorizing")
-                    .font(.subheadline.weight(.semibold))
+                    .appSecondaryBodyStrongText()
                     .foregroundStyle(.primary)
                 Text(countText)
                     .appCaptionText()
@@ -1651,20 +1713,20 @@ private struct UncategorizedBanner: View {
             Spacer()
 
             Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
+                .appCaptionStrongText()
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, AppTheme.Spacing.tight)
-        .padding(.vertical, AppTheme.Spacing.xSmall)
+        .padding(.horizontal, AppDesign.Theme.Spacing.tight)
+        .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
-                .fill(AppColors.warning(for: appColorMode).opacity(0.14))
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous)
+                .fill(AppDesign.Colors.warning(for: appColorMode).opacity(0.14))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous)
-                .stroke(AppColors.warning(for: appColorMode).opacity(0.25), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous)
+                .stroke(AppDesign.Colors.warning(for: appColorMode).opacity(0.25), lineWidth: 1)
         )
-        .contentShape(RoundedRectangle(cornerRadius: AppTheme.Radius.small, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.small, style: .continuous))
     }
 }
 
@@ -1683,23 +1745,23 @@ private struct MonthIndexBar: View {
     
     var body: some View {
         GeometryReader { geo in
-            VStack(spacing: AppTheme.Spacing.micro) {
+            VStack(spacing: AppDesign.Theme.Spacing.micro) {
                 ForEach(sections) { section in
 	                    Text(section.shortTitle)
-	                        .font(.caption2.weight(.semibold))
+	                        .appCaption2StrongText()
 	                        .foregroundStyle(.secondary)
-	                        .padding(.horizontal, AppTheme.Spacing.xSmall)
-	                        .padding(.vertical, AppTheme.Spacing.micro)
+	                        .padding(.horizontal, AppDesign.Theme.Spacing.xSmall)
+	                        .padding(.vertical, AppDesign.Theme.Spacing.micro)
 	                        .background(Color(.systemGray5))
-	                        .cornerRadius(AppTheme.Radius.tag)
+	                        .cornerRadius(AppDesign.Theme.Radius.tag)
 	                        .onTapGesture {
 	                            onSelect(section.id)
 	                        }
 	                }
             }
-            .padding(AppTheme.Spacing.xSmall)
+            .padding(AppDesign.Theme.Spacing.xSmall)
             .background(.ultraThinMaterial)
-            .cornerRadius(AppTheme.Radius.small)
+            .cornerRadius(AppDesign.Theme.Radius.small)
             .gesture(
                 DragGesture(minimumDistance: 0)
                     .onChanged { value in

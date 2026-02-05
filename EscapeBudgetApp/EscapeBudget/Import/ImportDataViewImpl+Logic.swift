@@ -40,7 +40,7 @@ extension ImportDataViewImpl {
 
                 if isDecryptingEncryptedExport {
                     Section {
-                        HStack(spacing: AppTheme.Spacing.small) {
+                        HStack(spacing: AppDesign.Theme.Spacing.small) {
                             ProgressView()
                             Text("Decrypting…")
                                 .foregroundStyle(.secondary)
@@ -619,7 +619,11 @@ extension ImportDataViewImpl {
             errorMessage = "Please select a default account for this import."
             return
         }
-        showingSignConfirmation = true
+        guard let signConvention else {
+            errorMessage = "Please choose how positive and negative amounts should be interpreted before importing."
+            return
+        }
+        startImport(signConvention: signConvention)
     }
 
     func attachPurchasedItems(from json: String?, to transaction: Transaction) {

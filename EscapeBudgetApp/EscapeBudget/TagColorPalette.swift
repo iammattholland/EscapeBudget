@@ -20,11 +20,11 @@ enum TagColorPalette {
     }
 
     static var options: [(hex: String, name: String)] {
-        options(for: AppColors.currentModeFromDefaults())
+        options(for: AppDesign.Colors.currentModeFromDefaults())
     }
 
     static var defaultHex: String {
-        defaultHex(for: AppColors.currentModeFromDefaults())
+        defaultHex(for: AppDesign.Colors.currentModeFromDefaults())
     }
 
     static let standardOptions: [(hex: String, name: String)] = [

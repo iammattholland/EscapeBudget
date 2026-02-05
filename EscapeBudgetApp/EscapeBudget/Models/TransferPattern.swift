@@ -26,6 +26,12 @@ final class TransferPattern {
     var commonPayeePatterns: [String]  // Payee substrings that indicate transfers
     var commonMemoKeywords: [String]?  // Memo keywords
 
+    // Learned calendar patterns
+    /// 0 = end-of-month, otherwise day of month (1...31)
+    var commonDayOfMonth: Int?
+    var dayOfMonthMatchCount: Int
+    var dayOfMonthSampleCount: Int
+
     // Confidence metrics
     var successfulMatches: Int  // User confirmed these matches
     var rejectedMatches: Int     // User rejected these suggestions
@@ -49,6 +55,9 @@ final class TransferPattern {
         autoDetectedCount: Int = 0,
         manualLinkCount: Int = 0,
         commonPayeePatterns: [String] = [],
+        commonDayOfMonth: Int? = nil,
+        dayOfMonthMatchCount: Int = 0,
+        dayOfMonthSampleCount: Int = 0,
         isDemoData: Bool = false
     ) {
         self.id = id
@@ -61,6 +70,9 @@ final class TransferPattern {
         self.autoDetectedCount = autoDetectedCount
         self.manualLinkCount = manualLinkCount
         self.commonPayeePatterns = commonPayeePatterns
+        self.commonDayOfMonth = commonDayOfMonth
+        self.dayOfMonthMatchCount = dayOfMonthMatchCount
+        self.dayOfMonthSampleCount = dayOfMonthSampleCount
         self.isDemoData = isDemoData
     }
 

@@ -7,12 +7,12 @@ import UIKit
 extension ImportDataViewImpl {
     // MARK: - File Selection View
 	    var fileSelectionView: some View {
-        VStack(spacing: AppTheme.Spacing.xLarge) {
+        VStack(spacing: AppDesign.Theme.Spacing.xLarge) {
             Image(systemName: "doc.text")
                 .appIconHero()
-                .foregroundStyle(AppColors.tint(for: appColorMode))
+                .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
 
-            VStack(spacing: AppTheme.Spacing.tight) {
+            VStack(spacing: AppDesign.Theme.Spacing.tight) {
                 Text("Import Data from CSV")
                     .appTitleText()
                     .fontWeight(.semibold)
@@ -21,10 +21,10 @@ extension ImportDataViewImpl {
                     .appSecondaryBodyText()
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal)
+                    .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
             }
             
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                 Text("Import Template")
                     .appSectionTitleText()
 
@@ -45,7 +45,7 @@ extension ImportDataViewImpl {
                     }
                 } label: {
                     HStack {
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.micro) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                             Text(selectedImportSource.rawValue)
                                 .foregroundStyle(.primary)
                             Text(selectedImportSource.description)
@@ -59,16 +59,16 @@ extension ImportDataViewImpl {
                     }
                     .padding()
                     .background(Color(.systemGray6))
-                    .cornerRadius(AppTheme.Radius.xSmall)
+                    .cornerRadius(AppDesign.Theme.Radius.xSmall)
                 }
             }
-            .padding(.horizontal)
+            .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
 
-            VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                 Text(initialAccount == nil ? "Default Account" : "Destination Account")
                     .appSectionTitleText()
                 if accounts.isEmpty {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.small) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
                         Text("Create an account to import transactions into.")
                             .appSecondaryBodyText()
                             .foregroundStyle(.secondary)
@@ -81,17 +81,17 @@ extension ImportDataViewImpl {
 		                        }
 		                        .appPrimaryCTA()
 		                    }
-		                    .padding(AppTheme.Spacing.tight)
+		                    .padding(AppDesign.Theme.Spacing.tight)
 		                    .background(Color(.secondarySystemGroupedBackground))
-		                    .cornerRadius(AppTheme.Radius.compact)
+		                    .cornerRadius(AppDesign.Theme.Radius.compact)
 		                } else {
 	                    if let initialAccount {
                         let destination = defaultAccount ?? initialAccount
-                        VStack(alignment: .leading, spacing: AppTheme.Spacing.xSmall) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                             HStack {
-                                VStack(alignment: .leading, spacing: AppTheme.Spacing.hairline) {
+                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                                     Text(destination.name)
-                                        .font(.body.weight(.semibold))
+                                        .appBodyStrongText()
                                     Text(destination.type.rawValue)
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
@@ -120,9 +120,9 @@ extension ImportDataViewImpl {
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
 	                        }
-	                        .padding(AppTheme.Spacing.tight)
+	                        .padding(AppDesign.Theme.Spacing.tight)
 	                        .background(Color(.secondarySystemGroupedBackground))
-	                        .cornerRadius(AppTheme.Radius.compact)
+	                        .cornerRadius(AppDesign.Theme.Radius.compact)
 	                    } else {
 	                        Picker("Default Account", selection: $defaultAccount) {
 	                            Text("Select").tag(Optional<Account>.none)
@@ -134,14 +134,14 @@ extension ImportDataViewImpl {
                     }
                 }
             }
-            .padding(.horizontal)
+            .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
 
             Button(action: { showFileImporter = true }) {
                 Label("Select CSV File", systemImage: "folder")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
-            .padding(.horizontal)
+            .buttonStyle(.glass)
+            .padding(.horizontal, AppDesign.Theme.Spacing.screenHorizontal)
             .controlSize(.large)
             .disabled(accounts.isEmpty)
         }

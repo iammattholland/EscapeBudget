@@ -7,6 +7,7 @@ struct LockScreenView: View {
     @State private var isAuthenticating = false
     @State private var showError = false
     @State private var hasAttemptedAutoAuth = false
+    @State private var passcodeError = false
 
     var body: some View {
         ZStack {
@@ -18,24 +19,24 @@ struct LockScreenView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: AppTheme.Spacing.xxLarge) {
+            VStack(spacing: AppDesign.Theme.Spacing.xxLarge) {
                 Spacer()
 
                 // App Icon / Lock Icon
                 ZStack {
                     Circle()
-                        .fill(AppColors.tint(for: appColorMode).opacity(0.12))
+                        .fill(AppDesign.Colors.tint(for: appColorMode).opacity(0.12))
                         .frame(width: 120, height: 120)
 
-                    Image(systemName: authService.biometricType.systemImage)
-                        .appIcon(size: AppTheme.IconSize.emptyState)
-                        .foregroundStyle(AppColors.tint(for: appColorMode))
+                    Image(systemName: authService.isBiometricsEnabled ? authService.biometricType.systemImage : "lock.fill")
+                        .appIcon(size: AppDesign.Theme.IconSize.emptyState)
+                        .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                 }
 
                 // Title
-                VStack(spacing: AppTheme.Spacing.compact) {
+                VStack(spacing: AppDesign.Theme.Spacing.compact) {
                     Text("Escape Budget")
-                        .font(.largeTitle)
+                        .appLargeTitleText()
                         .fontWeight(.bold)
 
                     Text("Locked")
@@ -45,38 +46,63 @@ struct LockScreenView: View {
 
                 Spacer()
 
-                // Unlock Button
-                VStack(spacing: AppTheme.Spacing.medium) {
-                    Button {
-                        authenticate()
-                    } label: {
-                        HStack(spacing: AppTheme.Spacing.tight) {
-                            if isAuthenticating {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                if authService.isPasscodeEnabled {
+                    PasscodeEntryView(
+                        title: "Enter Passcode",
+                        subtitle: authService.isBiometricsEnabled ? "You can also unlock with \(authService.biometricType.displayName)" : nil,
+                        showsBiometricButton: authService.isBiometricsEnabled,
+                        biometricTitle: "Unlock with \(authService.biometricType.displayName)",
+                        onBiometricTap: authenticate,
+                        onComplete: { code in
+                            let success = authService.verifyAppPasscode(code)
+                            if !success {
+                                passcodeError = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                    passcodeError = false
+                                }
                             } else {
-                                Image(systemName: authService.biometricType.systemImage)
+                                passcodeError = false
                             }
-                            Text(isAuthenticating ? "Authenticating..." : "Unlock with \(authService.biometricType.displayName)")
+                        },
+                        showError: $passcodeError,
+                        errorMessage: "Incorrect passcode. Try again."
+                    )
+                    .padding(.horizontal, AppDesign.Theme.Spacing.xxLarge)
+                    .padding(.bottom, AppDesign.Theme.Spacing.hero)
+                } else {
+                    // Unlock Button (biometrics-only)
+                    VStack(spacing: AppDesign.Theme.Spacing.medium) {
+                        Button {
+                            authenticate()
+                        } label: {
+                            HStack(spacing: AppDesign.Theme.Spacing.tight) {
+                                if isAuthenticating {
+                                    ProgressView()
+                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                } else {
+                                    Image(systemName: authService.biometricType.systemImage)
+                                }
+                                Text(isAuthenticating ? "Authenticating..." : "Unlock with \(authService.biometricType.displayName)")
+                            }
+                            .font(AppDesign.Theme.Typography.buttonLabel.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(AppDesign.Colors.tint(for: appColorMode))
+                            .cornerRadius(AppDesign.Theme.Radius.small)
                         }
-                        .font(AppTheme.Typography.buttonLabel.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(AppColors.tint(for: appColorMode))
-                        .cornerRadius(AppTheme.Radius.small)
-                    }
-                    .disabled(isAuthenticating)
+                        .disabled(isAuthenticating)
 
-                    if showError {
-                        Text("Authentication failed. Please try again.")
-                            .appCaptionText()
-                            .foregroundStyle(AppColors.danger(for: appColorMode))
-                            .transition(.opacity)
+                        if showError {
+                            Text("Authentication failed. Please try again.")
+                                .appCaptionText()
+                                .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
+                                .transition(.opacity)
+                        }
                     }
+                    .padding(.horizontal, AppDesign.Theme.Spacing.xxLarge)
+                    .padding(.bottom, AppDesign.Theme.Spacing.hero)
                 }
-                .padding(.horizontal, AppTheme.Spacing.xxLarge)
-                .padding(.bottom, AppTheme.Spacing.hero)
             }
         }
         .task {

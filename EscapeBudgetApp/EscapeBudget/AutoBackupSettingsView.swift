@@ -28,14 +28,14 @@ struct AutoBackupSettingsView: View {
     var body: some View {
         List {
             Section {
-                VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                     Text("Auto Backup")
                         .appSectionTitleText()
                     Text("Automatically save a periodic full backup to a folder you choose (iCloud Drive or On My iPhone). This helps protect your data even if the app is deleted or you switch devices.")
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
                 }
-                .padding(.vertical, AppTheme.Spacing.xSmall)
+                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
             }
 
             Section("Destination") {
@@ -107,11 +107,11 @@ struct AutoBackupSettingsView: View {
                     if !password.isEmpty, password.count < 8 {
                         Text("Use at least 8 characters.")
                             .appCaptionText()
-                            .foregroundStyle(AppColors.warning(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
                     } else if !passwordConfirm.isEmpty, passwordConfirm != password {
                         Text("Passwords don’t match.")
                             .appCaptionText()
-                            .foregroundStyle(AppColors.danger(for: appColorMode))
+                            .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                     }
 
                     Button("Save Password") {

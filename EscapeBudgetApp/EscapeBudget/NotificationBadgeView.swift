@@ -31,7 +31,7 @@ struct NotificationBadgeView: View {
                 
                 if hasNotifications {
                     Circle()
-                        .fill(AppColors.danger(for: appColorMode))
+                        .fill(AppDesign.Colors.danger(for: appColorMode))
                         .frame(width: 10, height: 10)
                         // Keep the badge fully inside the toolbar hit-area to avoid clipping.
                         .offset(x: -1, y: 1)

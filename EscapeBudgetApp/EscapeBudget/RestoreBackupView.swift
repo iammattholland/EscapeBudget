@@ -29,14 +29,14 @@ struct RestoreBackupView: View {
         NavigationStack {
             List {
                 Section {
-                    VStack(alignment: .leading, spacing: AppTheme.Spacing.compact) {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
                         Text("Restore an Escape Budget backup")
                             .appSectionTitleText()
                         Text("This replaces your current data with what’s in the backup file.")
                             .appSecondaryBodyText()
                             .foregroundStyle(.secondary)
                     }
-                    .padding(.vertical, AppTheme.Spacing.xSmall)
+                    .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
                 }
 
                 Section("Backup File") {
@@ -60,7 +60,7 @@ struct RestoreBackupView: View {
                     }
 
                     if isReadingFile {
-                        HStack(spacing: AppTheme.Spacing.small) {
+                        HStack(spacing: AppDesign.Theme.Spacing.small) {
                             ProgressView()
                             Text("Reading backup…")
                                 .foregroundStyle(.secondary)
@@ -140,11 +140,7 @@ struct RestoreBackupView: View {
             } message: {
                 Text(errorMessage ?? "")
             }
-            .confirmationDialog(
-                "Restore this backup?",
-                isPresented: $showingRestoreConfirm,
-                titleVisibility: .visible
-            ) {
+            .alert("Restore this backup?", isPresented: $showingRestoreConfirm) {
                 Button("Restore", role: .destructive) {
                     Task { await restoreBackup() }
                 }

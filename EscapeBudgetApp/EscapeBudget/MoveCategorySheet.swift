@@ -14,9 +14,13 @@ struct MoveCategorySheet: View {
     @State private var searchText = ""
     @State private var newGroupName = ""
     @State private var isCreatingGroup = false
+    @State private var targetTypeSelection: CategoryGroupType
 
-    private var targetType: CategoryGroupType {
-        targetTypeOverride ?? category.group?.type ?? .expense
+    init(category: Category, targetTypeOverride: CategoryGroupType? = nil) {
+        self.category = category
+        self.targetTypeOverride = targetTypeOverride
+        let initial = targetTypeOverride ?? category.group?.type ?? .expense
+        _targetTypeSelection = State(initialValue: initial == .income ? .income : .expense)
     }
 
     private var currentGroupID: PersistentIdentifier? {
@@ -26,12 +30,21 @@ struct MoveCategorySheet: View {
     private var eligibleGroups: [CategoryGroup] {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         return categoryGroups
-            .filter { $0.type == targetType }
+            .filter { $0.type == targetTypeSelection }
             .filter { trimmed.isEmpty ? true : $0.name.localizedCaseInsensitiveContains(trimmed) }
             .sorted { $0.order < $1.order }
     }
 
-    private var canCreateNewGroup: Bool { targetType == .expense }
+    private var canCreateNewGroup: Bool { targetTypeSelection != .transfer }
+
+    private var recentGroups: [CategoryGroup] {
+        RecentBudgetGroupStore.resolve(from: categoryGroups, requiredType: targetTypeSelection)
+            .filter { $0.persistentModelID != currentGroupID }
+    }
+
+    private var availableTargetTypes: [CategoryGroupType] {
+        [.expense, .income]
+    }
 
     var body: some View {
         NavigationStack {
@@ -40,6 +53,40 @@ struct MoveCategorySheet: View {
                     LabeledContent("Current Group") {
                         Text(category.group?.name ?? "None")
                             .foregroundStyle(.secondary)
+                    }
+                }
+
+                Section("Destination Type") {
+                    Picker("Destination Type", selection: $targetTypeSelection) {
+                        ForEach(availableTargetTypes, id: \.self) { type in
+                            Text(type.rawValue).tag(type)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                if !recentGroups.isEmpty {
+                    Section("Recent") {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: AppDesign.Theme.Spacing.small) {
+                                ForEach(recentGroups) { group in
+                                    Button {
+                                        moveCategory(to: group)
+                                    } label: {
+                                        Text(group.name)
+                                            .font(AppDesign.Theme.Typography.secondaryBody.weight(.semibold))
+                                            .padding(.horizontal, AppDesign.Theme.Spacing.cardPadding)
+                                            .padding(.vertical, AppDesign.Theme.Spacing.small)
+                                            .background(Color(.systemGray6))
+                                            .cornerRadius(AppDesign.Theme.Radius.button)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.vertical, AppDesign.Theme.Spacing.micro)
+                        }
+                        .listRowInsets(EdgeInsets())
+                        .padding(.horizontal, AppDesign.Theme.Spacing.medium)
                     }
                 }
 
@@ -118,6 +165,7 @@ struct MoveCategorySheet: View {
                 modelContext.safeSave(context: "MoveCategorySheet.moveCategory.fallback")
             }
 
+            RecentBudgetGroupStore.record(group: destinationGroup)
             dismiss()
         }
     }
@@ -138,7 +186,7 @@ struct MoveCategorySheet: View {
                 modelContext: modelContext,
                 name: trimmedName,
                 order: maxOrder + 1,
-                type: targetType
+                type: targetTypeSelection
             )
             try undoRedoManager.execute(addCommand)
 
@@ -149,17 +197,10 @@ struct MoveCategorySheet: View {
                 modelContext.safeSave(context: "MoveCategorySheet.createGroupAndMove.missingGroup.fallback")
             }
         } catch {
-            let newGroup = CategoryGroup(name: trimmedName, order: maxOrder + 1, type: targetType)
+            let newGroup = CategoryGroup(name: trimmedName, order: maxOrder + 1, type: targetTypeSelection)
             modelContext.insert(newGroup)
             modelContext.safeSave(context: "MoveCategorySheet.createGroupAndMove.insertGroup.fallback")
             moveCategory(to: newGroup)
         }
-    }
-}
-
-extension MoveCategorySheet {
-    init(category: Category, targetTypeOverride: CategoryGroupType? = nil) {
-        self.category = category
-        self.targetTypeOverride = targetTypeOverride
     }
 }
