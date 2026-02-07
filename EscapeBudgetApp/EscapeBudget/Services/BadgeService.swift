@@ -605,8 +605,7 @@ final class BadgeService: ObservableObject {
         }()
 
         let categories = groups.flatMap { $0.categories ?? [] }
-        let monthlyBudget = categories.reduce(Decimal(0)) { $0 + max(0, $1.assigned) }
-        guard monthlyBudget > 0 else { return false }
+        let monthlyBudgetCategories = categories.filter { $0.budgetType != .lumpSum }
 
         let standardRaw = TransactionKind.standard.rawValue
         var txDescriptor = FetchDescriptor<Transaction>(
@@ -616,6 +615,16 @@ final class BadgeService: ObservableObject {
         )
         txDescriptor.fetchLimit = 5000
         let txs = (try? modelContext.fetch(txDescriptor)) ?? []
+        let budgets: [MonthlyCategoryBudget] = {
+            var descriptor = FetchDescriptor<MonthlyCategoryBudget>(
+                predicate: #Predicate { entry in
+                    entry.isDemoData == false
+                }
+            )
+            descriptor.fetchLimit = 5000
+            return (try? modelContext.fetch(descriptor)) ?? []
+        }()
+        let calculator = CategoryBudgetCalculator(transactions: txs, monthlyBudgets: budgets)
 
         let calendar = Calendar.current
         var byMonth: [Date: Decimal] = [:]
@@ -624,7 +633,15 @@ final class BadgeService: ObservableObject {
             byMonth[monthStart, default: 0] += (-tx.amount)
         }
 
-        let underCount = byMonth.values.filter { $0 <= monthlyBudget }.count
+        var underCount = 0
+        for (monthStart, spent) in byMonth {
+            var limit: Decimal = 0
+            for category in monthlyBudgetCategories {
+                limit += max(0, calculator.monthSummary(for: category, monthStart: monthStart).effectiveLimitThisMonth)
+            }
+            guard limit > 0 else { continue }
+            if spent <= limit { underCount += 1 }
+        }
         return underCount >= minMonths
     }
 

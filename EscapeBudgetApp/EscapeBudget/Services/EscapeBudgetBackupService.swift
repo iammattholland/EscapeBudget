@@ -94,6 +94,18 @@ struct EscapeBudgetBackup: Codable {
         var savingsGoalID: UUID?
         var icon: String?
         var memo: String?
+        var budgetTypeRawValue: String?
+        var overspendHandlingRawValue: String?
+        var createdAt: Date?
+        var archivedAfterMonthStart: Date?
+        var isDemoData: Bool
+    }
+
+    struct MonthlyCategoryBudgetSnapshot: Codable {
+        var id: UUID
+        var monthStart: Date
+        var amount: Decimal
+        var categoryID: UUID?
         var isDemoData: Bool
     }
 
@@ -251,6 +263,7 @@ struct EscapeBudgetBackup: Codable {
     var accounts: [AccountSnapshot]
     var categoryGroups: [CategoryGroupSnapshot]
     var categories: [CategorySnapshot]
+    var monthlyCategoryBudgets: [MonthlyCategoryBudgetSnapshot]?
     var tags: [TransactionTagSnapshot]
     var savingsGoals: [SavingsGoalSnapshot]
     var transactions: [TransactionSnapshot]
@@ -272,6 +285,7 @@ enum EscapeBudgetBackupService {
         let accounts = try modelContext.fetch(FetchDescriptor<Account>(sortBy: [SortDescriptor(\Account.name)]))
         let categoryGroups = try modelContext.fetch(FetchDescriptor<CategoryGroup>(sortBy: [SortDescriptor(\CategoryGroup.order)]))
         let categories = try modelContext.fetch(FetchDescriptor<Category>(sortBy: [SortDescriptor(\Category.order)]))
+        let monthlyBudgets = try modelContext.fetch(FetchDescriptor<MonthlyCategoryBudget>(sortBy: [SortDescriptor(\MonthlyCategoryBudget.monthStart)]))
         let tags = try modelContext.fetch(FetchDescriptor<TransactionTag>(sortBy: [SortDescriptor(\TransactionTag.order)]))
         let goals = try modelContext.fetch(FetchDescriptor<SavingsGoal>(sortBy: [SortDescriptor(\SavingsGoal.createdDate)]))
         let transactions = try modelContext.fetch(FetchDescriptor<Transaction>(sortBy: [SortDescriptor(\Transaction.date, order: .reverse)]))
@@ -343,7 +357,22 @@ enum EscapeBudgetBackupService {
                 savingsGoalID: goalID,
                 icon: category.icon,
                 memo: category.memo,
+                budgetTypeRawValue: category.budgetTypeRawValue,
+                overspendHandlingRawValue: category.overspendHandlingRawValue,
+                createdAt: category.createdAt,
+                archivedAfterMonthStart: category.archivedAfterMonthStart,
                 isDemoData: category.isDemoData
+            )
+        }
+
+        let monthlyBudgetSnapshots = monthlyBudgets.map { entry -> EscapeBudgetBackup.MonthlyCategoryBudgetSnapshot in
+            let categoryID = entry.category.flatMap { categoryIDs[$0.persistentModelID] }
+            return .init(
+                id: UUID(),
+                monthStart: entry.monthStart,
+                amount: entry.amount,
+                categoryID: categoryID,
+                isDemoData: entry.isDemoData
             )
         }
 
@@ -585,6 +614,7 @@ enum EscapeBudgetBackupService {
             accounts: accountSnapshots,
             categoryGroups: groupSnapshots,
             categories: categorySnapshots,
+            monthlyCategoryBudgets: monthlyBudgetSnapshots,
             tags: tagSnapshots,
             savingsGoals: goalSnapshots,
             transactions: transactionSnapshots,
@@ -657,6 +687,12 @@ enum EscapeBudgetBackupService {
                 memo: snap.memo,
                 isDemoData: snap.isDemoData
             )
+            category.budgetTypeRawValue = snap.budgetTypeRawValue
+            category.overspendHandlingRawValue = snap.overspendHandlingRawValue
+            if let createdAt = snap.createdAt {
+                category.createdAt = createdAt
+            }
+            category.archivedAfterMonthStart = snap.archivedAfterMonthStart
             if let groupID = snap.groupID, let group = groupsByID[groupID] {
                 category.group = group
                 if group.categories == nil { group.categories = [] }
@@ -664,6 +700,20 @@ enum EscapeBudgetBackupService {
             }
             modelContext.insert(category)
             categoriesByID[snap.id] = category
+        }
+
+        if let monthlyBudgets = backup.monthlyCategoryBudgets {
+            let calendar = Calendar.current
+            for snap in monthlyBudgets {
+                let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: snap.monthStart)) ?? snap.monthStart
+                let entry = MonthlyCategoryBudget(
+                    monthStart: monthStart,
+                    amount: snap.amount,
+                    category: snap.categoryID.flatMap { categoriesByID[$0] },
+                    isDemoData: snap.isDemoData
+                )
+                modelContext.insert(entry)
+            }
         }
 
         var tagsByID: [UUID: TransactionTag] = [:]

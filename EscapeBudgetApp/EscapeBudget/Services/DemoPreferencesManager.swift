@@ -48,33 +48,35 @@ enum DemoPreferencesManager {
     }
 
     private static func applyDemoDefaults(defaults: UserDefaults) {
+        typealias K = AppSettings.Keys
+
         // Cash Flow Forecast defaults (will still infer monthly income from demo transactions if 0).
-        defaults.set(90, forKey: "cashflow.horizonDays")
-        defaults.set(true, forKey: "cashflow.includeIncome")
-        defaults.set(0.0, forKey: "cashflow.monthlyIncome")
-        defaults.set(true, forKey: "cashflow.includeChequing")
-        defaults.set(true, forKey: "cashflow.includeSavings")
-        defaults.set(true, forKey: "cashflow.includeOtherCash")
+        defaults.set(90, forKey: K.cashflowHorizonDays)
+        defaults.set(true, forKey: K.cashflowIncludeIncome)
+        defaults.set(0.0, forKey: K.cashflowMonthlyIncome)
+        defaults.set(true, forKey: K.cashflowIncludeChequing)
+        defaults.set(true, forKey: K.cashflowIncludeSavings)
+        defaults.set(true, forKey: K.cashflowIncludeOtherCash)
 
         // Retirement defaults (so demo shows meaningful projections immediately).
-        defaults.set(true, forKey: "retirement.isConfigured")
-        defaults.set(RetirementScenarioDemo.base.rawValue, forKey: "retirement.scenario")
-        defaults.set(32, forKey: "retirement.currentAge")
-        defaults.set(65, forKey: "retirement.targetAge")
-        defaults.set(false, forKey: "retirement.includeInvestmentAccounts")
-        defaults.set(true, forKey: "retirement.includeSavingsAccounts")
-        defaults.set(false, forKey: "retirement.includeOtherPositiveAccounts")
-        defaults.set(true, forKey: "retirement.useSpendingFromTransactions")
-        defaults.set("", forKey: "retirement.spendingMonthlyOverride")
-        defaults.set(true, forKey: "retirement.useInferredContributions")
-        defaults.set("", forKey: "retirement.monthlyContributionOverride")
-        defaults.set("25000", forKey: "retirement.externalAssets")
-        defaults.set("0", forKey: "retirement.otherIncomeMonthly")
-        defaults.set(false, forKey: "retirement.useManualTarget")
-        defaults.set("", forKey: "retirement.manualTarget")
-        defaults.set(0.04, forKey: "retirement.safeWithdrawalRate")
-        defaults.set(0.05, forKey: "retirement.realReturn")
-        defaults.set(false, forKey: "retirement.showAdvanced")
+        defaults.set(true, forKey: K.retirementIsConfigured)
+        defaults.set(RetirementScenarioDemo.base.rawValue, forKey: K.retirementScenario)
+        defaults.set(32, forKey: K.retirementCurrentAge)
+        defaults.set(65, forKey: K.retirementTargetAge)
+        defaults.set(false, forKey: K.retirementIncludeInvestmentAccounts)
+        defaults.set(true, forKey: K.retirementIncludeSavingsAccounts)
+        defaults.set(false, forKey: K.retirementIncludeOtherPositiveAccounts)
+        defaults.set(true, forKey: K.retirementUseSpendingFromTransactions)
+        defaults.set("", forKey: K.retirementSpendingMonthlyOverride)
+        defaults.set(true, forKey: K.retirementUseInferredContributions)
+        defaults.set("", forKey: K.retirementMonthlyContributionOverride)
+        defaults.set("25000", forKey: K.retirementExternalAssets)
+        defaults.set("0", forKey: K.retirementOtherIncomeMonthly)
+        defaults.set(false, forKey: K.retirementUseManualTarget)
+        defaults.set("", forKey: K.retirementManualTarget)
+        defaults.set(0.04, forKey: K.retirementSafeWithdrawalRate)
+        defaults.set(0.05, forKey: K.retirementRealReturn)
+        defaults.set(false, forKey: K.retirementShowAdvanced)
     }
 
     private enum RetirementScenarioDemo: String {

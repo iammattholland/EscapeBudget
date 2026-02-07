@@ -3,8 +3,8 @@ import SwiftData
 
 struct AutoRuleHistoryView: View {
     @Environment(\.modelContext) private var modelContext
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-
+    @Environment(\.appSettings) private var settings
+    
     @Query(sort: \AutoRuleApplication.appliedAt, order: .reverse)
     private var applications: [AutoRuleApplication]
 
@@ -155,7 +155,7 @@ struct AutoRuleHistoryView: View {
             ForEach(groupedApplications, id: \.0) { group, apps in
                 Section {
                     ForEach(apps) { app in
-                        HistoryRowView(application: app, currencyCode: currencyCode)
+                        HistoryRowView(application: app, currencyCode: settings.currencyCode)
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 if let tx = app.transaction {
@@ -414,6 +414,7 @@ struct StatBox: View {
     let label: String
     var icon: String? = nil
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
 
     var body: some View {
         VStack(spacing: AppDesign.Theme.Spacing.micro) {

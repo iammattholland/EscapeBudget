@@ -7,6 +7,8 @@ struct BudgetCategoryFixSheet: View {
     let currencyCode: String
     let dateRange: (start: Date, end: Date)
     let transactions: [Transaction]
+    let transactionsForBudgeting: [Transaction]
+    let monthlyBudgets: [MonthlyCategoryBudget]
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -15,8 +17,25 @@ struct BudgetCategoryFixSheet: View {
     @State private var errorMessage: String?
     @State private var showingTransactions = false
 
+    private var calculator: CategoryBudgetCalculator {
+        CategoryBudgetCalculator(transactions: transactionsForBudgeting, monthlyBudgets: monthlyBudgets)
+    }
+
+    private var effectiveLimit: Decimal {
+        max(0, calculator.periodSummary(for: category, start: dateRange.start, end: dateRange.end).effectiveLimitForPeriod)
+    }
+
     private var remaining: Decimal {
-        category.assigned - spent
+        effectiveLimit - spent
+    }
+
+    private var amountLabel: String {
+        switch category.budgetType {
+        case .monthlyReset, .monthlyRollover:
+            return "Budget Amount"
+        case .lumpSum:
+            return "Pool Amount"
+        }
     }
 
     private var statusTint: Color {
@@ -28,9 +47,15 @@ struct BudgetCategoryFixSheet: View {
             Form {
                 Section("Status") {
                     HStack {
-                        Text("Assigned")
+                        Text(amountLabel)
                         Spacer()
                         Text(category.assigned, format: .currency(code: currencyCode))
+                            .monospacedDigit()
+                    }
+                    HStack {
+                        Text("Available")
+                        Spacer()
+                        Text(effectiveLimit, format: .currency(code: currencyCode))
                             .monospacedDigit()
                     }
                     HStack {
@@ -50,7 +75,7 @@ struct BudgetCategoryFixSheet: View {
                 }
 
                 Section("Fix Budget") {
-                    TextField("Assigned", text: $assignedInput)
+                    TextField(amountLabel, text: $assignedInput)
                         .keyboardType(.decimalPad)
 
                     HStack {
@@ -121,4 +146,3 @@ struct BudgetCategoryFixSheet: View {
         }
     }
 }
-

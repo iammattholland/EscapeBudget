@@ -5,9 +5,9 @@ struct AccountsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.undoRedoManager) private var undoRedoManager
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
     @Query(sort: \Account.name) private var accounts: [Account]
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-
+    
     @Binding var searchText: String
     @State private var showingAddAccount = false
     @State private var editingAccount: Account?
@@ -62,7 +62,7 @@ struct AccountsView: View {
                                 totalAssets: totalAssets,
                                 totalDebt: totalDebt,
                                 netWorth: netWorth,
-                                currencyCode: currencyCode
+                                currencyCode: settings.currencyCode
                             )
                             .padding(.top, AppDesign.Theme.Spacing.small)
                             .listRowInsets(EdgeInsets())
@@ -75,7 +75,7 @@ struct AccountsView: View {
                             if !typeAccounts.isEmpty {
                                 Section(header: Text(type.rawValue)) {
                                     ForEach(typeAccounts) { account in
-                                        AccountRow(account: account, currencyCode: currencyCode)
+                                        AccountRow(account: account, currencyCode: settings.currencyCode)
                                             .contentShape(Rectangle())
                                             .onTapGesture {
                                                 selectedAccount = account
@@ -125,8 +125,7 @@ struct AccountsView: View {
                 Button {
                     showingAccountsActions = true
                 } label: {
-                    Image(systemName: "ellipsis")
-                        .imageScale(.large)
+                    Image(systemName: "ellipsis").appEllipsisIcon()
                 }
             }
         }
@@ -134,7 +133,7 @@ struct AccountsView: View {
             NavigationStack {
                 AccountEditorSheet(
                     title: "New Account",
-                    currencyCode: currencyCode,
+                    currencyCode: settings.currencyCode,
                     initialName: "",
                     initialType: .chequing,
                     initialBalance: 0,
@@ -208,7 +207,7 @@ struct AccountsView: View {
             NavigationStack {
                 AccountEditorSheet(
                     title: "Edit Account",
-                    currencyCode: currencyCode,
+                    currencyCode: settings.currencyCode,
                     initialName: account.name,
                     initialType: account.type,
                     initialBalance: account.balance,
@@ -470,6 +469,7 @@ private struct AccountRow: View {
 
 private struct AccountEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.appSettings) private var settings
 
     let title: String
     let currencyCode: String
@@ -515,7 +515,7 @@ private struct AccountEditorSheet: View {
 	                        .appCaptionText()
 	                        .foregroundStyle(.secondary)
 	                    HStack(spacing: AppDesign.Theme.Spacing.compact) {
-	                        Text(currencySymbol(for: currencyCode))
+	                        Text(currencySymbol(for: settings.currencyCode))
 	                            .appTitleText()
 	                            .fontWeight(.semibold)
 	                            .foregroundStyle(.secondary)

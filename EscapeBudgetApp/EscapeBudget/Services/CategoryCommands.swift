@@ -13,6 +13,7 @@ final class AddCategoryCommand: Command {
     private let order: Int
     private let icon: String?
     private let memo: String?
+    private let createdAt: Date?
     private let groupPersistentID: PersistentIdentifier?
     private let isDemoData: Bool
 
@@ -24,6 +25,7 @@ final class AddCategoryCommand: Command {
         order: Int = 0,
         icon: String? = nil,
         memo: String? = nil,
+        createdAt: Date? = nil,
         group: CategoryGroup? = nil,
         isDemoData: Bool = false
     ) {
@@ -34,6 +36,7 @@ final class AddCategoryCommand: Command {
         self.order = order
         self.icon = icon
         self.memo = memo
+        self.createdAt = createdAt
         self.groupPersistentID = group?.persistentModelID
         self.isDemoData = isDemoData
         self.description = "Add Category: \(name)"
@@ -50,6 +53,9 @@ final class AddCategoryCommand: Command {
             memo: memo,
             isDemoData: isDemoData
         )
+        if let createdAt {
+            newCategory.createdAt = createdAt
+        }
 
         // Restore relationship
         if let groupID = groupPersistentID,
@@ -82,6 +88,7 @@ final class DeleteCategoryCommand: Command {
     private let modelContext: ModelContext
     private var categoryPersistentID: PersistentIdentifier
     private var savedData: CategorySnapshot?
+    private var savedMonthlyBudgets: [MonthlyCategoryBudgetSnapshot] = []
 
     init(modelContext: ModelContext, category: Category) {
         self.modelContext = modelContext
@@ -97,6 +104,17 @@ final class DeleteCategoryCommand: Command {
 
         // Save data for undo
         savedData = CategorySnapshot(from: category)
+
+        // Save and remove monthly budget overrides tied to this category
+        let categoryID = category.persistentModelID
+        let budgetsDescriptor = FetchDescriptor<MonthlyCategoryBudget>(
+            predicate: #Predicate<MonthlyCategoryBudget> { $0.category?.persistentModelID == categoryID }
+        )
+        let budgets = (try? modelContext.fetch(budgetsDescriptor)) ?? []
+        savedMonthlyBudgets = budgets.map(MonthlyCategoryBudgetSnapshot.init(from:))
+        for budget in budgets {
+            modelContext.delete(budget)
+        }
 
         modelContext.delete(category)
         try modelContext.save()
@@ -117,6 +135,10 @@ final class DeleteCategoryCommand: Command {
             memo: snapshot.memo,
             isDemoData: snapshot.isDemoData
         )
+        newCategory.budgetTypeRawValue = snapshot.budgetTypeRawValue
+        newCategory.overspendHandlingRawValue = snapshot.overspendHandlingRawValue
+        newCategory.createdAt = snapshot.createdAt
+        newCategory.archivedAfterMonthStart = snapshot.archivedAfterMonthStart
 
         // Restore relationship
         if let groupID = snapshot.groupPersistentID,
@@ -125,6 +147,18 @@ final class DeleteCategoryCommand: Command {
         }
 
         modelContext.insert(newCategory)
+
+        if !savedMonthlyBudgets.isEmpty {
+            for snap in savedMonthlyBudgets {
+                let budget = MonthlyCategoryBudget(
+                    monthStart: snap.monthStart,
+                    amount: snap.amount,
+                    category: newCategory,
+                    isDemoData: snap.isDemoData
+                )
+                modelContext.insert(budget)
+            }
+        }
         try modelContext.save()
 
         // Update the persistent ID to the newly created category
@@ -150,7 +184,10 @@ final class UpdateCategoryCommand: Command {
         newOrder: Int,
         newIcon: String?,
         newMemo: String?,
-        newGroup: CategoryGroup?
+        newGroup: CategoryGroup?,
+        newBudgetTypeRawValue: String? = nil,
+        newOverspendHandlingRawValue: String? = nil,
+        newArchivedAfterMonthStart: Date? = nil
     ) {
         self.modelContext = modelContext
         self.categoryPersistentID = category.persistentModelID
@@ -163,6 +200,10 @@ final class UpdateCategoryCommand: Command {
             icon: newIcon,
             memo: newMemo,
             groupPersistentID: newGroup?.persistentModelID,
+            budgetTypeRawValue: newBudgetTypeRawValue ?? category.budgetTypeRawValue,
+            overspendHandlingRawValue: newOverspendHandlingRawValue ?? category.overspendHandlingRawValue,
+            createdAt: category.createdAt,
+            archivedAfterMonthStart: newArchivedAfterMonthStart ?? category.archivedAfterMonthStart,
             isDemoData: category.isDemoData
         )
         self.description = "Update Category: \(category.name)"
@@ -195,6 +236,10 @@ final class UpdateCategoryCommand: Command {
         category.order = snapshot.order
         category.icon = snapshot.icon
         category.memo = snapshot.memo
+        category.budgetTypeRawValue = snapshot.budgetTypeRawValue
+        category.overspendHandlingRawValue = snapshot.overspendHandlingRawValue
+        category.createdAt = snapshot.createdAt
+        category.archivedAfterMonthStart = snapshot.archivedAfterMonthStart
 
         if let groupID = snapshot.groupPersistentID,
            let group = modelContext.model(for: groupID) as? CategoryGroup {
@@ -241,20 +286,24 @@ final class BulkMoveCategoriesCommand: Command {
         let destinationMaxOrder = (destinationGroup.categories ?? []).map(\.order).max() ?? -1
         var nextOrder = destinationMaxOrder + 1
 
-        var new: [PersistentIdentifier: CategorySnapshot] = [:]
-        for category in orderedCategories {
-            new[category.persistentModelID] = CategorySnapshot(
-                name: category.name,
-                assigned: category.assigned,
-                activity: category.activity,
-                order: nextOrder,
-                icon: category.icon,
-                memo: category.memo,
-                groupPersistentID: destinationGroup.persistentModelID,
-                isDemoData: category.isDemoData
-            )
-            nextOrder += 1
-        }
+	        var new: [PersistentIdentifier: CategorySnapshot] = [:]
+	        for category in orderedCategories {
+		            new[category.persistentModelID] = CategorySnapshot(
+		                name: category.name,
+		                assigned: category.assigned,
+		                activity: category.activity,
+		                order: nextOrder,
+		                icon: category.icon,
+		                memo: category.memo,
+		                groupPersistentID: destinationGroup.persistentModelID,
+		                budgetTypeRawValue: category.budgetTypeRawValue,
+		                overspendHandlingRawValue: category.overspendHandlingRawValue,
+		                createdAt: category.createdAt,
+		                archivedAfterMonthStart: category.archivedAfterMonthStart,
+		                isDemoData: category.isDemoData
+		            )
+	            nextOrder += 1
+	        }
         self.newSnapshots = new
 
         self.description = "Move \(orderedCategories.count) Categories to \(destinationGroup.name)"
@@ -312,6 +361,10 @@ struct CategorySnapshot {
     let icon: String?
     let memo: String?
     let groupPersistentID: PersistentIdentifier?
+    let budgetTypeRawValue: String?
+    let overspendHandlingRawValue: String?
+    let createdAt: Date?
+    let archivedAfterMonthStart: Date?
     let isDemoData: Bool
 
     init(from category: Category) {
@@ -322,6 +375,10 @@ struct CategorySnapshot {
         self.icon = category.icon
         self.memo = category.memo
         self.groupPersistentID = category.group?.persistentModelID
+        self.budgetTypeRawValue = category.budgetTypeRawValue
+        self.overspendHandlingRawValue = category.overspendHandlingRawValue
+        self.createdAt = category.createdAt
+        self.archivedAfterMonthStart = category.archivedAfterMonthStart
         self.isDemoData = category.isDemoData
     }
 
@@ -333,6 +390,10 @@ struct CategorySnapshot {
         icon: String?,
         memo: String?,
         groupPersistentID: PersistentIdentifier?,
+        budgetTypeRawValue: String?,
+        overspendHandlingRawValue: String?,
+        createdAt: Date?,
+        archivedAfterMonthStart: Date?,
         isDemoData: Bool
     ) {
         self.name = name
@@ -342,6 +403,22 @@ struct CategorySnapshot {
         self.icon = icon
         self.memo = memo
         self.groupPersistentID = groupPersistentID
+        self.budgetTypeRawValue = budgetTypeRawValue
+        self.overspendHandlingRawValue = overspendHandlingRawValue
+        self.createdAt = createdAt
+        self.archivedAfterMonthStart = archivedAfterMonthStart
         self.isDemoData = isDemoData
+    }
+}
+
+struct MonthlyCategoryBudgetSnapshot {
+    let monthStart: Date
+    let amount: Decimal
+    let isDemoData: Bool
+
+    init(from budget: MonthlyCategoryBudget) {
+        self.monthStart = budget.monthStart
+        self.amount = budget.amount
+        self.isDemoData = budget.isDemoData
     }
 }

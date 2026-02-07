@@ -1,10 +1,9 @@
 import SwiftUI
 
 struct NotificationBadgeView: View {
-    @AppStorage("hasNotifications") var hasNotifications = false
-    @AppStorage("isDemoMode") private var isDemoMode = false
-    @State private var showingHub = false
+            @State private var showingHub = false
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
     
     var body: some View {
         Button(action: {
@@ -17,7 +16,7 @@ struct NotificationBadgeView: View {
                     .frame(width: 32, height: 32)
                     .clipShape(Circle())
                     .overlay {
-                        if isDemoMode {
+                        if settings.isDemoMode {
                             Circle()
                                 .fill(Color.orange.opacity(0.18))
                                 .overlay(
@@ -29,7 +28,7 @@ struct NotificationBadgeView: View {
                     }
                     .zIndex(0)
                 
-                if hasNotifications {
+                if settings.hasNotifications {
                     Circle()
                         .fill(AppDesign.Colors.danger(for: appColorMode))
                         .frame(width: 10, height: 10)

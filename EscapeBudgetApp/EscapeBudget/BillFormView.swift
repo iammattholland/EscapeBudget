@@ -5,8 +5,8 @@ struct BillFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.appColorMode) private var appColorMode
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-
+    @Environment(\.appSettings) private var settings
+    
     var existingBill: RecurringPurchase?
 
     @State private var name = ""
@@ -77,12 +77,12 @@ struct BillFormView: View {
                 if let projection = monthlyProjection {
                     Section("Cost Breakdown") {
                         LabeledContent("Monthly Equivalent") {
-                            Text(projection.monthly, format: .currency(code: currencyCode))
+                            Text(projection.monthly, format: .currency(code: settings.currencyCode))
                                 .fontWeight(.medium)
                         }
 
                         LabeledContent("Yearly Cost") {
-                            Text(projection.yearly, format: .currency(code: currencyCode))
+                            Text(projection.yearly, format: .currency(code: settings.currencyCode))
                                 .fontWeight(.medium)
                                 .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                         }
@@ -127,7 +127,7 @@ struct BillFormView: View {
     // MARK: - Computed Properties
 
     private var currencySymbol: String {
-        let locale = Locale(identifier: Locale.identifier(fromComponents: [NSLocale.Key.currencyCode.rawValue: currencyCode]))
+        let locale = Locale(identifier: Locale.identifier(fromComponents: [NSLocale.Key.currencyCode.rawValue: settings.currencyCode]))
         return locale.currencySymbol ?? "$"
     }
 

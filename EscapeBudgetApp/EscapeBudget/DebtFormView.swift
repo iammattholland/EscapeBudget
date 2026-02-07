@@ -5,8 +5,8 @@ struct DebtFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.appColorMode) private var appColorMode
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-
+    @Environment(\.appSettings) private var settings
+    
     // Query all accounts - we'll filter debt types in the view
     @Query(sort: \Account.name) private var allAccounts: [Account]
 
@@ -88,7 +88,7 @@ struct DebtFormView: View {
                     if useLinkedAccount && selectedAccount != nil {
                         LabeledContent("Current Balance") {
                             HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
-                                Text(abs(selectedAccount?.balance ?? 0), format: .currency(code: currencyCode))
+                                Text(abs(selectedAccount?.balance ?? 0), format: .currency(code: settings.currencyCode))
                                     .foregroundStyle(.secondary)
                                 Image(systemName: "arrow.triangle.2.circlepath")
                                     .appCaptionText()
@@ -167,7 +167,7 @@ struct DebtFormView: View {
                             Text("Total Interest")
                                 .foregroundStyle(.secondary)
                             Spacer()
-                            Text(projection.totalInterestPaid, format: .currency(code: currencyCode))
+                            Text(projection.totalInterestPaid, format: .currency(code: settings.currencyCode))
                                 .fontWeight(.medium)
                                 .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                         }
@@ -224,7 +224,7 @@ struct DebtFormView: View {
     // MARK: - Computed Properties
 
     private var currencySymbol: String {
-        let locale = Locale(identifier: Locale.identifier(fromComponents: [NSLocale.Key.currencyCode.rawValue: currencyCode]))
+        let locale = Locale(identifier: Locale.identifier(fromComponents: [NSLocale.Key.currencyCode.rawValue: settings.currencyCode]))
         return locale.currencySymbol ?? "$"
     }
 

@@ -1,0 +1,9 @@
+{
+  "obsidian_note_path": "/absolute/path/to/YourVault/Projects/EscapeBudget.md",
+  "project_name": "EscapeBudget",
+  "base_ref": "origin/main",
+  "include_diffstat": true,
+  "max_commits": 20,
+  "max_files": 50
+}
+

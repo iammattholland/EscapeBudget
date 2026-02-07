@@ -13,14 +13,7 @@ import UIKit
 
 @main
 struct EscapeBudgetApp: App {
-    @AppStorage("isDemoMode") private var isDemoMode = false
-    @AppStorage("shouldShowWelcome") private var shouldShowWelcome = true
-    @AppStorage("sync.icloud.enabled") private var iCloudSyncEnabled = false
-    @AppStorage("sync.icloud.lastAttempt") private var lastSyncAttempt: Double = 0
-    @AppStorage("sync.icloud.lastSuccess") private var lastSyncSuccess: Double = 0
-    @AppStorage("sync.icloud.lastError") private var lastSyncError: String = ""
-    @AppStorage("userAppearance") private var userAppearanceString = "System"
-    @AppStorage("appColorMode") private var appColorModeRawValue = AppColorMode.standard.rawValue
+    @State private var settings = AppSettings()
     @State private var userDataContainer: ModelContainer // Persistent storage for user data
     @State private var demoDataContainer: ModelContainer // In-memory storage for demo data
     @State private var undoRedoManager = UndoRedoManager()
@@ -34,11 +27,11 @@ struct EscapeBudgetApp: App {
 
     /// Returns the active container based on current mode
     private var activeContainer: ModelContainer {
-        isDemoMode ? demoDataContainer : userDataContainer
+        settings.isDemoMode ? demoDataContainer : userDataContainer
     }
-    
+
     private var appearanceColorScheme: ColorScheme? {
-        switch userAppearanceString {
+        switch settings.userAppearance {
         case "Dark":
             return .dark
         case "Light":
@@ -49,7 +42,7 @@ struct EscapeBudgetApp: App {
     }
 
     private var appColorMode: AppColorMode {
-        AppColorMode(rawValue: appColorModeRawValue) ?? .standard
+        AppColorMode(rawValue: settings.appColorModeRawValue) ?? .standard
     }
 
     init() {
@@ -60,24 +53,42 @@ struct EscapeBudgetApp: App {
         UITableView.appearance().sectionHeaderTopPadding = 0
 #endif
         let defaults = UserDefaults.standard
-        if defaults.object(forKey: "userAppearance") == nil {
-            defaults.set("System", forKey: "userAppearance")
+        if defaults.object(forKey: AppSettings.Keys.userAppearance) == nil {
+            defaults.set("System", forKey: AppSettings.Keys.userAppearance)
         }
-        if defaults.object(forKey: "appIconMode") == nil {
-            defaults.set(AppIconMode.system.rawValue, forKey: "appIconMode")
+        if defaults.object(forKey: AppSettings.Keys.appIconMode) == nil {
+            defaults.set(AppIconMode.system.rawValue, forKey: AppSettings.Keys.appIconMode)
         }
         let isUITesting = ProcessInfo.processInfo.arguments.contains("ui_testing")
         // UI tests: force a stable starting state (no onboarding, demo data, deterministic processing).
         if isUITesting {
-            defaults.set(false, forKey: "shouldShowWelcome")
-            defaults.set(true, forKey: "isDemoMode")
+            defaults.set(false, forKey: AppSettings.Keys.shouldShowWelcome)
+            defaults.set(true, forKey: AppSettings.Keys.isDemoMode)
             defaults.set(true, forKey: "transactions.applyAutoRulesOnManual")
         }
         // Create both containers at initialization
         do {
-            // User data container - persistent storage
-            let initialSyncEnabled = UserDefaults.standard.object(forKey: "sync.icloud.enabled") as? Bool ?? false
-            let userContainer = try ModelContainerProvider.makeContainer(demoMode: false, iCloudSyncEnabled: initialSyncEnabled)
+            let initialSyncEnabled = UserDefaults.standard.object(forKey: AppSettings.Keys.syncICloudEnabled) as? Bool ?? false
+            let userContainer: ModelContainer
+            do {
+                // User data container - persistent storage
+                userContainer = try ModelContainerProvider.makeContainer(
+                    demoMode: false,
+                    iCloudSyncEnabled: initialSyncEnabled
+                )
+            } catch {
+                // If iCloud-backed store init fails, fall back to local store automatically.
+                if initialSyncEnabled {
+                    UserDefaults.standard.set(false, forKey: AppSettings.Keys.syncICloudEnabled)
+                    UserDefaults.standard.set(String(describing: error), forKey: AppSettings.Keys.syncICloudLastError)
+                    userContainer = try ModelContainerProvider.makeContainer(
+                        demoMode: false,
+                        iCloudSyncEnabled: false
+                    )
+                } else {
+                    throw error
+                }
+            }
             _userDataContainer = State(initialValue: userContainer)
 
             // Demo data container - in-memory only (will be recreated when entering demo mode)
@@ -101,30 +112,30 @@ struct EscapeBudgetApp: App {
         WindowGroup {
             ZStack {
                 Group {
-                    if shouldShowWelcome {
+                    if settings.shouldShowWelcome {
                         WelcomeView(
                             onContinue: {
-                                shouldShowWelcome = false
+                                settings.shouldShowWelcome = false
                                 navigator.selectedTab = .home
                             },
                             onImport: {
-                                shouldShowWelcome = false
-                                isDemoMode = false
+                                settings.shouldShowWelcome = false
+                                settings.isDemoMode = false
                                 navigator.selectedTab = .manage
                                 navigator.manageNavigator.selectedSection = .transactions
                                 navigator.importData()
                             },
                             onTryDemo: {
                                 // Dismiss first to avoid any view hierarchy churn from demo mode switching.
-                                shouldShowWelcome = false
-                                isDemoMode = true
+                                settings.shouldShowWelcome = false
+                                settings.isDemoMode = true
                                 navigator.selectedTab = .home
                             }
                         )
                         .transition(.opacity)
                     } else {
                         ContentView()
-                            .id(isDemoMode) // Force recreate view hierarchy when mode changes
+                            .id(settings.isDemoMode) // Force recreate view hierarchy when mode changes
                     }
                 }
                 .globalKeyboardDoneToolbar()
@@ -134,6 +145,7 @@ struct EscapeBudgetApp: App {
                 .preferredColorScheme(appearanceColorScheme)
                 .tint(AppDesign.Colors.tint(for: appColorMode))
                 .environment(\.appColorMode, appColorMode)
+                .environment(\.appSettings, settings)
                 .environment(\.undoRedoManager, undoRedoManager)
                 .environmentObject(errorCenter)
                 .environmentObject(navigator)
@@ -147,7 +159,7 @@ struct EscapeBudgetApp: App {
                             await MonthlyAccountTotalsService.ensureUpToDateAsync(modelContext: activeContainer.mainContext)
                             await MonthlyCashflowTotalsService.ensureUpToDateAsync(modelContext: activeContainer.mainContext)
                         }
-                        if !isDemoMode {
+                        if !settings.isDemoMode {
                             Task { await AutoBackupService.maybeRunWeekly(modelContext: activeContainer.mainContext) }
                         }
                     }
@@ -231,7 +243,7 @@ struct EscapeBudgetApp: App {
             }
         }
         .modelContainer(activeContainer)
-        .onChange(of: isDemoMode) { _, newValue in
+        .onChange(of: settings.isDemoMode) { _, newValue in
             // Prevent change storms (stats rebuilds / stale dirty keys) from crossing between stores.
             isSwitchingDataStore = true
             statsUpdateTask?.cancel()
@@ -239,11 +251,13 @@ struct EscapeBudgetApp: App {
 
             if newValue {
                 DemoPreferencesManager.enterDemoMode()
+                settings.reloadFromDefaults()
                 recreateDemoContainer()
             } else {
                 // Cancel any in-flight demo seeding work and restore real-user preferences.
                 demoSeedTask?.cancel()
                 DemoPreferencesManager.exitDemoMode()
+                settings.reloadFromDefaults()
             }
             errorCenter.setDiagnosticsModelContext(activeContainer.mainContext)
             // Clear undo/redo history when switching modes
@@ -258,11 +272,11 @@ struct EscapeBudgetApp: App {
                 isSwitchingDataStore = false
             }
         }
-        .onChange(of: iCloudSyncEnabled) { _, newValue in
-            guard !isDemoMode else { return }
+        .onChange(of: settings.iCloudSyncEnabled) { _, newValue in
+            guard !settings.isDemoMode else { return }
             Task { @MainActor in
-                lastSyncAttempt = Date().timeIntervalSince1970
-                lastSyncError = ""
+                settings.lastSyncAttempt = Date().timeIntervalSince1970
+                settings.lastSyncError = ""
                 do {
                     let container = try ModelContainerProvider.makeContainer(demoMode: false, iCloudSyncEnabled: newValue)
                     userDataContainer = container
@@ -270,11 +284,11 @@ struct EscapeBudgetApp: App {
                     errorCenter.setDiagnosticsModelContext(container.mainContext)
                     undoRedoManager.clearHistory()
                     navigator.dismissAll()
-                    lastSyncSuccess = Date().timeIntervalSince1970
+                    settings.lastSyncSuccess = Date().timeIntervalSince1970
                 } catch {
                     // Revert toggle and surface error.
-                    iCloudSyncEnabled = false
-                    lastSyncError = String(describing: error)
+                    settings.iCloudSyncEnabled = false
+                    settings.lastSyncError = String(describing: error)
                     errorCenter.showOperation(.sync, error: error)
                 }
             }
@@ -284,11 +298,11 @@ struct EscapeBudgetApp: App {
             case .background:
                 authService.appDidEnterBackground()
             case .active:
-                authService.appWillEnterForeground()
+                authService.appDidBecomeActive(cameFromBackground: oldPhase == .background)
                 BadgeService.shared.recordAppBecameActive(modelContext: activeContainer.mainContext)
                 PremiumStatusService.shared.ensureTrialStarted()
                 UserAccountService.shared.reloadFromStorage()
-                if !isDemoMode {
+                if !settings.isDemoMode {
                     Task { await AutoBackupService.maybeRunWeekly(modelContext: activeContainer.mainContext) }
                     ReconcileReminderService.maybePostOverdueReconcileReminders(modelContext: activeContainer.mainContext)
                 }
@@ -477,23 +491,23 @@ enum AppIconController {
 }
 
 private struct AppIconSettingsApplier: ViewModifier {
-    @AppStorage("appIconMode") private var appIconModeRawValue = AppIconMode.system.rawValue
+    @Environment(\.appSettings) private var settings
     @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
         content
             .task {
-                await AppIconController.apply(modeRawValue: appIconModeRawValue)
+                await AppIconController.apply(modeRawValue: settings.appIconModeRawValue)
             }
-            .onChange(of: appIconModeRawValue) { _, newValue in
+            .onChange(of: settings.appIconModeRawValue) { _, newValue in
                 Task {
                     await AppIconController.apply(modeRawValue: newValue)
                 }
             }
             .onChange(of: colorScheme) { _, _ in
-                guard appIconModeRawValue == AppIconMode.system.rawValue else { return }
+                guard settings.appIconModeRawValue == AppIconMode.system.rawValue else { return }
                 Task {
-                    await AppIconController.apply(modeRawValue: appIconModeRawValue)
+                    await AppIconController.apply(modeRawValue: settings.appIconModeRawValue)
                 }
             }
     }

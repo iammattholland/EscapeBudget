@@ -7,6 +7,7 @@ struct NewBudgetCategorySheet: View {
     @Query(sort: \CategoryGroup.order) private var categoryGroups: [CategoryGroup]
 
     let initialGroup: CategoryGroup?
+    let createdAtMonthStart: Date?
     let onCreated: (Category) -> Void
 
     @State private var creatingNewGroup = false
@@ -18,9 +19,11 @@ struct NewBudgetCategorySheet: View {
 
     init(
         initialGroup: CategoryGroup? = nil,
+        createdAtMonthStart: Date? = nil,
         onCreated: @escaping (Category) -> Void
     ) {
         self.initialGroup = initialGroup
+        self.createdAtMonthStart = createdAtMonthStart
         self.onCreated = onCreated
         _selectedGroup = State(initialValue: initialGroup)
     }
@@ -107,6 +110,9 @@ struct NewBudgetCategorySheet: View {
         let nextCategoryOrder = ((group.categories ?? []).map(\.order).max() ?? -1) + 1
         let category = Category(name: trimmedCategory, assigned: 0, activity: 0, order: nextCategoryOrder)
         category.group = group
+        if let createdAtMonthStart {
+            category.createdAt = createdAtMonthStart
+        }
 
         if group.categories == nil { group.categories = [] }
         group.categories?.append(category)

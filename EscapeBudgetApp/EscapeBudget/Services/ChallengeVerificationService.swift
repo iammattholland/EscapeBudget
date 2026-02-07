@@ -10,7 +10,8 @@ struct ChallengeVerificationService {
     static func verify(
         challenge: SpendingChallenge,
         transactions: [Transaction],
-        categories: [Category]
+        categories: [Category],
+        monthlyBudgets: [MonthlyCategoryBudget] = []
     ) -> ChallengeResult {
         switch challenge.type {
         case .noSpendDay:
@@ -22,9 +23,9 @@ struct ChallengeVerificationService {
         case .restaurantReduction:
             return verifyRestaurantReduction(challenge: challenge, transactions: transactions)
         case .groceryBudgetHero:
-            return verifyGroceryBudget(challenge: challenge, transactions: transactions, categories: categories)
+            return verifyGroceryBudget(challenge: challenge, transactions: transactions, categories: categories, monthlyBudgets: monthlyBudgets)
         case .underBudgetStreak:
-            return verifyUnderBudgetStreak(challenge: challenge, transactions: transactions, categories: categories)
+            return verifyUnderBudgetStreak(challenge: challenge, transactions: transactions, categories: categories, monthlyBudgets: monthlyBudgets)
         case .packLunchWeek:
             return verifyPackLunchWeek(challenge: challenge, transactions: transactions)
         case .entertainmentDiet:
@@ -188,13 +189,19 @@ struct ChallengeVerificationService {
         )
     }
 
-    private static func verifyGroceryBudget(challenge: SpendingChallenge, transactions: [Transaction], categories: [Category]) -> ChallengeResult {
+    private static func verifyGroceryBudget(challenge: SpendingChallenge, transactions: [Transaction], categories: [Category], monthlyBudgets: [MonthlyCategoryBudget]) -> ChallengeResult {
         let keywords = challenge.type.relevantCategoryKeywords
         let groceryCategory = categories.first { cat in
             keywords.contains { cat.name.lowercased().contains($0) }
         }
 
-        guard let budget = groceryCategory?.assigned, budget > 0 else {
+        guard let groceryCategory else {
+            return ChallengeResult(progress: 0.0, passed: false, message: "No grocery budget set")
+        }
+
+        let calculator = CategoryBudgetCalculator(transactions: transactions, monthlyBudgets: monthlyBudgets)
+        let budget = max(0, calculator.periodSummary(for: groceryCategory, start: challenge.startDate, end: challenge.endDate).effectiveLimitForPeriod)
+        guard budget > 0 else {
             return ChallengeResult(progress: 0.0, passed: false, message: "No grocery budget set")
         }
 
@@ -212,14 +219,18 @@ struct ChallengeVerificationService {
         )
     }
 
-    private static func verifyUnderBudgetStreak(challenge: SpendingChallenge, transactions: [Transaction], categories: [Category]) -> ChallengeResult {
+    private static func verifyUnderBudgetStreak(challenge: SpendingChallenge, transactions: [Transaction], categories: [Category], monthlyBudgets: [MonthlyCategoryBudget]) -> ChallengeResult {
         let calendar = Calendar.current
-        let totalBudget = categories.filter { $0.group?.type == .expense }.reduce(Decimal.zero) { $0 + $1.assigned }
+        let calculator = CategoryBudgetCalculator(transactions: transactions, monthlyBudgets: monthlyBudgets)
+        let totalBudget = categories
+            .filter { $0.group?.type == .expense }
+            .reduce(Decimal.zero) { $0 + max(0, calculator.periodSummary(for: $1, start: challenge.startDate, end: challenge.endDate).effectiveLimitForPeriod) }
         guard totalBudget > 0 else {
             return ChallengeResult(progress: 0.0, passed: false, message: "No budget set")
         }
 
-        let dailyBudget = totalBudget / Decimal(30) // Approximate daily budget
+        let divisor = max(1, challenge.totalDays)
+        let dailyBudget = totalBudget / Decimal(divisor)
         var streakDays = 0
 
         for dayOffset in 0..<challenge.totalDays {

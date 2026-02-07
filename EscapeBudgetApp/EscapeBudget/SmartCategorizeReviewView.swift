@@ -5,8 +5,8 @@ struct SmartCategorizeReviewView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.appColorMode) private var appColorMode
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-
+    @Environment(\.appSettings) private var settings
+    
     @Query(sort: \Category.name) private var allCategories: [Category]
 
     let transactions: [Transaction]
@@ -38,6 +38,26 @@ struct SmartCategorizeReviewView: View {
 
     private var visibleSuggestions: [BulkCategorizationSuggester.SuggestionGroup] {
         suggestions.filter { !dismissedGroups.contains($0.id) }
+    }
+
+    private func monthStarts(for suggestion: BulkCategorizationSuggester.SuggestionGroup) -> [Date] {
+        let calendar = Calendar.current
+        let months = Set(
+            suggestion.transactions.map { tx in
+                calendar.date(from: calendar.dateComponents([.year, .month], from: tx.date)) ?? tx.date
+            }
+        )
+        return Array(months)
+    }
+
+    private func monthStarts(forGroupID groupID: UUID) -> [Date] {
+        guard let suggestion = suggestions.first(where: { $0.id == groupID }) else { return [] }
+        return monthStarts(for: suggestion)
+    }
+
+    private func isCategoryEligibleForSelection(_ category: Category, monthStarts: [Date]) -> Bool {
+        guard !monthStarts.isEmpty else { return true }
+        return monthStarts.allSatisfy { category.isActive(inMonthStart: $0) }
     }
 
     var body: some View {
@@ -178,7 +198,7 @@ struct SmartCategorizeReviewView: View {
 
                     Spacer()
 
-                    Text(group.totalAmount, format: .currency(code: currencyCode))
+                    Text(group.totalAmount, format: .currency(code: settings.currencyCode))
                         .appSecondaryBodyText()
                         .fontWeight(.semibold)
                         .monospacedDigit()
@@ -203,14 +223,17 @@ struct SmartCategorizeReviewView: View {
                     }
                     .buttonStyle(.plain)
                 } else if let suggested = group.suggestedCategory {
+                    let eligibleMonths = monthStarts(for: group)
+                    let isEligible = isCategoryEligibleForSelection(suggested, monthStarts: eligibleMonths)
                     HStack(spacing: AppDesign.Theme.Spacing.tight) {
                         Button {
+                            guard isEligible else { return }
                             selectedCategories[group.id] = suggested
                         } label: {
                             HStack {
                                 Image(systemName: "sparkles")
                                     .foregroundStyle(.yellow)
-                                Text(suggested.name)
+                                Text(isEligible ? suggested.name : "\(suggested.name) (Archived)")
                                     .foregroundStyle(.primary)
                                 Spacer()
                                 Text("Accept")
@@ -223,6 +246,7 @@ struct SmartCategorizeReviewView: View {
                             }
                         }
                         .buttonStyle(.plain)
+                        .disabled(!isEligible)
                     }
 
                     Button {
@@ -255,7 +279,7 @@ struct SmartCategorizeReviewView: View {
                 NavigationLink {
                     SmartCategorizeGroupDetailView(
                         group: group,
-                        currencyCode: currencyCode,
+                        currencyCode: settings.currencyCode,
                         selectedIDs: Binding(
                             get: { selectedTransactionIDsByGroup[group.id] ?? Set(group.transactions.map(\.persistentModelID)) },
                             set: { selectedTransactionIDsByGroup[group.id] = $0 }
@@ -325,7 +349,14 @@ struct SmartCategorizeReviewView: View {
 
     @ViewBuilder
     private func categoryGroupSections(for groupID: UUID) -> some View {
-        let groupedByID = Dictionary(grouping: availableCategories) { $0.group?.persistentModelID }
+        let eligibleMonths = monthStarts(forGroupID: groupID)
+        let selectedID = selectedCategories[groupID]?.persistentModelID
+        let eligibleCategories = availableCategories.filter { category in
+            isCategoryEligibleForSelection(category, monthStarts: eligibleMonths)
+                || category.persistentModelID == selectedID
+        }
+
+        let groupedByID = Dictionary(grouping: eligibleCategories) { $0.group?.persistentModelID }
         let sortedPairs = groupedByID.sorted { lhs, rhs in
             let lhsOrder = lhs.value.first?.group?.order ?? 0
             let rhsOrder = rhs.value.first?.group?.order ?? 0
@@ -342,8 +373,9 @@ struct SmartCategorizeReviewView: View {
                         selectedCategories[groupID] = category
                         showingCategoryPicker = false
                     } label: {
+                        let isInactive = !isCategoryEligibleForSelection(category, monthStarts: eligibleMonths)
                         HStack {
-                            Text(category.name)
+                            Text(isInactive ? "\(category.name) (Archived)" : category.name)
                                 .foregroundStyle(.primary)
                             Spacer()
                             if selectedCategories[groupID]?.persistentModelID == category.persistentModelID {
@@ -381,7 +413,10 @@ struct SmartCategorizeReviewView: View {
         // Auto-select high-confidence suggestions
         for suggestion in suggestions where suggestion.confidence >= 0.85 {
             if let category = suggestion.suggestedCategory {
-                selectedCategories[suggestion.id] = category
+                let eligibleMonths = monthStarts(for: suggestion)
+                if isCategoryEligibleForSelection(category, monthStarts: eligibleMonths) {
+                    selectedCategories[suggestion.id] = category
+                }
             }
         }
     }
@@ -408,7 +443,11 @@ struct SmartCategorizeReviewView: View {
 
             dismiss()
         } catch {
-            errorMessage = "Failed to apply categorizations. Please try again."
+            if let localized = error as? LocalizedError, let message = localized.errorDescription {
+                errorMessage = message
+            } else {
+                errorMessage = "Failed to apply categorizations. Please try again."
+            }
         }
     }
 }
@@ -492,7 +531,7 @@ private struct SmartCategorizeGroupDetailView: View {
                         selectedIDs = []
                     }
                 } label: {
-                    Image(systemName: "ellipsis")
+                    Image(systemName: "ellipsis").appEllipsisIcon()
                 }
             }
         }

@@ -7,9 +7,7 @@ struct RetirementView: View {
     @EnvironmentObject private var navigator: AppNavigator
     @Environment(\.appColorMode) private var appColorMode
 
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @AppStorage("retirement.isConfigured") private var isConfigured = false
-    @AppStorage("retirement.scenario") private var scenarioRawValue: String = RetirementScenario.yourPlan.rawValue
+    @Environment(\.appSettings) private var settings
 
     @Query(sort: \Account.name) private var accounts: [Account]
     @Query private var transactions: [Transaction]
@@ -18,28 +16,6 @@ struct RetirementView: View {
     private let windowMonths: Int
     private let windowStartDate: Date
 
-    @AppStorage("retirement.currentAge") private var currentAge: Int = 30
-    @AppStorage("retirement.targetAge") private var targetAge: Int = 65
-    @AppStorage("retirement.includeInvestmentAccounts") private var includeInvestmentAccounts = true
-    @AppStorage("retirement.includeSavingsAccounts") private var includeSavingsAccounts = false
-    @AppStorage("retirement.includeOtherPositiveAccounts") private var includeOtherPositiveAccounts = false
-
-    @AppStorage("retirement.useSpendingFromTransactions") private var useSpendingFromTransactions = true
-    @AppStorage("retirement.spendingMonthlyOverride") private var spendingMonthlyOverrideText = ""
-
-    @AppStorage("retirement.useInferredContributions") private var useInferredContributions = true
-    @AppStorage("retirement.monthlyContributionOverride") private var monthlyContributionOverrideText = ""
-
-    @AppStorage("retirement.externalAssets") private var externalAssetsText = ""
-    @AppStorage("retirement.otherIncomeMonthly") private var otherIncomeMonthlyText = ""
-
-    @AppStorage("retirement.useManualTarget") private var useManualTarget = false
-    @AppStorage("retirement.manualTarget") private var manualTargetText = ""
-
-    @AppStorage("retirement.safeWithdrawalRate") private var safeWithdrawalRate = 0.04
-    @AppStorage("retirement.realReturn") private var realReturn = 0.05
-
-    @AppStorage("retirement.showAdvanced") private var showAdvanced = false
 
     @State private var showingAssumptionsHelp = false
     @State private var showingPlanSettings = false
@@ -80,7 +56,7 @@ struct RetirementView: View {
     }
 
     private var scenario: RetirementScenario {
-        RetirementScenario(rawValue: scenarioRawValue) ?? .yourPlan
+        RetirementScenario(rawValue: settings.retirementScenario) ?? .yourPlan
     }
 
     init(topChrome: (() -> AnyView)? = nil) {
@@ -105,7 +81,7 @@ struct RetirementView: View {
     }
 
 	    var body: some View {
-	        let showOnlyEmptyState = !isConfigured || transactions.isEmpty
+	        let showOnlyEmptyState = !settings.retirementIsConfigured || transactions.isEmpty
 	        Group {
             if showOnlyEmptyState {
                 List {
@@ -113,7 +89,7 @@ struct RetirementView: View {
                         AppChromeListRow(topChrome: topChrome, scrollID: "RetirementView.scroll")
                     }
 
-	                    if isConfigured {
+	                    if settings.retirementIsConfigured {
 	                        noTransactionDataCard
 	                            .listRowInsets(EdgeInsets())
 	                            .listRowSeparator(.hidden)
@@ -159,17 +135,16 @@ struct RetirementView: View {
                         showingAssumptionsHelp = true
                     }
 
-                    if isConfigured {
+                    if settings.retirementIsConfigured {
                         Divider()
                         Button("Delete Plan", systemImage: "trash", role: .destructive) {
                             showingDeletePlanConfirm = true
                         }
                     }
                 } label: {
-                    Image(systemName: "ellipsis")
-                        .imageScale(.large)
+                    Image(systemName: "ellipsis").appEllipsisIcon()
                 }
-                .tint(.black)
+                .tint(.primary)
                 .accessibilityLabel("Retirement Menu")
                 .accessibilityIdentifier("retirement.menu")
             }
@@ -189,18 +164,18 @@ struct RetirementView: View {
         }
         .sheet(isPresented: $showingAssumptionsHelp) {
             RetirementAssumptionsHelpView(
-                safeWithdrawalRate: safeWithdrawalRate,
-                realReturn: realReturn
+                safeWithdrawalRate: settings.retirementSafeWithdrawalRate,
+                realReturn: settings.retirementRealReturn
             )
         }
         .onAppear {
             normalizeAgesIfNeeded()
             inferConfiguredIfNeeded()
         }
-        .onChange(of: currentAge) { _, _ in
+        .onChange(of: settings.retirementCurrentAge) { _, _ in
             normalizeAgesIfNeeded()
         }
-        .onChange(of: targetAge) { _, _ in
+        .onChange(of: settings.retirementTargetAge) { _, _ in
             normalizeAgesIfNeeded()
         }
         .task(id: derivedComputationKey) {
@@ -234,29 +209,29 @@ struct RetirementView: View {
             defaults.removeObject(forKey: key)
         }
 
-        scenarioRawValue = RetirementScenario.yourPlan.rawValue
-        currentAge = 30
-        targetAge = 65
-        includeInvestmentAccounts = true
-        includeSavingsAccounts = false
-        includeOtherPositiveAccounts = false
+        settings.retirementScenario = RetirementScenario.yourPlan.rawValue
+        settings.retirementCurrentAge = 30
+        settings.retirementTargetAge = 65
+        settings.retirementIncludeInvestmentAccounts = true
+        settings.retirementIncludeSavingsAccounts = false
+        settings.retirementIncludeOtherPositiveAccounts = false
 
-        useSpendingFromTransactions = true
-        spendingMonthlyOverrideText = ""
+        settings.retirementUseSpendingFromTransactions = true
+        settings.retirementSpendingMonthlyOverride = ""
 
-        useInferredContributions = true
-        monthlyContributionOverrideText = ""
+        settings.retirementUseInferredContributions = true
+        settings.retirementMonthlyContributionOverride = ""
 
-        externalAssetsText = ""
-        otherIncomeMonthlyText = ""
+        settings.retirementExternalAssets = ""
+        settings.retirementOtherIncomeMonthly = ""
 
-        useManualTarget = false
-        manualTargetText = ""
+        settings.retirementUseManualTarget = false
+        settings.retirementManualTarget = ""
 
-        safeWithdrawalRate = 0.04
-        realReturn = 0.05
+        settings.retirementSafeWithdrawalRate = 0.04
+        settings.retirementRealReturn = 0.05
 
-        showAdvanced = false
+        settings.retirementShowAdvanced = false
 
         derivedCashflow = .init(income: 0, spending: 0)
         derivedStandardCount = 0
@@ -264,7 +239,7 @@ struct RetirementView: View {
         derivedInferredMonthlyContribution = nil
         isComputingDerived = false
 
-        isConfigured = false
+        settings.retirementIsConfigured = false
     }
 
     // MARK: - Data Selection
@@ -275,11 +250,11 @@ struct RetirementView: View {
 
             switch account.type {
             case .investment:
-                return includeInvestmentAccounts
+                return settings.retirementIncludeInvestmentAccounts
             case .savings:
-                return includeSavingsAccounts
+                return settings.retirementIncludeSavingsAccounts
             case .chequing, .creditCard, .lineOfCredit, .mortgage, .loans, .other:
-                return includeOtherPositiveAccounts
+                return settings.retirementIncludeOtherPositiveAccounts
             }
         }
     }
@@ -289,7 +264,7 @@ struct RetirementView: View {
     }
 
     private var externalAssets: Decimal {
-        parseAmount(externalAssetsText) ?? 0
+        parseAmount(settings.retirementExternalAssets) ?? 0
     }
 
     private var currentPortfolio: Decimal {
@@ -297,7 +272,7 @@ struct RetirementView: View {
     }
 
     private var otherIncomeMonthly: Decimal {
-        max(0, parseAmount(otherIncomeMonthlyText) ?? 0)
+        max(0, parseAmount(settings.retirementOtherIncomeMonthly) ?? 0)
     }
 
     private var otherIncomeAnnual: Decimal {
@@ -325,11 +300,11 @@ struct RetirementView: View {
     }
 
     private var spendingGoalMonthly: Decimal {
-        if useSpendingFromTransactions {
+        if settings.retirementUseSpendingFromTransactions {
             return inferredMonthlySpending ?? 0
         }
 
-        if let override = parseAmount(spendingMonthlyOverrideText), override > 0 {
+        if let override = parseAmount(settings.retirementSpendingMonthlyOverride), override > 0 {
             return override
         }
 
@@ -345,7 +320,7 @@ struct RetirementView: View {
     }
 
     private var requiredPortfolio: Decimal {
-        if useManualTarget, let manual = parseAmount(manualTargetText), manual > 0 {
+        if settings.retirementUseManualTarget, let manual = parseAmount(settings.retirementManualTarget), manual > 0 {
             return manual
         }
 
@@ -354,7 +329,7 @@ struct RetirementView: View {
     }
 
     private var yearsToRetirement: Int {
-        max(0, targetAge - currentAge)
+        max(0, settings.retirementTargetAge - settings.retirementCurrentAge)
     }
 
     private var monthsToRetirement: Int {
@@ -370,11 +345,11 @@ struct RetirementView: View {
     }
 
     private var monthlyContribution: Decimal {
-        if useInferredContributions {
+        if settings.retirementUseInferredContributions {
             return inferredMonthlyContribution ?? 0
         }
 
-        if let override = parseAmount(monthlyContributionOverrideText), override > 0 {
+        if let override = parseAmount(settings.retirementMonthlyContributionOverride), override > 0 {
             return override
         }
 
@@ -416,8 +391,8 @@ struct RetirementView: View {
     }
 
     private var status: RetirementStatus {
-        guard isConfigured else { return .noPlan }
-        guard targetAge > currentAge else { return .noPlan }
+        guard settings.retirementIsConfigured else { return .noPlan }
+        guard settings.retirementTargetAge > settings.retirementCurrentAge else { return .noPlan }
         guard requiredPortfolio > 0 else { return .noPlan }
 
         let ratio = projectedPortfolioAtRetirement.doubleValue / requiredPortfolio.doubleValue
@@ -439,7 +414,7 @@ struct RetirementView: View {
 
     private var projectionSeries: [RetirementProjectionPoint] {
         guard yearsToRetirement > 0 else {
-            return [RetirementProjectionPoint(age: currentAge, value: currentPortfolio.doubleValue)]
+            return [RetirementProjectionPoint(age: settings.retirementCurrentAge, value: currentPortfolio.doubleValue)]
         }
 
         return (0...yearsToRetirement).map { yearOffset in
@@ -450,7 +425,7 @@ struct RetirementView: View {
                 monthlyReturn: monthlyRealReturn,
                 months: months
             )
-            return RetirementProjectionPoint(age: currentAge + yearOffset, value: value)
+            return RetirementProjectionPoint(age: settings.retirementCurrentAge + yearOffset, value: value)
         }
     }
 
@@ -467,7 +442,7 @@ struct RetirementView: View {
 
     private var estimatedRetirementAgeAtGoal: Int? {
         guard let monthsToReachGoal else { return nil }
-        return currentAge + (monthsToReachGoal / 12)
+        return settings.retirementCurrentAge + (monthsToReachGoal / 12)
     }
 
     private var recommendedMonthlyContribution: Decimal? {
@@ -490,11 +465,11 @@ struct RetirementView: View {
     }
 
     private var activeRealReturn: Double {
-        scenario.presetRealReturn ?? realReturn
+        scenario.presetRealReturn ?? settings.retirementRealReturn
     }
 
     private var activeSafeWithdrawalRate: Double {
-        scenario.presetSafeWithdrawalRate ?? safeWithdrawalRate
+        scenario.presetSafeWithdrawalRate ?? settings.retirementSafeWithdrawalRate
     }
 
     private var isPreviewingScenarioPreset: Bool {
@@ -574,7 +549,7 @@ struct RetirementView: View {
 	                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                             Text("Your Number")
                                 .appSectionTitleText()
-                            Text(requiredPortfolio, format: .currency(code: currencyCode))
+                            Text(requiredPortfolio, format: .currency(code: settings.currencyCode))
                                 .appDisplayText(AppDesign.Theme.DisplaySize.xxLarge, weight: .bold)
                                 .monospacedDigit()
                                 .lineLimit(1)
@@ -602,7 +577,7 @@ struct RetirementView: View {
                             tint: statusTint
                         )
                         RetirementMetricTile(
-                            title: "At \(targetAge)",
+                            title: "At \(settings.retirementTargetAge)",
                             value: compactCurrency(projectedPortfolioAtRetirement),
                             subtitle: "Projected",
                             tint: statusTint
@@ -622,10 +597,10 @@ struct RetirementView: View {
                     NavigationLink {
                         RetirementAccountsDetailView(
                             accounts: accounts,
-                            currencyCode: currencyCode,
-                            includeInvestmentAccounts: includeInvestmentAccounts,
-                            includeSavingsAccounts: includeSavingsAccounts,
-                            includeOtherPositiveAccounts: includeOtherPositiveAccounts,
+                            currencyCode: settings.currencyCode,
+                            includeInvestmentAccounts: settings.retirementIncludeInvestmentAccounts,
+                            includeSavingsAccounts: settings.retirementIncludeSavingsAccounts,
+                            includeOtherPositiveAccounts: settings.retirementIncludeOtherPositiveAccounts,
                             externalAssets: externalAssets
                         )
                     } label: {
@@ -646,7 +621,8 @@ struct RetirementView: View {
     }
 
     private var projectionCard: some View {
-	        RetirementCard {
+        @Bindable var settings = settings
+        return RetirementCard {
 	            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
 	                HStack {
 	                    Text("Projection")
@@ -658,7 +634,7 @@ struct RetirementView: View {
                 }
 
                 VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
-                    Picker("Scenario", selection: $scenarioRawValue) {
+                    Picker("Scenario", selection: $settings.retirementScenario) {
                         ForEach(RetirementScenario.allCases) { item in
                             Text(item.rawValue).tag(item.rawValue)
                         }
@@ -673,13 +649,13 @@ struct RetirementView: View {
                             Spacer()
                             Button("Apply to Plan") {
                                 if let presetReturn = scenario.presetRealReturn {
-                                    realReturn = presetReturn
+                                    settings.retirementRealReturn = presetReturn
                                 }
                                 if let presetSWR = scenario.presetSafeWithdrawalRate {
-                                    safeWithdrawalRate = presetSWR
+                                    settings.retirementSafeWithdrawalRate = presetSWR
                                 }
-                                scenarioRawValue = RetirementScenario.yourPlan.rawValue
-                                isConfigured = true
+                                settings.retirementScenario = RetirementScenario.yourPlan.rawValue
+                                settings.retirementIsConfigured = true
                             }
                             .appCaptionStrongText()
                             .appSecondaryCTA()
@@ -799,13 +775,13 @@ struct RetirementView: View {
 
                 RetirementActionCard(
                     title: "Increase contributions",
-                    subtitle: "To reach your target by age \(targetAge), aim for about \(formatCurrency(recommendedMonthlyContribution))/mo.",
+                    subtitle: "To reach your target by age \(settings.retirementTargetAge), aim for about \(formatCurrency(recommendedMonthlyContribution))/mo.",
                     detail: delta > 0 ? "That’s \(formatCurrency(delta))/mo more than your current pace." : nil,
                     tint: AppDesign.Colors.tint(for: appColorMode),
                     primaryButtonTitle: "Use \(formatCurrency(recommendedMonthlyContribution))/mo",
                     primaryAction: {
-                        useInferredContributions = false
-                        monthlyContributionOverrideText = plainAmountString(recommendedMonthlyContribution)
+                        settings.retirementUseInferredContributions = false
+                        settings.retirementMonthlyContributionOverride = plainAmountString(recommendedMonthlyContribution)
                     }
                 )
             } else if status == .onTrack || status == .ahead {
@@ -825,8 +801,8 @@ struct RetirementView: View {
                     tint: AppDesign.Colors.warning(for: appColorMode),
                     primaryButtonTitle: "Use \(formatCurrency(sustainable))/mo",
                     primaryAction: {
-                        useSpendingFromTransactions = false
-                        spendingMonthlyOverrideText = plainAmountString(sustainable)
+                        settings.retirementUseSpendingFromTransactions = false
+                        settings.retirementSpendingMonthlyOverride = plainAmountString(sustainable)
                     }
                 )
             }
@@ -854,8 +830,8 @@ struct RetirementView: View {
 	                    Text("Plan Settings")
 	                        .appSectionTitleText()
 	                    Spacer()
-	                    Button(showAdvanced ? "Less" : "More") {
-	                        withAnimation(.snappy) { showAdvanced.toggle() }
+	                    Button(settings.retirementShowAdvanced ? "Less" : "More") {
+	                        withAnimation(.snappy) { settings.retirementShowAdvanced.toggle() }
                     }
                     .appCaptionStrongText()
                     .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
@@ -874,7 +850,7 @@ struct RetirementView: View {
 
                 contributionControls
 
-                if showAdvanced {
+                if settings.retirementShowAdvanced {
                     Divider()
                     advancedControls
                 }
@@ -890,11 +866,11 @@ struct RetirementView: View {
 
                 RetirementKeyValueRow(
                     title: "Spending source",
-                    value: useSpendingFromTransactions ? "Last \(windowMonths) months average" : "Manual goal"
+                    value: settings.retirementUseSpendingFromTransactions ? "Last \(windowMonths) months average" : "Manual goal"
                 )
                 RetirementKeyValueRow(
                     title: "Contribution source",
-                    value: useInferredContributions ? "Estimated from activity" : "Manual goal"
+                    value: settings.retirementUseInferredContributions ? "Estimated from activity" : "Manual goal"
                 )
                 RetirementKeyValueRow(
                     title: "Accounts included",
@@ -914,68 +890,70 @@ struct RetirementView: View {
 	                HStack {
                     Text("Current age")
 	                    Spacer()
-	                    Text("\(currentAge)")
+	                    Text("\(settings.retirementCurrentAge)")
 	                        .appSecondaryBodyText()
 	                        .fontWeight(.semibold)
 	                }
 	            } onIncrement: {
-	                currentAge = min(currentAge + 1, 80)
+	                settings.retirementCurrentAge = min(settings.retirementCurrentAge + 1, 80)
 	            } onDecrement: {
-                currentAge = max(currentAge - 1, 18)
+                settings.retirementCurrentAge = max(settings.retirementCurrentAge - 1, 18)
             }
 
             Stepper {
                 HStack {
                     Text("Retire at")
 	                    Spacer()
-	                    Text("\(targetAge)")
+	                    Text("\(settings.retirementTargetAge)")
 	                        .appSecondaryBodyText()
 	                        .fontWeight(.semibold)
 	                }
 	            } onIncrement: {
-	                targetAge = min(targetAge + 1, 80)
+	                settings.retirementTargetAge = min(settings.retirementTargetAge + 1, 80)
 	            } onDecrement: {
-                targetAge = max(targetAge - 1, 18)
+                settings.retirementTargetAge = max(settings.retirementTargetAge - 1, 18)
             }
 	        }
 	        .font(AppDesign.Theme.Typography.secondaryBody)
 	    }
 
 	    private var accountInclusionToggles: some View {
-	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
+	        @Bindable var settings = settings
+	        return VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
 	            Text("Include accounts")
 	                .appSecondaryBodyText()
 	                .fontWeight(.semibold)
 
-            Toggle("Investment", isOn: $includeInvestmentAccounts)
-            Toggle("Savings", isOn: $includeSavingsAccounts)
-            Toggle("Other positive balances", isOn: $includeOtherPositiveAccounts)
+            Toggle("Investment", isOn: $settings.retirementIncludeInvestmentAccounts)
+            Toggle("Savings", isOn: $settings.retirementIncludeSavingsAccounts)
+            Toggle("Other positive balances", isOn: $settings.retirementIncludeOtherPositiveAccounts)
 	        }
 	        .font(AppDesign.Theme.Typography.secondaryBody)
 	    }
 
 	    private var spendGoalControls: some View {
-	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
+	        @Bindable var settings = settings
+	        return VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
 	            Text("Retirement spending goal")
 	                .appSecondaryBodyText()
 	                .fontWeight(.semibold)
 
             Picker("Spending goal", selection: Binding(
-                get: { useSpendingFromTransactions ? 0 : 1 },
-                set: { useSpendingFromTransactions = ($0 == 0) }
+                get: { settings.retirementUseSpendingFromTransactions ? 0 : 1 },
+                set: { settings.retirementUseSpendingFromTransactions = ($0 == 0) }
             )) {
                 Text("Auto").tag(0)
                 Text("Manual").tag(1)
             }
             .pickerStyle(.segmented)
 
-	            if useSpendingFromTransactions {
+	            if settings.retirementUseSpendingFromTransactions {
 	                Text("Estimated at \(formatCurrency(spendingGoalMonthly))/mo from your last \(windowMonths) months of spending.")
 	                    .appCaptionText()
 	                    .foregroundStyle(.secondary)
 	            } else {
                 HStack(spacing: AppDesign.Theme.Spacing.small) {
-                    TextField("Monthly spend", text: $spendingMonthlyOverrideText)
+                    TextField("Monthly spend", text: $settings.retirementSpendingMonthlyOverride)
                         .keyboardType(.decimalPad)
                     Text("/mo")
                         .appCaptionText()
@@ -987,27 +965,28 @@ struct RetirementView: View {
 	    }
 
 	    private var contributionControls: some View {
-	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
+	        @Bindable var settings = settings
+	        return VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
 	            Text("Monthly contributions")
 	                .appSecondaryBodyText()
 	                .fontWeight(.semibold)
 
             Picker("Contribution goal", selection: Binding(
-                get: { useInferredContributions ? 0 : 1 },
-                set: { useInferredContributions = ($0 == 0) }
+                get: { settings.retirementUseInferredContributions ? 0 : 1 },
+                set: { settings.retirementUseInferredContributions = ($0 == 0) }
             )) {
                 Text("Auto").tag(0)
                 Text("Manual").tag(1)
             }
             .pickerStyle(.segmented)
 
-	            if useInferredContributions {
+	            if settings.retirementUseInferredContributions {
 	                Text("Estimated at \(formatCurrency(monthlyContribution))/mo from transfers into included accounts.")
 	                    .appCaptionText()
 	                    .foregroundStyle(.secondary)
 	            } else {
                 HStack(spacing: AppDesign.Theme.Spacing.small) {
-                    TextField("Monthly contribution", text: $monthlyContributionOverrideText)
+                    TextField("Monthly contribution", text: $settings.retirementMonthlyContributionOverride)
                         .keyboardType(.decimalPad)
                     Text("/mo")
                         .appCaptionText()
@@ -1019,7 +998,8 @@ struct RetirementView: View {
 	    }
 
 	    private var advancedControls: some View {
-	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
+	        @Bindable var settings = settings
+	        return VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
 	            Text("Advanced assumptions")
 	                .appSecondaryBodyText()
 	                .fontWeight(.semibold)
@@ -1028,11 +1008,11 @@ struct RetirementView: View {
 	                HStack {
 	                    Text("Safe withdrawal rate")
 	                    Spacer()
-	                    Text("\(String(format: "%.1f", safeWithdrawalRate * 100))%")
+	                    Text("\(String(format: "%.1f", settings.retirementSafeWithdrawalRate * 100))%")
 	                        .appSecondaryBodyText()
 	                        .fontWeight(.semibold)
 	                }
-                Slider(value: $safeWithdrawalRate, in: 0.025...0.05, step: 0.001)
+                Slider(value: $settings.retirementSafeWithdrawalRate, in: 0.025...0.05, step: 0.001)
                     .tint(AppDesign.Colors.warning(for: appColorMode))
             }
 
@@ -1040,20 +1020,20 @@ struct RetirementView: View {
 	                HStack {
 	                    Text("Real return (after inflation)")
 	                    Spacer()
-	                    Text("\(Int(realReturn * 100))%")
+	                    Text("\(Int(settings.retirementRealReturn * 100))%")
 	                        .appSecondaryBodyText()
 	                        .fontWeight(.semibold)
 	                }
-                Slider(value: $realReturn, in: 0.00...0.08, step: 0.0025)
+                Slider(value: $settings.retirementRealReturn, in: 0.00...0.08, step: 0.0025)
                     .tint(AppDesign.Colors.tint(for: appColorMode))
             }
 
 	            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
-	                Toggle("Set my own target", isOn: $useManualTarget)
+	                Toggle("Set my own target", isOn: $settings.retirementUseManualTarget)
 	                    .font(AppDesign.Theme.Typography.secondaryBody)
 
-	                if useManualTarget {
-	                    TextField("Target portfolio", text: $manualTargetText)
+	                if settings.retirementUseManualTarget {
+	                    TextField("Target portfolio", text: $settings.retirementManualTarget)
 	                        .keyboardType(.decimalPad)
 	                        .font(AppDesign.Theme.Typography.secondaryBody)
 	                } else {
@@ -1068,7 +1048,7 @@ struct RetirementView: View {
                     .appCaptionText()
                     .foregroundStyle(.secondary)
 	                HStack(spacing: AppDesign.Theme.Spacing.small) {
-	                    TextField("Monthly pension/SS", text: $otherIncomeMonthlyText)
+	                    TextField("Monthly pension/SS", text: $settings.retirementOtherIncomeMonthly)
 	                        .keyboardType(.decimalPad)
 	                    Text("/mo")
 	                        .appCaptionText()
@@ -1081,7 +1061,7 @@ struct RetirementView: View {
 	                Text("External retirement assets (optional)")
 	                    .appCaptionText()
 	                    .foregroundStyle(.secondary)
-	                TextField("Other accounts", text: $externalAssetsText)
+	                TextField("Other accounts", text: $settings.retirementExternalAssets)
 	                    .keyboardType(.decimalPad)
 	                    .font(AppDesign.Theme.Typography.secondaryBody)
 	            }
@@ -1103,28 +1083,28 @@ struct RetirementView: View {
     }
 
     private func normalizeAgesIfNeeded() {
-        currentAge = min(max(currentAge, 18), 80)
-        targetAge = min(max(targetAge, currentAge + 1), 80)
+        settings.retirementCurrentAge = min(max(settings.retirementCurrentAge, 18), 80)
+        settings.retirementTargetAge = min(max(settings.retirementTargetAge, settings.retirementCurrentAge + 1), 80)
     }
 
     private var derivedComputationKey: String {
         let newest = transactions.first?.date.timeIntervalSince1970 ?? 0
         let oldest = transactions.last?.date.timeIntervalSince1970 ?? 0
         return [
-            isConfigured ? "1" : "0",
+            settings.retirementIsConfigured ? "1" : "0",
             "\(transactions.count)",
             "\(newest)",
             "\(oldest)",
             "\(includedAccountIDs.count)",
-            includeInvestmentAccounts ? "1" : "0",
-            includeSavingsAccounts ? "1" : "0",
-            includeOtherPositiveAccounts ? "1" : "0"
+            settings.retirementIncludeInvestmentAccounts ? "1" : "0",
+            settings.retirementIncludeSavingsAccounts ? "1" : "0",
+            settings.retirementIncludeOtherPositiveAccounts ? "1" : "0"
         ].joined(separator: "|")
     }
 
     @MainActor
     private func recomputeDerived() async {
-        guard isConfigured else {
+        guard settings.retirementIsConfigured else {
             derivedCashflow = .init(income: 0, spending: 0)
             derivedStandardCount = 0
             derivedInferredMonthlySpending = nil
@@ -1212,7 +1192,7 @@ struct RetirementView: View {
     }
 
     private func inferConfiguredIfNeeded() {
-        guard !isConfigured else { return }
+        guard !settings.retirementIsConfigured else { return }
         let defaults = UserDefaults.standard
         // Infer configuration only if the user has changed something away from defaults.
         // This avoids "Delete Plan" immediately being re-inferred as configured just because keys exist.
@@ -1240,7 +1220,7 @@ struct RetirementView: View {
             (double("retirement.realReturn").map { abs($0 - 0.05) > 0.000_000_1 } ?? false)
 
         if changed {
-            isConfigured = true
+            settings.retirementIsConfigured = true
         }
     }
 
@@ -1254,7 +1234,7 @@ struct RetirementView: View {
     private var projectionBandSeries: [RetirementProjectionBandPoint] {
         guard yearsToRetirement > 0 else {
             let v = currentPortfolio.doubleValue
-            return [RetirementProjectionBandPoint(age: currentAge, low: v, high: v)]
+            return [RetirementProjectionBandPoint(age: settings.retirementCurrentAge, low: v, high: v)]
         }
 
         let lowerAnnual = max(-0.95, activeRealReturn - 0.02)
@@ -1277,7 +1257,7 @@ struct RetirementView: View {
                 months: months
             )
             return RetirementProjectionBandPoint(
-                age: currentAge + yearOffset,
+                age: settings.retirementCurrentAge + yearOffset,
                 low: min(low, high),
                 high: max(low, high)
             )
@@ -1301,16 +1281,16 @@ struct RetirementView: View {
     }
 
     private func formatCurrency(_ value: Decimal) -> String {
-        value.formatted(.currency(code: currencyCode).precision(.fractionLength(0...0)))
+        value.formatted(.currency(code: settings.currencyCode).precision(.fractionLength(0...0)))
     }
 
     private func compactCurrency(_ value: Decimal) -> String {
         let currencySymbol: String = {
             let formatter = NumberFormatter()
             formatter.numberStyle = .currency
-            formatter.currencyCode = currencyCode
+            formatter.currencyCode = settings.currencyCode
             formatter.maximumFractionDigits = 0
-            return formatter.currencySymbol ?? currencyCode
+            return formatter.currencySymbol ?? settings.currencyCode
         }()
 
         let doubleValue = value.doubleValue
@@ -1337,96 +1317,75 @@ struct RetirementView: View {
 
 private struct RetirementPlanSettingsView: View {
     @Environment(\.dismiss) private var dismiss
-
-    @AppStorage("retirement.isConfigured") private var isConfigured = false
-
-    @AppStorage("retirement.currentAge") private var currentAge: Int = 30
-    @AppStorage("retirement.targetAge") private var targetAge: Int = 65
-    @AppStorage("retirement.includeInvestmentAccounts") private var includeInvestmentAccounts = true
-    @AppStorage("retirement.includeSavingsAccounts") private var includeSavingsAccounts = false
-    @AppStorage("retirement.includeOtherPositiveAccounts") private var includeOtherPositiveAccounts = false
-
-    @AppStorage("retirement.useSpendingFromTransactions") private var useSpendingFromTransactions = true
-    @AppStorage("retirement.spendingMonthlyOverride") private var spendingMonthlyOverrideText = ""
-
-    @AppStorage("retirement.useInferredContributions") private var useInferredContributions = true
-    @AppStorage("retirement.monthlyContributionOverride") private var monthlyContributionOverrideText = ""
-
-    @AppStorage("retirement.externalAssets") private var externalAssetsText = ""
-    @AppStorage("retirement.otherIncomeMonthly") private var otherIncomeMonthlyText = ""
-
-    @AppStorage("retirement.useManualTarget") private var useManualTarget = false
-    @AppStorage("retirement.manualTarget") private var manualTargetText = ""
-
-    @AppStorage("retirement.safeWithdrawalRate") private var safeWithdrawalRate = 0.04
-    @AppStorage("retirement.realReturn") private var realReturn = 0.05
+    @Environment(\.appSettings) private var settings
 
     @State private var showAdvanced = false
 
     var body: some View {
-        Form {
+        @Bindable var settings = settings
+        return Form {
             Section("Ages") {
                 Stepper {
                     HStack {
                         Text("Current age")
                         Spacer()
-                        Text("\(currentAge)")
+                        Text("\(settings.retirementCurrentAge)")
                             .appSecondaryBodyStrongText()
                     }
                 } onIncrement: {
-                    currentAge = min(currentAge + 1, 80)
+                    settings.retirementCurrentAge = min(settings.retirementCurrentAge + 1, 80)
                 } onDecrement: {
-                    currentAge = max(currentAge - 1, 18)
+                    settings.retirementCurrentAge = max(settings.retirementCurrentAge - 1, 18)
                 }
 
                 Stepper {
                     HStack {
                         Text("Retire at")
                         Spacer()
-                        Text("\(targetAge)")
+                        Text("\(settings.retirementTargetAge)")
                             .appSecondaryBodyStrongText()
                     }
                 } onIncrement: {
-                    targetAge = min(targetAge + 1, 80)
+                    settings.retirementTargetAge = min(settings.retirementTargetAge + 1, 80)
                 } onDecrement: {
-                    targetAge = max(targetAge - 1, 18)
+                    settings.retirementTargetAge = max(settings.retirementTargetAge - 1, 18)
                 }
             }
 
             Section("Accounts Included") {
-                Toggle("Investment", isOn: $includeInvestmentAccounts)
-                Toggle("Savings", isOn: $includeSavingsAccounts)
-                Toggle("Other positive balances", isOn: $includeOtherPositiveAccounts)
+                Toggle("Investment", isOn: $settings.retirementIncludeInvestmentAccounts)
+                Toggle("Savings", isOn: $settings.retirementIncludeSavingsAccounts)
+                Toggle("Other positive balances", isOn: $settings.retirementIncludeOtherPositiveAccounts)
             }
 
             Section("Spending Goal") {
                 Picker("Spending goal", selection: Binding(
-                    get: { useSpendingFromTransactions ? 0 : 1 },
-                    set: { useSpendingFromTransactions = ($0 == 0) }
+                    get: { settings.retirementUseSpendingFromTransactions ? 0 : 1 },
+                    set: { settings.retirementUseSpendingFromTransactions = ($0 == 0) }
                 )) {
                     Text("Auto").tag(0)
                     Text("Manual").tag(1)
                 }
                 .pickerStyle(.segmented)
 
-                if !useSpendingFromTransactions {
-                    TextField("Monthly spend", text: $spendingMonthlyOverrideText)
+                if !settings.retirementUseSpendingFromTransactions {
+                    TextField("Monthly spend", text: $settings.retirementSpendingMonthlyOverride)
                         .keyboardType(.decimalPad)
                 }
             }
 
             Section("Contributions") {
                 Picker("Contribution goal", selection: Binding(
-                    get: { useInferredContributions ? 0 : 1 },
-                    set: { useInferredContributions = ($0 == 0) }
+                    get: { settings.retirementUseInferredContributions ? 0 : 1 },
+                    set: { settings.retirementUseInferredContributions = ($0 == 0) }
                 )) {
                     Text("Auto").tag(0)
                     Text("Manual").tag(1)
                 }
                 .pickerStyle(.segmented)
 
-                if !useInferredContributions {
-                    TextField("Monthly contribution", text: $monthlyContributionOverrideText)
+                if !settings.retirementUseInferredContributions {
+                    TextField("Monthly contribution", text: $settings.retirementMonthlyContributionOverride)
                         .keyboardType(.decimalPad)
                 }
             }
@@ -1440,29 +1399,29 @@ private struct RetirementPlanSettingsView: View {
                     HStack {
                         Text("Safe withdrawal rate")
                         Spacer()
-                        Text("\(String(format: "%.1f", safeWithdrawalRate * 100))%")
+                        Text("\(String(format: "%.1f", settings.retirementSafeWithdrawalRate * 100))%")
                             .appSecondaryBodyStrongText()
                     }
-                    Slider(value: $safeWithdrawalRate, in: 0.025...0.05, step: 0.001)
+                    Slider(value: $settings.retirementSafeWithdrawalRate, in: 0.025...0.05, step: 0.001)
 
                     HStack {
                         Text("Real return (after inflation)")
                         Spacer()
-                        Text("\(Int(realReturn * 100))%")
+                        Text("\(Int(settings.retirementRealReturn * 100))%")
                             .appSecondaryBodyStrongText()
                     }
-                    Slider(value: $realReturn, in: 0.00...0.08, step: 0.0025)
+                    Slider(value: $settings.retirementRealReturn, in: 0.00...0.08, step: 0.0025)
 
-                    Toggle("Set my own target", isOn: $useManualTarget)
-                    if useManualTarget {
-                        TextField("Target portfolio", text: $manualTargetText)
+                    Toggle("Set my own target", isOn: $settings.retirementUseManualTarget)
+                    if settings.retirementUseManualTarget {
+                        TextField("Target portfolio", text: $settings.retirementManualTarget)
                             .keyboardType(.decimalPad)
                     }
 
-                    TextField("Other income at retirement (monthly)", text: $otherIncomeMonthlyText)
+                    TextField("Other income at retirement (monthly)", text: $settings.retirementOtherIncomeMonthly)
                         .keyboardType(.decimalPad)
 
-                    TextField("External retirement assets", text: $externalAssetsText)
+                    TextField("External retirement assets", text: $settings.retirementExternalAssets)
                         .keyboardType(.decimalPad)
                 }
             }
@@ -1476,7 +1435,7 @@ private struct RetirementPlanSettingsView: View {
             }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Done") {
-                    isConfigured = true
+                    settings.retirementIsConfigured = true
                     dismiss()
                 }
             }

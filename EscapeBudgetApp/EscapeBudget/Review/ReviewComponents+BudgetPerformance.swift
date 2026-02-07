@@ -3,8 +3,11 @@ import SwiftData
 import Charts
 
 struct BudgetPerformanceView: View {
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Query private var categoryGroups: [CategoryGroup]
+
+    @Environment(\.appSettings) private var appSettings
+        @Query private var categoryGroups: [CategoryGroup]
+    @Query(sort: \SavingsGoal.createdDate, order: .reverse) private var savingsGoals: [SavingsGoal]
+    @Query(sort: \MonthlyCategoryBudget.monthStart, order: .reverse) private var monthlyCategoryBudgets: [MonthlyCategoryBudget]
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
 
@@ -18,10 +21,12 @@ struct BudgetPerformanceView: View {
     @State private var standardTransactions: [Transaction] = []
     @State private var netByCategoryID: [PersistentIdentifier: Decimal] = [:]
     @State private var transactionsByCategoryID: [PersistentIdentifier: [Transaction]] = [:]
+	@State private var budgetCalculator = CategoryBudgetCalculator(transactions: [], monthlyBudgets: [])
 
     private var cacheTaskID: BudgetPerformanceCacheTaskID {
         BudgetPerformanceCacheTaskID(
             transactionsCount: standardTransactions.count,
+            budgetsCount: monthlyCategoryBudgets.count,
             dataChangeToken: DataChangeTracker.token,
             start: dateRangeDates.0,
             end: dateRangeDates.1
@@ -68,10 +73,15 @@ struct BudgetPerformanceView: View {
         }
     }
     
-    private func activityFor(category: Category) -> Decimal {
-        let net = netByCategoryID[category.persistentModelID] ?? 0
-        return max(Decimal.zero, -net)
-    }
+	private func activityFor(category: Category) -> Decimal {
+	    let net = netByCategoryID[category.persistentModelID] ?? 0
+	    return max(Decimal.zero, -net)
+	}
+
+	private func effectiveLimitForPeriod(category: Category) -> Decimal {
+	    let summary = budgetCalculator.periodSummary(for: category, start: dateRangeDates.0, end: dateRangeDates.1)
+	    return max(0, summary.effectiveLimitForPeriod)
+	}
 
     private func transactionsFor(category: Category) -> [Transaction] {
         transactionsByCategoryID[category.persistentModelID] ?? []
@@ -80,9 +90,12 @@ struct BudgetPerformanceView: View {
     private func recomputeCategoryCaches() {
         var netTotals: [PersistentIdentifier: Decimal] = [:]
         var transactionsByCategory: [PersistentIdentifier: [Transaction]] = [:]
+        let start = dateRangeDates.0
+        let end = dateRangeDates.1
 
         for transaction in standardTransactions {
             guard transaction.account?.isTrackingOnly != true else { continue }
+            guard transaction.date >= start && transaction.date <= end else { continue }
             guard let category = transaction.category else { continue }
             let categoryID = category.persistentModelID
             netTotals[categoryID, default: 0] += transaction.amount
@@ -91,15 +104,16 @@ struct BudgetPerformanceView: View {
 
         netByCategoryID = netTotals
         transactionsByCategoryID = transactionsByCategory
+		budgetCalculator = CategoryBudgetCalculator(transactions: standardTransactions, monthlyBudgets: monthlyCategoryBudgets)
     }
     
-    private func groupActivity(_ group: CategoryGroup) -> Decimal {
-        group.sortedCategories.reduce(0) { $0 + activityFor(category: $1) }
-    }
-    
-    private func groupAssigned(_ group: CategoryGroup) -> Decimal {
-        group.sortedCategories.reduce(0) { $0 + $1.assigned }
-    }
+	private func groupActivity(_ group: CategoryGroup) -> Decimal {
+	    group.sortedCategories.reduce(0) { $0 + activityFor(category: $1) }
+	}
+	    
+	private func groupAssigned(_ group: CategoryGroup) -> Decimal {
+	    group.sortedCategories.reduce(0) { $0 + effectiveLimitForPeriod(category: $1) }
+	}
 
     private var totalAssigned: Decimal {
         expenseGroups.reduce(0) { $0 + groupAssigned($1) }
@@ -147,7 +161,7 @@ struct BudgetPerformanceView: View {
                     id: "top_over_budget",
                     systemImage: "exclamationmark.triangle.fill",
                     title: "Top over budget",
-                    value: "\(topOverBudgetCategory.category.name) • \(topOverBudgetCategory.overBy.formatted(.currency(code: currencyCode)))",
+                    value: "\(topOverBudgetCategory.category.name) • \(topOverBudgetCategory.overBy.formatted(.currency(code: appSettings.currencyCode)))",
                     tint: AppDesign.Colors.danger(for: appColorMode),
                     action: { categoryToFix = topOverBudgetCategory.category }
                 )
@@ -160,7 +174,7 @@ struct BudgetPerformanceView: View {
                     id: "most_left",
                     systemImage: "chart.pie.fill",
                     title: "Most left",
-                    value: "\(biggestLeftCategory.category.name) • \(biggestLeftCategory.left.formatted(.currency(code: currencyCode)))",
+                    value: "\(biggestLeftCategory.category.name) • \(biggestLeftCategory.left.formatted(.currency(code: appSettings.currencyCode)))",
                     tint: AppDesign.Colors.success(for: appColorMode),
                     action: { categoryToFix = biggestLeftCategory.category }
                 )
@@ -175,8 +189,8 @@ struct BudgetPerformanceView: View {
                     systemImage: delta > 0 ? "chart.line.uptrend.xyaxis" : "chart.line.downtrend.xyaxis",
                     title: "Projection",
                     value: (delta > 0)
-                        ? "Over by \(delta.formatted(.currency(code: currencyCode)))"
-                        : "Left \(abs(delta).formatted(.currency(code: currencyCode)))",
+                        ? "Over by \(delta.formatted(.currency(code: appSettings.currencyCode)))"
+                        : "Left \(abs(delta).formatted(.currency(code: appSettings.currencyCode)))",
                     tint: delta > 0 ? AppDesign.Colors.warning(for: appColorMode) : AppDesign.Colors.success(for: appColorMode),
                     action: nil
                 )
@@ -186,16 +200,16 @@ struct BudgetPerformanceView: View {
         return items
     }
 
-    private var overBudgetCategories: [(category: Category, overBy: Decimal, utilization: Double)] {
-        var items: [(category: Category, overBy: Decimal, utilization: Double)] = []
-        for group in expenseGroups {
-            for category in group.sortedCategories {
-                let assigned = max(0, category.assigned)
-                guard assigned > 0 else { continue }
-                let spent = activityFor(category: category)
-                let over = spent - assigned
-                if over > 0 {
-                    let util = Double(truncating: (spent / assigned) as NSNumber)
+	private var overBudgetCategories: [(category: Category, overBy: Decimal, utilization: Double)] {
+	    var items: [(category: Category, overBy: Decimal, utilization: Double)] = []
+	    for group in expenseGroups {
+	        for category in group.sortedCategories {
+	            let assigned = effectiveLimitForPeriod(category: category)
+	            guard assigned > 0 else { continue }
+	            let spent = activityFor(category: category)
+	            let over = spent - assigned
+	            if over > 0 {
+	                let util = Double(truncating: (spent / assigned) as NSNumber)
                     items.append((category: category, overBy: over, utilization: util))
                 }
             }
@@ -210,16 +224,16 @@ struct BudgetPerformanceView: View {
         overBudgetCategories.first.map { ($0.category, $0.overBy) }
     }
 
-    private var biggestLeftCategory: (category: Category, left: Decimal)? {
-        var best: (Category, Decimal)? = nil
-        for group in expenseGroups {
-            for category in group.sortedCategories {
-                let assigned = max(0, category.assigned)
-                guard assigned > 0 else { continue }
-                let left = assigned - activityFor(category: category)
-                guard left > 0 else { continue }
-                if best == nil || left > (best?.1 ?? 0) {
-                    best = (category, left)
+	private var biggestLeftCategory: (category: Category, left: Decimal)? {
+	    var best: (Category, Decimal)? = nil
+	    for group in expenseGroups {
+	        for category in group.sortedCategories {
+	            let assigned = effectiveLimitForPeriod(category: category)
+	            guard assigned > 0 else { continue }
+	            let left = assigned - activityFor(category: category)
+	            guard left > 0 else { continue }
+	            if best == nil || left > (best?.1 ?? 0) {
+	                best = (category, left)
                 }
             }
         }
@@ -253,18 +267,58 @@ struct BudgetPerformanceView: View {
         hasBudgetGroups && hasBudgetData
     }
 
+    private var savingsGoalRows: [(goal: SavingsGoal, assigned: Decimal, spent: Decimal, available: Decimal)] {
+        savingsGoals.compactMap { goal in
+            guard let category = goal.category else { return nil }
+            let summary = budgetCalculator.periodSummary(for: category, start: dateRangeDates.0, end: dateRangeDates.1)
+            let assigned = summary.budgeted
+            let spent = summary.spent
+            let available = summary.endingAvailable
+            return (goal: goal, assigned: assigned, spent: spent, available: available)
+        }
+    }
+
     var body: some View {
         ScrollView {
             AppChromeStack(topChrome: topChrome, scrollID: "BudgetPerformanceView.scroll") {
                 VStack(spacing: AppDesign.Theme.Spacing.cardGap) {
                     BudgetReviewSectionCard {
                         BudgetReviewSummaryCard(
-                            currencyCode: currencyCode,
+                            currencyCode: appSettings.currencyCode,
                             periodLabel: budgetPeriodLabel,
                             assigned: totalAssigned,
                             spent: totalSpent,
                             remaining: totalRemaining
                         )
+                    }
+
+                    if !savingsGoalRows.isEmpty {
+                        BudgetReviewSectionCard {
+                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
+                                Text("Savings Goal Envelopes")
+                                    .appSectionTitleText()
+                                ForEach(Array(savingsGoalRows.enumerated()), id: \.element.goal.persistentModelID) { index, row in
+                                    HStack(alignment: .firstTextBaseline, spacing: AppDesign.Theme.Spacing.tight) {
+                                        Text(row.goal.name)
+                                            .font(AppDesign.Theme.Typography.body)
+                                            .fontWeight(.medium)
+                                        Spacer()
+                                        Text("Assigned \(row.assigned.formatted(.currency(code: appSettings.currencyCode)))")
+                                            .appCaption2Text()
+                                            .foregroundStyle(.secondary)
+                                        Text("Spent \(row.spent.formatted(.currency(code: appSettings.currencyCode)))")
+                                            .appCaption2Text()
+                                            .foregroundStyle(.secondary)
+                                        Text("Available \(row.available.formatted(.currency(code: appSettings.currencyCode)))")
+                                            .appCaption2Text()
+                                            .foregroundStyle(row.available >= 0 ? .secondary : AppDesign.Colors.danger(for: appColorMode))
+                                    }
+                                    if index != savingsGoalRows.count - 1 {
+                                        Divider().opacity(0.35)
+                                    }
+                                }
+                            }
+                        }
                     }
 
                     if shouldShowBudgetDetails {
@@ -283,21 +337,23 @@ struct BudgetPerformanceView: View {
                                     assigned: assigned,
                                     spent: spent,
                                     remaining: remaining,
-                                    currencyCode: currencyCode
+                                    currencyCode: appSettings.currencyCode
                                 )
 
-                                VStack(spacing: 0) {
-                                    ForEach(Array(group.sortedCategories.enumerated()), id: \.element.persistentModelID) { index, category in
-                                        Button {
-                                            selectedCategory = category
-                                        } label: {
-                                            BudgetProgressRow(
-                                                category: category,
-                                                activity: activityFor(category: category),
-                                                transactionCount: transactionsFor(category: category).count
-                                            )
-                                            .padding(.vertical, AppDesign.Theme.Spacing.hairline)
-                                        }
+	                                VStack(spacing: 0) {
+	                                    ForEach(Array(group.sortedCategories.enumerated()), id: \.element.persistentModelID) { index, category in
+	                                        Button {
+	                                            selectedCategory = category
+	                                        } label: {
+	                                            let effectiveLimit = effectiveLimitForPeriod(category: category)
+	                                            BudgetProgressRow(
+	                                                category: category,
+	                                                activity: activityFor(category: category),
+	                                                budgetLimit: effectiveLimit,
+	                                                transactionCount: transactionsFor(category: category).count
+	                                            )
+	                                            .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+	                                        }
                                         .buttonStyle(.plain)
 
                                         if index != group.sortedCategories.count - 1 {
@@ -328,19 +384,28 @@ struct BudgetPerformanceView: View {
             recomputeCategoryCaches()
         }
         .sheet(item: $selectedCategory) { category in
+            let monthStart = budgetCalculator.startOfMonth(for: dateRangeDates.1)
             CategoryTransactionsSheet(
                 category: category,
                 transactions: transactionsFor(category: category),
-                dateRange: dateRangeDates
+                dateRange: dateRangeDates,
+                budgetLogic: CategoryBudgetLogicSnapshot(
+                    periodSummary: budgetCalculator.periodSummary(for: category, start: dateRangeDates.0, end: dateRangeDates.1),
+                    monthSummary: budgetCalculator.monthSummary(for: category, monthStart: monthStart),
+                    periodRange: dateRangeDates,
+                    monthStart: monthStart
+                )
             )
         }
         .sheet(item: $categoryToFix) { category in
             BudgetCategoryFixSheet(
                 category: category,
                 spent: activityFor(category: category),
-                currencyCode: currencyCode,
+                currencyCode: appSettings.currencyCode,
                 dateRange: dateRangeDates,
-                transactions: transactionsFor(category: category)
+                transactions: transactionsFor(category: category),
+                transactionsForBudgeting: standardTransactions,
+                monthlyBudgets: monthlyCategoryBudgets
             )
         }
         .background(Color(.systemGroupedBackground))
@@ -349,6 +414,7 @@ struct BudgetPerformanceView: View {
 
 private struct BudgetPerformanceCacheTaskID: Equatable {
     var transactionsCount: Int
+    var budgetsCount: Int
     var dataChangeToken: Int
     var start: Date
     var end: Date
@@ -361,27 +427,29 @@ private struct BudgetPerformanceQueryTaskID: Equatable {
     var end: Date
 }
 
-private struct BudgetPerformanceTransactionsQuery: View {
-    @Query private var transactions: [Transaction]
-    private let onUpdate: ([Transaction]) -> Void
-    private let start: Date
-    private let end: Date
+	private struct BudgetPerformanceTransactionsQuery: View {
 
-    init(start: Date, end: Date, onUpdate: @escaping ([Transaction]) -> Void) {
-        self.start = start
-        self.end = end
-        self.onUpdate = onUpdate
-        let kind = TransactionKind.standard.rawValue
-        _transactions = Query(
-            filter: #Predicate<Transaction> { tx in
-                tx.date >= start &&
-                tx.date <= end &&
-                tx.kindRawValue == kind
-            },
-            sort: \Transaction.date,
-            order: .reverse
-        )
-    }
+	    @Environment(\.appSettings) private var appSettings
+	    @Query private var transactions: [Transaction]
+	    private let onUpdate: ([Transaction]) -> Void
+	    private let start: Date
+	    private let end: Date
+
+	    init(start: Date, end: Date, onUpdate: @escaping ([Transaction]) -> Void) {
+	        self.start = start
+	        self.end = end
+	        self.onUpdate = onUpdate
+	        let kind = TransactionKind.standard.rawValue
+	        _transactions = Query(
+	            filter: #Predicate<Transaction> { tx in
+	                tx.date >= start &&
+	                tx.date <= end &&
+	                tx.kindRawValue == kind
+	            },
+	            sort: \Transaction.date,
+	            order: .reverse
+	        )
+	    }
 
     var body: some View {
         Color.clear
@@ -398,6 +466,9 @@ private struct BudgetPerformanceTransactionsQuery: View {
 
 
 private struct BudgetInsightsEmptyStateCard: View {
+
+
+    @Environment(\.appSettings) private var appSettings
     let hasBudgetGroups: Bool
 
     var body: some View {
@@ -416,6 +487,8 @@ private struct BudgetInsightsEmptyStateCard: View {
 }
 
 struct BudgetReviewSectionCard<Content: View>: View {
+
+    @Environment(\.appSettings) private var appSettings
 	@ViewBuilder var content: Content
 
 	var body: some View {
@@ -425,6 +498,8 @@ struct BudgetReviewSectionCard<Content: View>: View {
 }
 
 private struct BudgetReviewSummaryCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let currencyCode: String
     let periodLabel: String
     let assigned: Decimal
@@ -478,19 +553,19 @@ private struct BudgetReviewSummaryCard: View {
                 BudgetReviewMetricTile(
                     title: "Assigned",
                     value: assigned,
-                    currencyCode: currencyCode,
+                    currencyCode: appSettings.currencyCode,
                     valueColor: .primary
                 )
                 BudgetReviewMetricTile(
                     title: "Spent",
                     value: spent,
-                    currencyCode: currencyCode,
+                    currencyCode: appSettings.currencyCode,
                     valueColor: .secondary
                 )
                 BudgetReviewMetricTile(
                     title: "Left",
                     value: remaining,
-                    currencyCode: currencyCode,
+                    currencyCode: appSettings.currencyCode,
                     valueColor: remaining >= 0 ? .secondary : AppDesign.Colors.danger(for: appColorMode)
                 )
             }
@@ -499,6 +574,8 @@ private struct BudgetReviewSummaryCard: View {
 }
 
 private struct BudgetReviewMetricTile: View {
+
+    @Environment(\.appSettings) private var appSettings
     let title: String
     let value: Decimal
     let currencyCode: String
@@ -510,7 +587,7 @@ private struct BudgetReviewMetricTile: View {
                 .appCaptionText()
                 .foregroundStyle(.secondary)
 
-            Text(value, format: .currency(code: currencyCode))
+            Text(value, format: .currency(code: appSettings.currencyCode))
                 .font(AppDesign.Theme.Typography.secondaryBody)
                 .fontWeight(.semibold)
                 .foregroundStyle(valueColor)
@@ -531,6 +608,8 @@ private struct BudgetReviewMetricTile: View {
 }
 
 struct BudgetReviewRingProgress: View {
+
+    @Environment(\.appSettings) private var appSettings
     let progress: Double
     let color: Color
 
@@ -554,6 +633,8 @@ struct BudgetReviewRingProgress: View {
 }
 
 private struct BudgetReviewGroupCardHeader: View {
+
+    @Environment(\.appSettings) private var appSettings
     let groupName: String
     let assigned: Decimal
     let spent: Decimal
@@ -581,14 +662,14 @@ private struct BudgetReviewGroupCardHeader: View {
 
 	    private var spentPill: some View {
 	        BudgetReviewMetricPill(
-	            text: Text("Spent: \(spent.formatted(.currency(code: currencyCode)))"),
+	            text: Text("Spent: \(spent.formatted(.currency(code: appSettings.currencyCode)))"),
 	            tint: .secondary
 	        )
 	    }
 
 	    private var leftPill: some View {
 	        BudgetReviewMetricPill(
-	            text: Text("Left: \(remaining.formatted(.currency(code: currencyCode)))"),
+	            text: Text("Left: \(remaining.formatted(.currency(code: appSettings.currencyCode)))"),
 	            tint: remaining >= 0 ? .secondary : AppDesign.Colors.danger(for: appColorMode)
 	        )
 	    }
@@ -623,6 +704,8 @@ private struct BudgetReviewGroupCardHeader: View {
 }
 
 private struct BudgetReviewMetricPill: View {
+
+    @Environment(\.appSettings) private var appSettings
     let text: Text
     let tint: Color
 
@@ -647,30 +730,33 @@ private struct BudgetReviewMetricPill: View {
     }
 }
 
-struct BudgetProgressRow: View {
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
-    let category: Category
-    let activity: Decimal
-    let transactionCount: Int
+	struct BudgetProgressRow: View {
+
+	    @Environment(\.appSettings) private var appSettings
+        @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appSettings) private var settings
+	    let category: Category
+	    let activity: Decimal
+	    let budgetLimit: Decimal
+	    let transactionCount: Int
     
     private var isIncome: Bool {
         category.group?.type == .income
     }
     
-    private var remaining: Decimal {
-        category.assigned - activity
-    }
-    
-    private var percentageRemaining: Double {
-        guard category.assigned > 0 else { return activity > 0 ? 0 : 1 }
-        return max(0, min(1, Double(truncating: remaining as NSNumber) / Double(truncating: category.assigned as NSNumber)))
-    }
-    
-    private var percentageProgress: Double {
-        guard category.assigned > 0 else { return activity > 0 ? 1 : 0 }
-        return min(1, Double(truncating: activity as NSNumber) / Double(truncating: category.assigned as NSNumber))
-    }
+	    private var remaining: Decimal {
+	        budgetLimit - activity
+	    }
+	    
+	    private var percentageRemaining: Double {
+	        guard budgetLimit > 0 else { return activity > 0 ? 0 : 1 }
+	        return max(0, min(1, Double(truncating: remaining as NSNumber) / Double(truncating: budgetLimit as NSNumber)))
+	    }
+	    
+	    private var percentageProgress: Double {
+	        guard budgetLimit > 0 else { return activity > 0 ? 1 : 0 }
+	        return min(1, Double(truncating: activity as NSNumber) / Double(truncating: budgetLimit as NSNumber))
+	    }
     
     private var progressColor: Color {
         if isIncome {
@@ -743,7 +829,7 @@ struct BudgetProgressRow: View {
                 // Budget text
                 HStack {
 	                    if isIncome {
-	                        Text(remaining >= 0 ? "\(remaining.formatted(.currency(code: currencyCode))) to go" : "\(abs(remaining).formatted(.currency(code: currencyCode))) over goal")
+	                        Text(remaining >= 0 ? "\(remaining.formatted(.currency(code: appSettings.currencyCode))) to go" : "\(abs(remaining).formatted(.currency(code: appSettings.currencyCode))) over goal")
 	                            .appCaptionText()
 	                            .foregroundStyle(progressColor)
 	                            .lineLimit(1)
@@ -751,27 +837,27 @@ struct BudgetProgressRow: View {
 	                        
 	                        Spacer()
 	                        
-	                        Text("\(activity.formatted(.currency(code: currencyCode))) received")
+	                        Text("\(activity.formatted(.currency(code: appSettings.currencyCode))) received")
 	                            .appCaptionText()
 	                            .foregroundStyle(.secondary)
 	                            .lineLimit(1)
 	                            .minimumScaleFactor(0.5)
-	                    } else {
-	                        Text(remaining >= 0 ? "\(remaining.formatted(.currency(code: currencyCode))) remaining" : "\(abs(remaining).formatted(.currency(code: currencyCode))) over budget")
-	                            .appCaptionText()
-	                            .foregroundStyle(progressColor)
-	                            .lineLimit(1)
-	                            .minimumScaleFactor(0.5)
-	                        
-	                        Spacer()
-	                        
-	                        Text("\(activity.formatted(.currency(code: currencyCode))) of \(category.assigned.formatted(.currency(code: currencyCode)))")
-	                            .appCaptionText()
-	                            .foregroundStyle(.secondary)
-	                            .lineLimit(1)
-	                            .minimumScaleFactor(0.5)
-	                    }
-                }
+		                    } else {
+		                        Text(remaining >= 0 ? "\(remaining.formatted(.currency(code: appSettings.currencyCode))) remaining" : "\(abs(remaining).formatted(.currency(code: appSettings.currencyCode))) over budget")
+		                            .appCaptionText()
+		                            .foregroundStyle(progressColor)
+		                            .lineLimit(1)
+		                            .minimumScaleFactor(0.5)
+		                        
+		                        Spacer()
+		                        
+		                        Text("\(activity.formatted(.currency(code: appSettings.currencyCode))) of \(budgetLimit.formatted(.currency(code: appSettings.currencyCode)))")
+		                            .appCaptionText()
+		                            .foregroundStyle(.secondary)
+		                            .lineLimit(1)
+		                            .minimumScaleFactor(0.5)
+		                    }
+	                }
             }
         }
         .padding(.vertical, AppDesign.Theme.Spacing.compact)

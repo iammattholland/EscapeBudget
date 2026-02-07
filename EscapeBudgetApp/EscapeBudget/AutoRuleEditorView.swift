@@ -740,10 +740,10 @@ struct ActionToggleLabel: View {
 
 struct PreviewMatchesSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    let transactions: [Transaction]
+        let transactions: [Transaction]
     var onExcludePayee: ((String) -> Void)? = nil
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
 
     var body: some View {
         NavigationStack {
@@ -773,7 +773,7 @@ struct PreviewMatchesSheet: View {
                                         .foregroundStyle(.secondary)
                                     }
                                     Spacer()
-                                    Text(tx.amount, format: .currency(code: currencyCode))
+                                    Text(tx.amount, format: .currency(code: settings.currencyCode))
                                         .foregroundStyle(tx.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)
                                 }
                                 .contextMenu {

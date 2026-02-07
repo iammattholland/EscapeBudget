@@ -43,6 +43,9 @@ final class AuthenticationService: ObservableObject {
 
     /// Timestamp when app was last authenticated
     private var lastAuthenticatedAt: Date?
+    private let sessionTimeoutInterval: TimeInterval = 15 * 60
+    private var sessionTimeoutTask: Task<Void, Never>?
+    private var isAppActive: Bool = false
 
     /// Prevents multiple simultaneous authentication attempts
     @Published private(set) var shouldAutoAuthenticate: Bool = false
@@ -155,6 +158,7 @@ final class AuthenticationService: ObservableObject {
             isPasscodeEnabled = true
             isLocked = false
             lastAuthenticatedAt = Date()
+            restartSessionTimeoutMonitor()
         }
         return stored
     }
@@ -163,11 +167,14 @@ final class AuthenticationService: ObservableObject {
     func disablePasscode() {
         isPasscodeEnabled = false
         isLocked = false
+        restartSessionTimeoutMonitor()
     }
 
     /// Called when app enters background
     func appDidEnterBackground() {
         SecurityLogger.shared.logAppBackground()
+        isAppActive = false
+        sessionTimeoutTask?.cancel()
 
         // When biometric lock is enabled, require authentication every time the app returns.
         if isBiometricsEnabled || isPasscodeEnabled {
@@ -176,23 +183,36 @@ final class AuthenticationService: ObservableObject {
         }
     }
 
-    /// Called when app enters foreground - determines if re-auth is needed
-    func appWillEnterForeground() {
+    /// Called when app becomes active.
+    /// - Parameter cameFromBackground: true only when transitioning from `.background` to `.active`.
+    func appDidBecomeActive(cameFromBackground: Bool) {
         SecurityLogger.shared.logAppForeground()
+        isAppActive = true
 
-        guard isBiometricsEnabled else {
-            if isPasscodeEnabled {
-                isLocked = true
-            } else {
-                isLocked = false
-            }
+        guard isBiometricsEnabled || isPasscodeEnabled else {
+            isLocked = false
             shouldAutoAuthenticate = false
+            sessionTimeoutTask?.cancel()
             return
         }
 
-        // Always require authentication after returning from background.
-        isLocked = true
-        shouldAutoAuthenticate = isBiometricsEnabled
+        // Require re-auth only when actually returning from background.
+        if cameFromBackground {
+            isLocked = true
+            shouldAutoAuthenticate = isBiometricsEnabled
+            sessionTimeoutTask?.cancel()
+            return
+        }
+
+        // Relock only after session timeout when continuously active.
+        if shouldRequireSessionTimeoutLock() {
+            isLocked = true
+            shouldAutoAuthenticate = isBiometricsEnabled
+            sessionTimeoutTask?.cancel()
+            return
+        }
+
+        restartSessionTimeoutMonitor()
     }
 
     /// Enables biometric authentication after successful verification
@@ -217,6 +237,7 @@ final class AuthenticationService: ObservableObject {
                 isBiometricsEnabled = true
                 isLocked = false
                 lastAuthenticatedAt = Date()
+                restartSessionTimeoutMonitor()
             }
 
             return success
@@ -229,6 +250,7 @@ final class AuthenticationService: ObservableObject {
     func disableBiometrics() {
         isBiometricsEnabled = false
         isLocked = isPasscodeEnabled
+        restartSessionTimeoutMonitor()
     }
 
     /// Resets the auto-authentication flag
@@ -285,6 +307,7 @@ final class AuthenticationService: ObservableObject {
         lastAuthenticatedAt = Date()
         shouldAutoAuthenticate = false
         SecurityLogger.shared.logAuthenticationAttempt(success: true, method: method)
+        restartSessionTimeoutMonitor()
 
         // Reset failure count
         _ = KeychainService.shared.remove(forKey: .authFailureCount)
@@ -293,6 +316,38 @@ final class AuthenticationService: ObservableObject {
     private func handleAuthenticationFailure(method: String) {
         SecurityLogger.shared.logAuthenticationAttempt(success: false, method: method)
         // Note: For a full implementation, you'd track failure count and implement lockout
+    }
+
+    private func shouldRequireSessionTimeoutLock(now: Date = Date()) -> Bool {
+        guard isBiometricsEnabled || isPasscodeEnabled else { return false }
+        guard let lastAuthenticatedAt else { return true }
+        return now.timeIntervalSince(lastAuthenticatedAt) >= sessionTimeoutInterval
+    }
+
+    private func restartSessionTimeoutMonitor() {
+        sessionTimeoutTask?.cancel()
+
+        guard isAppActive else { return }
+        guard isBiometricsEnabled || isPasscodeEnabled else { return }
+        guard !isLocked else { return }
+        guard let lastAuthenticatedAt else { return }
+
+        sessionTimeoutTask = Task { [weak self] in
+            guard let self else { return }
+            let elapsed = Date().timeIntervalSince(lastAuthenticatedAt)
+            let remaining = max(0, sessionTimeoutInterval - elapsed)
+            if remaining > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
+            }
+            if Task.isCancelled { return }
+            await MainActor.run {
+                guard self.isAppActive else { return }
+                guard !self.isLocked else { return }
+                guard self.shouldRequireSessionTimeoutLock() else { return }
+                self.isLocked = true
+                self.shouldAutoAuthenticate = self.isBiometricsEnabled
+            }
+        }
     }
 
     private func hashPasscode(_ code: String) -> String {

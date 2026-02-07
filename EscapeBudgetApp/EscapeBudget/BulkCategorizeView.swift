@@ -3,11 +3,12 @@ import SwiftUI
 import SwiftData
 
 struct BulkCategorizeView: View {
+
+    @Environment(\.appSettings) private var appSettings
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-
+    
     let transactions: [Transaction]
     let categoryGroups: [CategoryGroup]
     let onCategorized: ([Transaction]) -> Void
@@ -27,6 +28,17 @@ struct BulkCategorizeView: View {
     @State private var selectedSuggestedOption: SuggestedPayeeOption?
 
     @Query private var accounts: [Account]
+    @Query(sort: \SavingsGoal.createdDate, order: .reverse) private var savingsGoals: [SavingsGoal]
+
+    private var categoryEligibilityMonthStarts: [Date] {
+        monthStartsInRange(from: dateFrom, to: dateTo)
+    }
+
+    private func isCategoryEligibleForSelection(_ category: Category) -> Bool {
+        let months = categoryEligibilityMonthStarts
+        guard !months.isEmpty else { return true }
+        return months.allSatisfy { category.isActive(inMonthStart: $0) }
+    }
 
     enum FilterType: String, CaseIterable, Identifiable {
         case payeeExact = "Payee (Exact Match)"
@@ -47,9 +59,25 @@ struct BulkCategorizeView: View {
                     Menu {
                         ForEach(categoryGroups.filter { $0.type != .transfer }) { group in
                             Menu(group.name) {
-                                ForEach(group.sortedCategories) { category in
+                                let selectedID = selectedCategory?.persistentModelID
+                                let candidates = group.sortedCategories.filter { cat in
+                                    isCategoryEligibleForSelection(cat) || cat.persistentModelID == selectedID
+                                }
+
+                                ForEach(candidates) { category in
                                     Button(category.name) {
                                         selectedCategory = category
+                                    }
+                                }
+                            }
+                        }
+
+                        if !savingsGoals.isEmpty {
+                            Divider()
+                            Menu("Savings Goals") {
+                                ForEach(savingsGoals) { goal in
+                                    Button(goal.name) {
+                                        selectedCategory = ensureEnvelopeCategory(for: goal)
                                     }
                                 }
                             }
@@ -59,7 +87,8 @@ struct BulkCategorizeView: View {
                             Text("Category")
                             Spacer()
                             if let category = selectedCategory {
-                                Text(category.name)
+                                let isInactive = !isCategoryEligibleForSelection(category)
+                                Text(isInactive ? "\(category.name) (Archived)" : category.name)
                                     .foregroundStyle(.secondary)
                             } else {
                                 Text("Select...")
@@ -262,7 +291,7 @@ struct BulkCategorizeView: View {
                 BulkCategorizePreviewView(
                     transactions: matchingTransactions,
                     category: selectedCategory!,
-                    currencyCode: currencyCode,
+                    currencyCode: appSettings.currencyCode,
                     onConfirm: {
                         applyBulkCategorization()
                     }
@@ -271,7 +300,7 @@ struct BulkCategorizeView: View {
             .sheet(item: $selectedSuggestedOption) { option in
                 SuggestedPayeeCategorizeSheet(
                     option: option,
-                    currencyCode: currencyCode,
+                    currencyCode: appSettings.currencyCode,
                     onApplied: { updated in
                         onCategorized(updated)
                         refreshSuggestedPayeeOptions()
@@ -355,8 +384,8 @@ struct BulkCategorizeView: View {
     private var currencySymbol: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = currencyCode
-        return formatter.currencySymbol ?? currencyCode
+        formatter.currencyCode = appSettings.currencyCode
+        return formatter.currencySymbol ?? appSettings.currencyCode
     }
 
     private func findMatchingTransactions() {
@@ -432,6 +461,12 @@ struct BulkCategorizeView: View {
     private func applyBulkCategorization() {
         guard let category = selectedCategory else { return }
 
+        let calendar = Calendar.current
+        for tx in matchingTransactions {
+            let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: tx.date)) ?? tx.date
+            guard category.isActive(inMonthStart: monthStart) else { return }
+        }
+
         let previousCategories = matchingTransactions.map { (transaction: $0, category: $0.category) }
         for transaction in matchingTransactions {
             let oldSnapshot = TransactionSnapshot(from: transaction)
@@ -456,6 +491,12 @@ struct BulkCategorizeView: View {
             }
             return
         }
+
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            referenceDate: Date(),
+            saveContext: "BulkCategorizeView.applyBulkCategorization.syncSavingsGoals"
+        )
         onCategorized(matchingTransactions)
         dismiss()
     }
@@ -467,6 +508,65 @@ struct BulkCategorizeView: View {
             .replacingOccurrences(of: "\\s{2,}", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return key
+    }
+
+    private func monthStartsInRange(from: Date, to: Date) -> [Date] {
+        let calendar = Calendar.current
+        let start = calendar.date(from: calendar.dateComponents([.year, .month], from: min(from, to))) ?? min(from, to)
+        let end = calendar.date(from: calendar.dateComponents([.year, .month], from: max(from, to))) ?? max(from, to)
+
+        var months: [Date] = []
+        var cursor = start
+        while cursor <= end {
+            months.append(cursor)
+            guard let next = calendar.date(byAdding: .month, value: 1, to: cursor) else { break }
+            cursor = next
+        }
+        return months
+    }
+
+    @discardableResult
+    private func ensureEnvelopeCategory(for goal: SavingsGoal) -> Category {
+        if let existing = goal.category {
+            existing.budgetType = .monthlyRollover
+            existing.overspendHandling = .carryNegative
+            if let monthlyContribution = goal.monthlyContribution, monthlyContribution >= 0 {
+                existing.assigned = monthlyContribution
+            }
+            return existing
+        }
+
+        let normalizedStart = Calendar.current.date(
+            from: Calendar.current.dateComponents([.year, .month], from: min(dateFrom, dateTo))
+        ) ?? Date()
+        let expenseGroup: CategoryGroup = {
+            if let existing = categoryGroups.first(where: { $0.type == .expense && $0.name == "Savings Goals" }) {
+                return existing
+            }
+            let nextOrder = (categoryGroups.map(\.order).max() ?? -1) + 1
+            let group = CategoryGroup(name: "Savings Goals", order: nextOrder, type: .expense, isDemoData: goal.isDemoData)
+            modelContext.insert(group)
+            return group
+        }()
+
+        let nextOrder = ((expenseGroup.categories ?? []).map(\.order).max() ?? -1) + 1
+        let category = Category(
+            name: goal.name,
+            assigned: goal.monthlyContribution ?? 0,
+            activity: 0,
+            order: nextOrder,
+            icon: "🎯",
+            memo: "Savings goal envelope",
+            isDemoData: goal.isDemoData
+        )
+        category.group = expenseGroup
+        category.budgetType = .monthlyRollover
+        category.overspendHandling = .carryNegative
+        category.createdAt = normalizedStart
+        category.savingsGoal = goal
+        goal.category = category
+        modelContext.insert(category)
+        return category
     }
 
     private func refreshSuggestedPayeeOptions() {
@@ -500,8 +600,15 @@ struct BulkCategorizeView: View {
             guard let (bestCategoryID, _) = counts.max(by: { $0.value < $1.value }) else { continue }
             guard let suggestedCategory = categoryLookup[bestCategoryID] else { continue }
 
+            let calendar = Calendar.current
+            let eligibleTransactions = group.filter { tx in
+                let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: tx.date)) ?? tx.date
+                return suggestedCategory.isActive(inMonthStart: monthStart)
+            }
+            guard !eligibleTransactions.isEmpty else { continue }
+
             let representative = PayeeNormalizer.normalizeDisplay(group[0].payee)
-            let sortedIDs = group
+            let sortedIDs = eligibleTransactions
                 .sorted { $0.date > $1.date }
                 .map(\.persistentModelID)
 
@@ -535,6 +642,8 @@ private struct SuggestedPayeeOption: Identifiable {
 }
 
 private struct SuggestedPayeeCategorizeSheet: View {
+
+    @Environment(\.appSettings) private var appSettings
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
@@ -597,7 +706,7 @@ private struct SuggestedPayeeCategorizeSheet: View {
 
                                     Spacer()
 
-                                    Text(transaction.amount, format: .currency(code: currencyCode))
+                                    Text(transaction.amount, format: .currency(code: appSettings.currencyCode))
                                         .fontWeight(.semibold)
                                         .monospacedDigit()
                                 }
@@ -634,8 +743,13 @@ private struct SuggestedPayeeCategorizeSheet: View {
     }
 
     private func loadTransactions() {
+        let calendar = Calendar.current
         transactions = option.transactionIDs.compactMap { id in
             modelContext.model(for: id) as? Transaction
+        }
+        .filter { tx in
+            let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: tx.date)) ?? tx.date
+            return option.category.isActive(inMonthStart: monthStart)
         }
         .sorted { $0.date > $1.date }
     }
@@ -645,6 +759,12 @@ private struct SuggestedPayeeCategorizeSheet: View {
 	            modelContext.model(for: id) as? Transaction
 	        }
 	        guard !selectedTransactions.isEmpty else { return }
+
+            let calendar = Calendar.current
+            for tx in selectedTransactions {
+                let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: tx.date)) ?? tx.date
+                guard option.category.isActive(inMonthStart: monthStart) else { return }
+            }
 	
 	        let previousCategories = selectedTransactions.map { (transaction: $0, category: $0.category) }
 	        for transaction in selectedTransactions {
@@ -671,14 +791,23 @@ private struct SuggestedPayeeCategorizeSheet: View {
 	            return
 	        }
 
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            referenceDate: Date(),
+            saveContext: "SuggestedPayeeCategorizeSheet.apply.syncSavingsGoals"
+        )
+
         onApplied(selectedTransactions)
         dismiss()
     }
 }
 
 struct BulkCategorizePreviewView: View {
+
+    @Environment(\.appSettings) private var appSettings
     @Environment(\.dismiss) private var dismiss
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
 
     let transactions: [Transaction]
     let category: Category
@@ -736,7 +865,7 @@ struct BulkCategorizePreviewView: View {
 
                             Spacer()
 
-                            Text(transaction.amount, format: .currency(code: currencyCode))
+                            Text(transaction.amount, format: .currency(code: appSettings.currencyCode))
                                 .foregroundStyle(transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)
                                 .fontWeight(.semibold)
                         }

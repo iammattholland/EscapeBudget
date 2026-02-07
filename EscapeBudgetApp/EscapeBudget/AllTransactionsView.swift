@@ -32,9 +32,8 @@ struct AllTransactionsView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.undoRedoManager) private var undoRedoManager
     @EnvironmentObject private var errorCenter: AppErrorCenter
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @AppStorage("showTransactionTags") private var showTransactionTags = false
-
+    @Environment(\.appSettings) private var settings
+        
     @EnvironmentObject private var navigator: AppNavigator
     @Binding var searchText: String
     @Binding var filter: TransactionFilter
@@ -83,6 +82,7 @@ struct AllTransactionsView: View {
     @State private var showingNewCategorySheet = false
     @State private var categoryCreationTransactionID: PersistentIdentifier?
     @State private var newCategoryInitialGroup: CategoryGroup?
+    @State private var newCategoryCreatedAtMonthStart: Date?
     
     private var bannerText: String {
         if uncategorizedCount > 99 {
@@ -171,7 +171,7 @@ struct AllTransactionsView: View {
             .toolbar { toolbarContent }
             .sheet(item: $selectedTransaction, content: transactionSheet)
             .sheet(item: $viewingReceipt) { receipt in
-                ReceiptDetailView(receipt: receipt, currencyCode: currencyCode)
+                ReceiptDetailView(receipt: receipt, currencyCode: settings.currencyCode)
             }
             .sheet(isPresented: $showingAddTransfer) { addTransferSheet }
             .sheet(isPresented: $showingTransfersInbox) { transfersInboxSheet }
@@ -188,7 +188,10 @@ struct AllTransactionsView: View {
                         canRedo: undoRedoManager.canRedo,
                         isBulkEditing: isBulkEditing,
                         filterIsActive: filter.isActive,
-                        showTags: $showTransactionTags,
+                        showTags: Binding(
+                            get: { settings.showTransactionTags },
+                            set: { settings.showTransactionTags = $0 }
+                        ),
                         onUndo: { do { try undoRedoManager.undo() } catch { } },
                         onRedo: { do { try undoRedoManager.redo() } catch { } },
                         onAddTransaction: { navigator.addTransaction() },
@@ -242,13 +245,12 @@ struct AllTransactionsView: View {
                 Button {
                     showingTransactionsActions = true
                 } label: {
-                    Image(systemName: "ellipsis")
-                        .imageScale(.large)
+                    Image(systemName: "ellipsis").appEllipsisIcon()
                 }
                     .accessibilityLabel("Transactions Menu")
                     .accessibilityIdentifier("transactions.menu")
-		        }
-		    }
+            }
+        }
 
     @ViewBuilder
     private func transactionSheet(_ transaction: Transaction) -> some View {
@@ -281,7 +283,7 @@ struct AllTransactionsView: View {
 	               let base = modelContext.model(for: baseID) as? Transaction {
 	                TransferMatchPickerView(
 	                    base: base,
-	                    currencyCode: currencyCode,
+	                    currencyCode: settings.currencyCode,
 	                    onLinked: { _ in
 	                        showingTransferMatch = false
 	                        // No reload needed - @Query updates automatically
@@ -331,7 +333,7 @@ struct AllTransactionsView: View {
 		                                .foregroundStyle(.secondary)
 		                        }
 	                        Spacer()
-	                        Text(account.balance, format: .currency(code: currencyCode))
+	                        Text(account.balance, format: .currency(code: settings.currencyCode))
 	                            .foregroundStyle(.secondary)
 	                    }
 	                }
@@ -353,7 +355,7 @@ struct AllTransactionsView: View {
 
 	    private var uncategorizedSheet: some View {
 	        UncategorizedTransactionsSheetContent(
-	            currencyCode: currencyCode,
+	            currencyCode: settings.currencyCode,
 	            categoryGroups: categoryGroups,
 	            onDismiss: { navigator.showingUncategorizedTransactions = false }
 	        )
@@ -473,7 +475,7 @@ struct AllTransactionsView: View {
 		                        ForEach(section.transactions) { transaction in
 			                            TransactionRowContent(
 			                                transaction: transaction,
-			                                currencyCode: currencyCode,
+			                                currencyCode: settings.currencyCode,
 			                                categoryGroups: categoryGroups,
 			                                onCategoryChanged: handleCategoryChange,
 		                                onTransferSelected: { tx in
@@ -487,7 +489,7 @@ struct AllTransactionsView: View {
 		                                },
 			                                isBulkEditing: isBulkEditing,
 			                                isSelected: selectedTransactionIDs.contains(transaction.persistentModelID),
-			                                showTags: showTransactionTags
+			                                showTags: settings.showTransactionTags
 			                            )
                                         .accessibilityElement(children: .combine)
                                         .accessibilityIdentifier("transactions.row")
@@ -565,7 +567,10 @@ struct AllTransactionsView: View {
 	    }
 
     private var newCategorySheet: some View {
-        NewBudgetCategorySheet(initialGroup: newCategoryInitialGroup) { category in
+        NewBudgetCategorySheet(
+            initialGroup: newCategoryInitialGroup,
+            createdAtMonthStart: newCategoryCreatedAtMonthStart
+        ) { category in
             if let id = categoryCreationTransactionID,
                let transaction = allTransactions.first(where: { $0.persistentModelID == id }) {
                 handleCategoryChange(for: transaction, newCategory: category)
@@ -772,7 +777,16 @@ struct AllTransactionsView: View {
                 AutoRulesService(modelContext: modelContext).learnFromCategorization(transaction: transaction, wasAutoDetected: false)
             }
 
-            _ = modelContext.safeSave(context: "AllTransactionsView.handleCategoryChange", showErrorToUser: false)
+            let saveSuccessful = modelContext.safeSave(
+                context: "AllTransactionsView.handleCategoryChange",
+                showErrorToUser: false
+            )
+            if saveSuccessful {
+                SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+                    modelContext: modelContext,
+                    saveContext: "AllTransactionsView.handleCategoryChange"
+                )
+            }
         }
     }
     
@@ -802,7 +816,13 @@ struct AllTransactionsView: View {
             logHistory(for: transaction, detail: "Converted from Standard to Transfer.")
 
             // Save the changes
-            _ = modelContext.safeSave(context: "AllTransactionsView.handleTransferSelection")
+            let saveSuccessful = modelContext.safeSave(context: "AllTransactionsView.handleTransferSelection")
+            if saveSuccessful {
+                SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+                    modelContext: modelContext,
+                    saveContext: "AllTransactionsView.handleTransferSelection"
+                )
+            }
         }
 
         // Open the Edit Transaction sheet which will show Transfer Information section
@@ -834,6 +854,9 @@ struct AllTransactionsView: View {
     }
 
     private func beginNewCategoryCreation(for transaction: Transaction) {
+        newCategoryCreatedAtMonthStart = Calendar.current.date(
+            from: Calendar.current.dateComponents([.year, .month], from: transaction.date)
+        ) ?? transaction.date
         categoryCreationTransactionID = transaction.persistentModelID
         newCategoryInitialGroup =
             transaction.category?.group ??
@@ -846,6 +869,7 @@ struct AllTransactionsView: View {
         showingNewCategorySheet = false
         categoryCreationTransactionID = nil
         newCategoryInitialGroup = nil
+        newCategoryCreatedAtMonthStart = nil
     }
 
 
@@ -1478,6 +1502,11 @@ private struct UncategorizedTransactionsSheetContent: View {
     
 	    private var categoryMenu: some View {
 	        Menu {
+                let txMonthStart = Calendar.current.date(
+                    from: Calendar.current.dateComponents([.year, .month], from: transaction.date)
+                ) ?? transaction.date
+                let selectedID = transaction.category?.persistentModelID
+
 	            Button("Transfer") {
 	                onTransferSelected(transaction)
 	            }
@@ -1489,13 +1518,16 @@ private struct UncategorizedTransactionsSheetContent: View {
 	            }
 	            ForEach(categoryGroups.filter { $0.type != .transfer }) { group in
 	                Section(header: Text(group.name)) {
-	                    if let categories = group.categories {
-	                        ForEach(categories) { category in
-	                            Button(category.name) {
-	                                onCategoryChanged(transaction, category)
-	                            }
-	                        }
-	                    }
+                        let candidates = group.sortedCategories.filter { category in
+                            category.isActive(inMonthStart: txMonthStart) || category.persistentModelID == selectedID
+                        }
+
+                        ForEach(candidates) { category in
+                            let isInactive = !category.isActive(inMonthStart: txMonthStart)
+                            Button(isInactive ? "\(category.name) (Archived)" : category.name) {
+                                onCategoryChanged(transaction, category)
+                            }
+                        }
 	                }
 	            }
                 Divider()
@@ -1513,7 +1545,11 @@ private struct UncategorizedTransactionsSheetContent: View {
 	                        .padding(.vertical, AppDesign.Theme.Spacing.hairline)
 	                        .background(Capsule().fill(AppDesign.Colors.warning(for: appColorMode).opacity(0.12)))
 	                } else if let category = transaction.category {
-		                Text(category.name)
+                        let txMonthStart = Calendar.current.date(
+                            from: Calendar.current.dateComponents([.year, .month], from: transaction.date)
+                        ) ?? transaction.date
+                        let isInactive = !category.isActive(inMonthStart: txMonthStart)
+		                Text(isInactive ? "\(category.name) (Archived)" : category.name)
 		                    .appCaptionText()
 	                    .foregroundStyle(.secondary)
                     .padding(.horizontal, AppDesign.Theme.Spacing.compact)
@@ -1689,6 +1725,7 @@ private struct TagFilterPickerView: View {
 private struct UncategorizedBanner: View {
     let countText: String
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
 
     var body: some View {
         HStack(spacing: AppDesign.Theme.Spacing.tight) {

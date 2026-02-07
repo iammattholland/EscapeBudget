@@ -5,6 +5,17 @@ import SwiftData
 @MainActor
 struct BulkCategorizationSuggester {
     let modelContext: ModelContext
+    
+    enum ApplySuggestionError: LocalizedError {
+        case categoryNotActiveForTransactionMonth
+        
+        var errorDescription: String? {
+            switch self {
+            case .categoryNotActiveForTransactionMonth:
+                return "Selected category is archived for at least one transaction’s month."
+            }
+        }
+    }
 
     /// Represents a group of similar transactions with a suggested category
     struct SuggestionGroup: Identifiable {
@@ -384,8 +395,14 @@ struct BulkCategorizationSuggester {
     /// Apply a category to all transactions in a suggestion group
     func applySuggestion(group: SuggestionGroup, category: Category, selectedTransactionIDs: Set<PersistentIdentifier>) throws {
         let autoRulesService = AutoRulesService(modelContext: modelContext)
+        let calendar = Calendar.current
 
         for transaction in group.transactions where selectedTransactionIDs.contains(transaction.persistentModelID) {
+            let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: transaction.date)) ?? transaction.date
+            guard category.isActive(inMonthStart: monthStart) else {
+                throw ApplySuggestionError.categoryNotActiveForTransactionMonth
+            }
+
             let old = TransactionSnapshot(from: transaction)
             TransactionStatsUpdateCoordinator.markDirty(transactionSnapshot: old)
             transaction.category = category
@@ -405,6 +422,10 @@ struct BulkCategorizationSuggester {
         }
 
         try modelContext.save()
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            saveContext: "BulkCategorizationSuggester.applySuggestion"
+        )
         DataChangeTracker.bump()
     }
 }

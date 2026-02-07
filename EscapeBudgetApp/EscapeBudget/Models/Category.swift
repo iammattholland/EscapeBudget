@@ -7,6 +7,61 @@ enum CategoryGroupType: String, Codable, CaseIterable {
     case transfer = "Transfer"
 }
 
+enum CategoryBudgetType: String, Codable, CaseIterable, Identifiable {
+    case monthlyReset = "monthlyReset"
+    case monthlyRollover = "monthlyRollover"
+    case lumpSum = "lumpSum"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .monthlyReset:
+            return "Monthly (Resets)"
+        case .monthlyRollover:
+            return "Monthly (Rollover)"
+        case .lumpSum:
+            return "Lump Sum (Pool)"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .monthlyReset:
+            return "Budget starts fresh each month. Unused funds do not carry forward."
+        case .monthlyRollover:
+            return "Unused funds carry forward month to month."
+        case .lumpSum:
+            return "One balance shared across months until you add more funds."
+        }
+    }
+}
+
+enum CategoryOverspendHandling: String, Codable, CaseIterable, Identifiable {
+    case carryNegative = "carryNegative"
+    case doNotCarry = "doNotCarry"
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .carryNegative:
+            return "Carry overspending forward"
+        case .doNotCarry:
+            return "Do not carry overspending"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .carryNegative:
+            return "Next month starts reduced until you budget more."
+        case .doNotCarry:
+            return "Next month starts at $0 even if you overspent this month."
+        }
+    }
+}
+
 @Model
 final class CategoryGroup: DemoDataTrackable {
     var name: String
@@ -44,7 +99,32 @@ final class Category: DemoDataTrackable {
     var savingsGoal: SavingsGoal?
     var icon: String?
     var memo: String?
+    var budgetTypeRawValue: String?
+    var overspendHandlingRawValue: String?
+    var createdAt: Date?
+    var archivedAfterMonthStart: Date?
     var isDemoData: Bool = false
+
+    var budgetType: CategoryBudgetType {
+        get { CategoryBudgetType(rawValue: budgetTypeRawValue ?? "") ?? .monthlyReset }
+        set { budgetTypeRawValue = newValue.rawValue }
+    }
+
+    var overspendHandling: CategoryOverspendHandling {
+        get { CategoryOverspendHandling(rawValue: overspendHandlingRawValue ?? "") ?? .carryNegative }
+        set { overspendHandlingRawValue = newValue.rawValue }
+    }
+
+    func isActive(inMonthStart monthStart: Date, calendar: Calendar = .current) -> Bool {
+        if let createdAt {
+            let createdMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: createdAt)) ?? createdAt
+            if monthStart < createdMonth { return false }
+        }
+        if let archivedAfterMonthStart {
+            return monthStart <= archivedAfterMonthStart
+        }
+        return true
+    }
     
     var available: Decimal {
         assigned - activity
@@ -57,6 +137,10 @@ final class Category: DemoDataTrackable {
         self.order = order
         self.icon = icon
         self.memo = memo
+        self.budgetTypeRawValue = nil
+        self.overspendHandlingRawValue = nil
+        self.createdAt = Date()
+        self.archivedAfterMonthStart = nil
         self.isDemoData = isDemoData
     }
 }

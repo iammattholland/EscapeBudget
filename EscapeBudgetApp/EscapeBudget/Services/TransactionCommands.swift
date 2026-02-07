@@ -73,6 +73,10 @@ final class AddTransactionCommand: Command {
         transaction = newTransaction
 
         try modelContext.save()
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            saveContext: "AddTransactionCommand.execute"
+        )
         TransactionStatsUpdateCoordinator.markDirty(transaction: newTransaction)
         DataChangeTracker.bump()
     }
@@ -87,6 +91,10 @@ final class AddTransactionCommand: Command {
         TransactionStatsUpdateCoordinator.markDirty(transactionSnapshot: old)
         modelContext.delete(transaction)
         try modelContext.save()
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            saveContext: "AddTransactionCommand.undo"
+        )
         DataChangeTracker.bump()
         self.transaction = nil
     }
@@ -120,6 +128,10 @@ final class DeleteTransactionCommand: Command {
 
         modelContext.delete(transaction)
         try modelContext.save()
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            saveContext: "DeleteTransactionCommand.execute"
+        )
         DataChangeTracker.bump()
     }
 
@@ -154,6 +166,10 @@ final class DeleteTransactionCommand: Command {
 
         modelContext.insert(newTransaction)
         try modelContext.save()
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            saveContext: "DeleteTransactionCommand.undo"
+        )
         TransactionStatsUpdateCoordinator.markDirty(transaction: newTransaction)
         DataChangeTracker.bump()
 
@@ -212,6 +228,10 @@ final class UpdateTransactionCommand: Command {
         TransactionStatsUpdateCoordinator.markDirty(transactionSnapshot: oldSnapshot)
         applySnapshot(newSnapshot, to: transaction)
         try modelContext.save()
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            saveContext: "UpdateTransactionCommand.execute"
+        )
         TransactionStatsUpdateCoordinator.markDirty(transactionSnapshot: newSnapshot)
         DataChangeTracker.bump()
     }
@@ -225,6 +245,10 @@ final class UpdateTransactionCommand: Command {
         TransactionStatsUpdateCoordinator.markDirty(transactionSnapshot: newSnapshot)
         applySnapshot(oldSnapshot, to: transaction)
         try modelContext.save()
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            saveContext: "UpdateTransactionCommand.undo"
+        )
         TransactionStatsUpdateCoordinator.markDirty(transactionSnapshot: oldSnapshot)
         DataChangeTracker.bump()
     }

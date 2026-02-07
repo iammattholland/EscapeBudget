@@ -2,6 +2,8 @@ import SwiftUI
 import SwiftData
 
 struct ManageView: View {
+
+    @Environment(\.appSettings) private var appSettings
     @EnvironmentObject private var navigator: AppNavigator
     @EnvironmentObject private var manageNavigator: ManageNavigator
     @Query private var allTransactions: [Transaction]
@@ -118,6 +120,8 @@ struct ManageView: View {
 }
 
 struct ManageBudgetView: View {
+
+    @Environment(\.appSettings) private var appSettings
     @Query(sort: \CategoryGroup.order) private var categoryGroups: [CategoryGroup]
     @Binding var searchText: String
     @State private var showingBudgetSetup = false
@@ -167,6 +171,8 @@ struct ManageBudgetView: View {
 // MARK: - Manage Budget UI Components
 
 private struct ManageBudgetHeroCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     @Binding var selectedDate: Date
     let totalAssigned: Decimal
     let totalSpent: Decimal
@@ -179,9 +185,9 @@ private struct ManageBudgetHeroCard: View {
             MonthNavigationHeader(selectedDate: $selectedDate)
 
             HStack(spacing: AppDesign.Theme.Spacing.tight) {
-                ManageBudgetMetric(title: "Budgeted", value: totalAssigned, currencyCode: currencyCode, tint: .primary)
-                ManageBudgetMetric(title: "Spent", value: totalSpent, currencyCode: currencyCode, tint: .secondary)
-                ManageBudgetMetric(title: "Left", value: totalRemaining, currencyCode: currencyCode, tint: totalRemaining >= 0 ? .secondary : AppDesign.Colors.danger(for: appColorMode))
+                ManageBudgetMetric(title: "Budgeted", value: totalAssigned, currencyCode: appSettings.currencyCode, tint: .primary)
+                ManageBudgetMetric(title: "Spent", value: totalSpent, currencyCode: appSettings.currencyCode, tint: .secondary)
+                ManageBudgetMetric(title: "Left", value: totalRemaining, currencyCode: appSettings.currencyCode, tint: totalRemaining >= 0 ? .secondary : AppDesign.Colors.danger(for: appColorMode))
             }
         }
         .padding(AppDesign.Theme.Spacing.screenHorizontal)
@@ -201,6 +207,8 @@ private struct ManageBudgetHeroCard: View {
 }
 
 private struct ManageBudgetMetric: View {
+
+    @Environment(\.appSettings) private var appSettings
     let title: String
     let value: Decimal
     let currencyCode: String
@@ -212,7 +220,7 @@ private struct ManageBudgetMetric: View {
                 .appCaption2Text()
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
-            Text(value, format: .currency(code: currencyCode))
+            Text(value, format: .currency(code: appSettings.currencyCode))
                 .appSectionTitleText()
                 .foregroundStyle(tint)
                 .lineLimit(1)
@@ -228,6 +236,8 @@ private struct ManageBudgetMetric: View {
 }
 
 private struct ManageBudgetInsightsCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let needsBudgetCount: Int
     let coverage: Double?
     let monthTransactions: Int
@@ -271,6 +281,8 @@ private struct ManageBudgetInsightsCard: View {
 }
 
 private struct InsightPill: View {
+
+    @Environment(\.appSettings) private var appSettings
     let title: String
     let detail: String
     let icon: String
@@ -296,6 +308,8 @@ private struct InsightPill: View {
 }
 
 private struct BudgetQuickActionsRow: View {
+
+    @Environment(\.appSettings) private var appSettings
     let onAddGroup: () -> Void
     let onAddCategory: () -> Void
     let onGuidedSetup: () -> Void
@@ -322,6 +336,8 @@ private struct BudgetQuickActionsRow: View {
 }
 
 private struct QuickActionButton: View {
+
+    @Environment(\.appSettings) private var appSettings
     let title: String
     let icon: String
     let tint: Color
@@ -348,6 +364,8 @@ private struct QuickActionButton: View {
 }
 
 private struct BudgetGroupCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let group: CategoryGroup
     let categories: [Category]
     let currencyCode: String
@@ -414,7 +432,7 @@ private struct BudgetGroupCard: View {
 
     private var summaryText: String {
         let remaining = assignedTotal - spentTotal
-        return "\(assignedTotal.formatted(.currency(code: currencyCode))) • \(remaining >= 0 ? "Left" : "Over") \(abs(remaining).formatted(.currency(code: currencyCode)))"
+        return "\(assignedTotal.formatted(.currency(code: appSettings.currencyCode))) • \(remaining >= 0 ? "Left" : "Over") \(abs(remaining).formatted(.currency(code: appSettings.currencyCode)))"
     }
 
     private func monthlyActivity(for category: Category) -> Decimal {
@@ -435,6 +453,8 @@ private struct BudgetGroupCard: View {
 }
 
 private struct BudgetEmptyStateCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let action: () -> Void
     @Environment(\.appColorMode) private var appColorMode
 
@@ -475,6 +495,8 @@ private struct BudgetEmptyStateCard: View {
 }
 
 private struct ManageBudgetHighlightsView: View {
+
+    @Environment(\.appSettings) private var appSettings
     let highlights: [(String, String, String)] = [
         ("folder.badge.plus", "Build groups", "Organize spending with focused categories."),
         ("slider.horizontal.3", "Set monthly targets", "Tell the app how much to budget for each area."),
@@ -523,14 +545,15 @@ private struct ManageBudgetHighlightsView: View {
 // MARK: - Guided Setup
 
 struct BudgetSetupWizardView: View {
+
+    @Environment(\.appSettings) private var appSettings
     enum Step {
         case intro, templates, income, assign, review
     }
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Query(sort: \CategoryGroup.order) private var existingGroups: [CategoryGroup]
+        @Query(sort: \CategoryGroup.order) private var existingGroups: [CategoryGroup]
     @Environment(\.appColorMode) private var appColorMode
 
     private let replaceExistingDefault: Bool
@@ -759,7 +782,7 @@ struct BudgetSetupWizardView: View {
         }
     }
 
-    private var displayCurrencyCode: String { currencyCode }
+    private var displayCurrencyCode: String { appSettings.currencyCode }
 
     private var progressValue: Double {
         switch step {
@@ -929,6 +952,8 @@ struct BudgetSetupWizardView: View {
 }
 
 private struct BudgetIncomeSourcesView: View {
+
+    @Environment(\.appSettings) private var appSettings
     @Binding var incomeSources: [String]
     @Environment(\.appColorMode) private var appColorMode
 
@@ -986,6 +1011,8 @@ private struct BudgetIncomeSourcesView: View {
 }
 
 private struct BudgetSetupIntro: View {
+
+    @Environment(\.appSettings) private var appSettings
     var body: some View {
         VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
             Text("Let's build your budget")
@@ -1007,6 +1034,8 @@ private struct BudgetSetupIntro: View {
 }
 
 private struct BudgetTemplateSelectionView: View {
+
+    @Environment(\.appSettings) private var appSettings
     let templates: [BudgetTemplateGroup]
     let customTemplates: [BudgetTemplateGroup]
     @Binding var selectedTemplateIDs: Set<UUID>
@@ -1088,6 +1117,8 @@ private struct BudgetTemplateSelectionView: View {
 }
 
 private struct BudgetTemplateCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let template: BudgetTemplateGroup
     @Binding var isSelected: Bool
     @Binding var selectedCategoryIDs: Set<UUID>
@@ -1187,6 +1218,8 @@ private struct BudgetTemplateCard: View {
 }
 
 private struct BudgetAssignmentView: View {
+
+    @Environment(\.appSettings) private var appSettings
     let groups: [BudgetTemplateGroup]
     @Binding var budgetInputs: [UUID: String]
     let currencyCode: String
@@ -1195,8 +1228,8 @@ private struct BudgetAssignmentView: View {
     private var currencySymbol: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = currencyCode
-        return formatter.currencySymbol ?? currencyCode
+        formatter.currencyCode = appSettings.currencyCode
+        return formatter.currencySymbol ?? appSettings.currencyCode
     }
 
     var body: some View {
@@ -1223,7 +1256,7 @@ private struct BudgetAssignmentView: View {
 
                                     Spacer()
 
-                                    Text(groupTotal(for: group), format: .currency(code: currencyCode))
+                                    Text(groupTotal(for: group), format: .currency(code: appSettings.currencyCode))
                                         .appSecondaryBodyText()
                                         .fontWeight(.semibold)
                                         .foregroundStyle(.secondary)
@@ -1284,7 +1317,7 @@ private struct BudgetAssignmentView: View {
             BudgetSuggestionView(
                 groups: groups,
                 budgetInputs: $budgetInputs,
-                currencyCode: currencyCode
+                currencyCode: appSettings.currencyCode
             )
         }
     }
@@ -1303,12 +1336,15 @@ private struct BudgetAssignmentView: View {
 }
 
 private struct BudgetSuggestionView: View {
+
+    @Environment(\.appSettings) private var appSettings
     let groups: [BudgetTemplateGroup]
     @Binding var budgetInputs: [UUID: String]
     let currencyCode: String
 
 	@Environment(\.dismiss) private var dismiss
 	@Environment(\.appColorMode) private var appColorMode
+	@Environment(\.appSettings) private var settings
 	@State private var monthlyIncomeInput = ""
 	@State private var targetSavingsRate = 10.0
 	@State private var suggestedAmounts: [UUID: Decimal] = [:]
@@ -1317,8 +1353,8 @@ private struct BudgetSuggestionView: View {
     private var currencySymbol: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = currencyCode
-        return formatter.currencySymbol ?? currencyCode
+        formatter.currencyCode = appSettings.currencyCode
+        return formatter.currencySymbol ?? appSettings.currencyCode
     }
 
     private var monthlyIncome: Decimal {
@@ -1408,14 +1444,14 @@ private struct BudgetSuggestionView: View {
                                 SummaryMetric(
                                     title: "Total Budget",
                                     value: totalBudgeted,
-                                    currencyCode: currencyCode,
+                                    currencyCode: appSettings.currencyCode,
                                     tint: .primary
                                 )
 
                                 SummaryMetric(
                                     title: "Savings",
                                     value: savingsAmount,
-                                    currencyCode: currencyCode,
+                                    currencyCode: appSettings.currencyCode,
                                     tint: savingsAmount >= 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode)
                                 )
                             }
@@ -1439,7 +1475,7 @@ private struct BudgetSuggestionView: View {
 	                                    }
 
 	                                HStack {
-	                                    Text("Target: \(targetSavingsAmount, format: .currency(code: currencyCode))")
+	                                    Text("Target: \(targetSavingsAmount, format: .currency(code: appSettings.currencyCode))")
 	                                    Spacer()
 	                                    Text("Actual: \(Int(savingsRate))%")
 	                                }
@@ -1485,7 +1521,7 @@ private struct BudgetSuggestionView: View {
 
                                         Spacer()
 
-                                        Text(groupTotal(for: group), format: .currency(code: currencyCode))
+                                        Text(groupTotal(for: group), format: .currency(code: appSettings.currencyCode))
                                             .appSecondaryBodyText()
                                             .fontWeight(.semibold)
                                             .foregroundStyle(.secondary)
@@ -1773,6 +1809,8 @@ private struct BudgetSuggestionView: View {
 }
 
 private struct SummaryMetric: View {
+
+    @Environment(\.appSettings) private var appSettings
     let title: String
     let value: Decimal
     let currencyCode: String
@@ -1784,7 +1822,7 @@ private struct SummaryMetric: View {
                 .font(AppDesign.Theme.Typography.caption)
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
-            Text(value, format: .currency(code: currencyCode))
+            Text(value, format: .currency(code: appSettings.currencyCode))
                 .appTitleText()
                 .fontWeight(.bold)
                 .foregroundStyle(tint)
@@ -1801,6 +1839,8 @@ private struct SummaryMetric: View {
 }
 
 private struct BudgetSetupReview: View {
+
+    @Environment(\.appSettings) private var appSettings
     let groups: [BudgetTemplateGroup]
     let budgetInputs: [UUID: String]
     let currencyCode: String
@@ -1808,8 +1848,8 @@ private struct BudgetSetupReview: View {
     private var currencySymbol: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = currencyCode
-        return formatter.currencySymbol ?? currencyCode
+        formatter.currencyCode = appSettings.currencyCode
+        return formatter.currencySymbol ?? appSettings.currencyCode
     }
 
     var body: some View {
@@ -1978,6 +2018,8 @@ private struct EditableCustomGroup: Identifiable {
 }
 
 private struct CustomGroupEditor: View {
+
+    @Environment(\.appSettings) private var appSettings
     @State var group: EditableCustomGroup
     let onSave: (EditableCustomGroup) -> Void
     let onCancel: () -> Void

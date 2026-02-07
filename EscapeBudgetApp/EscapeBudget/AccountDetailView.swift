@@ -5,9 +5,9 @@ struct AccountDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
     let account: Account
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    
+        
     @State private var showingImportSheet = false
     @State private var selectedTransaction: Transaction?
     @State private var showingAddTransaction = false
@@ -32,7 +32,7 @@ struct AccountDetailView: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Text(transaction.amount, format: .currency(code: currencyCode))
+                    Text(transaction.amount, format: .currency(code: settings.currencyCode))
                         .foregroundStyle(transaction.isTransfer ? .primary : (transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary))
                 }
                 .contentShape(Rectangle())
@@ -48,8 +48,7 @@ struct AccountDetailView: View {
                 Button {
                     showingAccountActions = true
                 } label: {
-                    Image(systemName: "ellipsis")
-                        .imageScale(.large)
+                    Image(systemName: "ellipsis").appEllipsisIcon()
                 }
             }
         }
@@ -75,7 +74,7 @@ struct AccountDetailView: View {
         }
         .sheet(isPresented: $showingEditAccountSheet) {
             NavigationStack {
-                AccountEditSheet(account: account, currencyCode: currencyCode)
+                AccountEditSheet(account: account, currencyCode: settings.currencyCode)
             }
         }
         .sheet(isPresented: $showingAccountActions) {
@@ -212,6 +211,7 @@ private struct AccountActionsSheet: View {
 private struct AccountEditSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.appSettings) private var settings
 
     let account: Account
     let currencyCode: String

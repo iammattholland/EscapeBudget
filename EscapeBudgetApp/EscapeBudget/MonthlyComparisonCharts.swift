@@ -75,7 +75,7 @@ struct MonthComparisonLineChart<MenuContent: View>: View {
                 Spacer()
                 if showsMenu {
                     Menu { menuContent() } label: {
-                        Image(systemName: "ellipsis")
+                        Image(systemName: "ellipsis").appEllipsisIcon()
                             .appDisplayText(AppDesign.Theme.DisplaySize.small, weight: .semibold)
                             .foregroundStyle(.secondary)
                     }
@@ -311,7 +311,7 @@ struct MonthlyIncomeBarChart: View {
 
                     Button(showAverageLine ? "Hide Monthly Average" : "Show Monthly Average", action: toggleAverage)
                 } label: {
-                    Image(systemName: "ellipsis")
+                    Image(systemName: "ellipsis").appEllipsisIcon()
                         .appDisplayText(AppDesign.Theme.DisplaySize.small, weight: .semibold)
                         .foregroundStyle(.secondary)
                 }

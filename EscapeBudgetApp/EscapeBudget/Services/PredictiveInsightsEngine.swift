@@ -425,6 +425,20 @@ struct PredictiveInsightsEngine {
         // Find categories on track to exceed budget
         let expenseCategories = categories.filter { $0.group?.type == .expense && $0.assigned >= 25 }
 
+        let rangeStartMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: rangeStart)) ?? rangeStart
+        let rangeEndMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: rangeEnd)) ?? rangeEnd
+        let budgets: [MonthlyCategoryBudget] = {
+            var descriptor = FetchDescriptor<MonthlyCategoryBudget>(
+                predicate: #Predicate { entry in
+                    entry.monthStart >= rangeStartMonth && entry.monthStart <= rangeEndMonth
+                }
+            )
+            descriptor.fetchLimit = 5000
+            return (try? modelContext.fetch(descriptor)) ?? []
+        }()
+
+        let budgetCalculator = CategoryBudgetCalculator(transactions: transactions, monthlyBudgets: budgets, calendar: calendar)
+
         for category in expenseCategories {
             let net = transactions
                 .filter { $0.category?.persistentModelID == category.persistentModelID && $0.kind == .standard && $0.account?.isTrackingOnly != true }
@@ -436,11 +450,13 @@ struct PredictiveInsightsEngine {
             let dailyRate = spent / Decimal(daysPassed)
             let projectedTotal = dailyRate * Decimal(totalDays)
 
-            if projectedTotal > category.assigned {
+            let budgetLimit = max(0, budgetCalculator.periodSummary(for: category, start: rangeStart, end: rangeEnd).effectiveLimitForPeriod)
+
+            if budgetLimit > 0, projectedTotal > budgetLimit {
                 insights.append(Insight(
                     type: .budgetProjection,
                     title: "\(category.name) budget at risk",
-                    description: "Projected \(projectedTotal.formatted(.currency(code: currencyCode))) vs budget \(category.assigned.formatted(.currency(code: currencyCode))).",
+                    description: "Projected \(projectedTotal.formatted(.currency(code: currencyCode))) vs budget \(budgetLimit.formatted(.currency(code: currencyCode))).",
                     why: "Based on \(daysPassed) day\(daysPassed == 1 ? "" : "s") of spend so far.",
                     severity: .warning,
                     actionable: true,

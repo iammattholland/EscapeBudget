@@ -4,8 +4,8 @@ import SwiftData
 struct ApplyRuleRetroactiveView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appSettings) private var settings
 
     let rule: AutoRule
 
@@ -111,7 +111,7 @@ struct ApplyRuleRetroactiveView: View {
                                 Spacer()
 
                                 VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.hairline) {
-                                    Text(tx.amount, format: .currency(code: currencyCode))
+                                    Text(tx.amount, format: .currency(code: settings.currencyCode))
                                         .monospacedDigit()
                                         .foregroundStyle(.primary)
                                     Text(tx.category?.name ?? "Uncategorized")
@@ -206,6 +206,10 @@ struct ApplyRuleRetroactiveView: View {
                 applyProgress = nil
 
                 if saveSuccessful {
+                    SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+                        modelContext: modelContext,
+                        saveContext: "ApplyRuleRetroactiveView.applySelected"
+                    )
                     InAppNotificationService.post(
                         title: "Rule Applied",
                         message: "Applied “\(rule.name)” to \(totalCount) transaction\(totalCount == 1 ? "" : "s").",

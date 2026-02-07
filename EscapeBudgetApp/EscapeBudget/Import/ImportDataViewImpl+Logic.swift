@@ -1166,6 +1166,11 @@ extension ImportDataViewImpl {
                 }
 
 	                importProcessingResult = processingResult
+                    SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+                        modelContext: modelContext,
+                        referenceDate: Date(),
+                        saveContext: "ImportDataView.performFinalImport.syncSavingsGoals"
+                    )
 
                     StatsSanityChecker.checkRecentMonths(in: modelContext, monthsBack: 3, isDemoData: false)
 

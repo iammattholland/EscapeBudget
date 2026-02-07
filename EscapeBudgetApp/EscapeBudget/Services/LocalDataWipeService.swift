@@ -26,15 +26,15 @@ enum LocalDataWipeService {
             "badge.",
             "badges.",
             "inAppNotifications.",
-            "hasNotifications",
-            "isDemoMode",
-            "showTransactionTags",
-            "weekStartDay",
-            "currencyCode",
-            "appLanguage",
-            "userAppearance",
-            "appIconMode",
-            "appColorMode"
+            AppSettings.Keys.hasNotifications,
+            AppSettings.Keys.isDemoMode,
+            AppSettings.Keys.showTransactionTags,
+            AppSettings.Keys.weekStartDay,
+            AppSettings.Keys.currencyCode,
+            AppSettings.Keys.appLanguage,
+            AppSettings.Keys.userAppearance,
+            AppSettings.Keys.appIconMode,
+            AppSettings.Keys.appColorMode
         ]
 
         for key in keys {

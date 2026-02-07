@@ -2,6 +2,8 @@ import SwiftUI
 import SwiftData
 
 struct ImportProcessingReviewView: View {
+
+    @Environment(\.appSettings) private var appSettings
     let result: TransactionProcessor.Result
     let fileName: String?
     let options: ImportProcessingOptions
@@ -9,8 +11,7 @@ struct ImportProcessingReviewView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.appColorMode) private var appColorMode
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-
+    
     @State private var editingTransaction: TransactionSheetItem?
     @State private var selectedRuleImpact: RuleImpactSheetItem?
 
@@ -312,19 +313,23 @@ struct ImportProcessingReviewView: View {
                 ruleName: item.ruleName,
                 rule: item.rule,
                 transactions: item.transactions,
-                currencyCode: currencyCode
+                currencyCode: appSettings.currencyCode
             )
         }
     }
 }
 
 private struct RuleImpactSheet: View {
+
+    @Environment(\.appSettings) private var appSettings
     let ruleName: String
     let rule: AutoRule?
     let transactions: [Transaction]
     let currencyCode: String
 
     @Environment(\.dismiss) private var dismiss
+
+    @Environment(\.appSettings) private var settings
     @State private var editingTransaction: Transaction?
     @State private var editingRule: AutoRule?
 
@@ -385,7 +390,7 @@ private struct RuleImpactSheet: View {
                                             .foregroundStyle(.secondary)
                                     }
                                     Spacer()
-                                    Text(tx.amount, format: .currency(code: currencyCode))
+                                    Text(tx.amount, format: .currency(code: appSettings.currencyCode))
                                         .appSecondaryBodyText()
                                         .monospacedDigit()
                                 }
@@ -465,7 +470,7 @@ private struct RuleImpactSheet: View {
                 .fontWeight(.medium)
 
             HStack(spacing: AppDesign.Theme.Spacing.compact) {
-                Text(suggestion.amount, format: .currency(code: currencyCode))
+                Text(suggestion.amount, format: .currency(code: appSettings.currencyCode))
                     .appCaptionText()
                     .foregroundStyle(.secondary)
                     .monospacedDigit()

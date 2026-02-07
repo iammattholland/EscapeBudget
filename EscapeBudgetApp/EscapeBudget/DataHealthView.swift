@@ -5,14 +5,9 @@ import UIKit
 struct DataHealthView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var errorCenter: AppErrorCenter
+    @Environment(\.appSettings) private var settings
 
-    @AppStorage("sync.icloud.enabled") private var iCloudSyncEnabled = false
-    @AppStorage("sync.icloud.lastAttempt") private var lastSyncAttempt: Double = 0
-    @AppStorage("sync.icloud.lastSuccess") private var lastSyncSuccess: Double = 0
-    @AppStorage("sync.icloud.lastError") private var lastSyncError: String = ""
-    @AppStorage("diagnostics.audit.lastRun") private var lastAuditRun: Double = 0
-    @AppStorage("diagnostics.audit.lastReport") private var lastAuditReportFilename: String = ""
-
+                        
     @State private var auditSummary: DataAuditSummary = .empty
     @State private var storeSummary: StoreSummary = .empty
     @State private var isRunningBackup = false
@@ -43,6 +38,7 @@ struct DataHealthView: View {
     }
 
     var body: some View {
+        @Bindable var settings = settings
         List {
             Section {
                 VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
@@ -56,7 +52,7 @@ struct DataHealthView: View {
             }
 
             Section("Sync") {
-                Toggle("Sync with iCloud (Beta)", isOn: $iCloudSyncEnabled)
+                Toggle("Sync with iCloud (Beta)", isOn: $settings.iCloudSyncEnabled)
                 Text("If enabled, Escape Budget will attempt to keep your data in sync across your devices. This requires iCloud capabilities in your Apple Developer setup.")
                     .appCaptionText()
                     .foregroundStyle(.secondary)
@@ -64,28 +60,28 @@ struct DataHealthView: View {
 
             Section {
                 LabeledContent("Mode") {
-                    Text(iCloudSyncEnabled ? "iCloud (Beta)" : "Local only")
+                    Text(settings.iCloudSyncEnabled ? "iCloud (Beta)" : "Local only")
                         .foregroundStyle(.secondary)
                 }
 
                 LabeledContent("Last attempt") {
-                    Text(lastSyncAttempt > 0 ? Date(timeIntervalSince1970: lastSyncAttempt).formatted(.dateTime.year().month().day().hour().minute()) : "—")
+                    Text(settings.lastSyncAttempt > 0 ? Date(timeIntervalSince1970: settings.lastSyncAttempt).formatted(.dateTime.year().month().day().hour().minute()) : "—")
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
 
                 LabeledContent("Last success") {
-                    Text(lastSyncSuccess > 0 ? Date(timeIntervalSince1970: lastSyncSuccess).formatted(.dateTime.year().month().day().hour().minute()) : "—")
+                    Text(settings.lastSyncSuccess > 0 ? Date(timeIntervalSince1970: settings.lastSyncSuccess).formatted(.dateTime.year().month().day().hour().minute()) : "—")
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                 }
 
-                if !lastSyncError.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                if !settings.lastSyncError.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                         Text("Last error")
                             .appCaptionStrongText()
                             .foregroundStyle(.secondary)
-                        Text(lastSyncError)
+                        Text(settings.lastSyncError)
                             .appCaptionText()
                             .foregroundStyle(.secondary)
                             .lineLimit(4)
@@ -118,17 +114,17 @@ struct DataHealthView: View {
                 }
                 .disabled(isRunningAudit)
 
-                if lastAuditRun > 0 {
+                if settings.diagnosticsLastAuditRun > 0 {
                     LabeledContent("Last audit") {
-                        Text(Date(timeIntervalSince1970: lastAuditRun).formatted(.dateTime.year().month().day().hour().minute()))
+                        Text(Date(timeIntervalSince1970: settings.diagnosticsLastAuditRun).formatted(.dateTime.year().month().day().hour().minute()))
                             .foregroundStyle(.secondary)
                             .monospacedDigit()
                     }
                 }
 
-                if !lastAuditReportFilename.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                if !settings.diagnosticsLastAuditReport.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     LabeledContent("Last report") {
-                        Text(lastAuditReportFilename)
+                        Text(settings.diagnosticsLastAuditReport)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .truncationMode(.middle)
@@ -235,7 +231,7 @@ struct DataHealthView: View {
         .task {
             refreshSummaries()
         }
-        .onChange(of: iCloudSyncEnabled) { _, _ in
+        .onChange(of: settings.iCloudSyncEnabled) { _, _ in
             // Container recreation happens in EscapeBudgetApp; keep this view lightweight.
         }
     }
@@ -278,11 +274,11 @@ struct DataHealthView: View {
         lines.append("Bundle: \(bundleID)")
         lines.append("iOS: \(UIDevice.current.systemVersion)")
         lines.append("")
-        lines.append("Sync: \(iCloudSyncEnabled ? "iCloud (Beta)" : "Local only")")
-        lines.append("Last attempt: \(lastSyncAttempt > 0 ? ISO8601DateFormatter().string(from: Date(timeIntervalSince1970: lastSyncAttempt)) : "—")")
-        lines.append("Last success: \(lastSyncSuccess > 0 ? ISO8601DateFormatter().string(from: Date(timeIntervalSince1970: lastSyncSuccess)) : "—")")
-        if !lastSyncError.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            lines.append("Last error: \(sanitizeFreeText(lastSyncError))")
+        lines.append("Sync: \(settings.iCloudSyncEnabled ? "iCloud (Beta)" : "Local only")")
+        lines.append("Last attempt: \(settings.lastSyncAttempt > 0 ? ISO8601DateFormatter().string(from: Date(timeIntervalSince1970: settings.lastSyncAttempt)) : "—")")
+        lines.append("Last success: \(settings.lastSyncSuccess > 0 ? ISO8601DateFormatter().string(from: Date(timeIntervalSince1970: settings.lastSyncSuccess)) : "—")")
+        if !settings.lastSyncError.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            lines.append("Last error: \(sanitizeFreeText(settings.lastSyncError))")
         }
         lines.append("")
         lines.append("Counts:")
@@ -352,8 +348,8 @@ struct DataHealthView: View {
 
         do {
             let result = try await DataAuditService.run(modelContext: modelContext)
-            lastAuditRun = Date().timeIntervalSince1970
-            lastAuditReportFilename = result.reportFilename
+            settings.diagnosticsLastAuditRun = Date().timeIntervalSince1970
+            settings.diagnosticsLastAuditReport = result.reportFilename
             refreshSummaries()
             auditAlertMessage = "Saved report: \(result.reportFilename)"
             showAuditAlert = true

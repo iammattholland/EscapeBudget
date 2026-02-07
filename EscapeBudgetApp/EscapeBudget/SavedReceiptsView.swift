@@ -3,9 +3,9 @@ import SwiftData
 
 struct SavedReceiptsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.appSettings) private var settings
     @Query(sort: \ReceiptImage.createdDate, order: .reverse) private var receipts: [ReceiptImage]
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-
+    
     @State private var selectedReceipt: ReceiptImage?
 
     var body: some View {
@@ -22,7 +22,7 @@ struct SavedReceiptsView: View {
                         Button {
                             selectedReceipt = receipt
                         } label: {
-                            ReceiptRow(receipt: receipt, currencyCode: currencyCode)
+                            ReceiptRow(receipt: receipt, currencyCode: settings.currencyCode)
                         }
                         .buttonStyle(.plain)
                     }
@@ -33,7 +33,7 @@ struct SavedReceiptsView: View {
         .navigationTitle("Saved Receipts")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $selectedReceipt) { receipt in
-            ReceiptDetailView(receipt: receipt, currencyCode: currencyCode)
+            ReceiptDetailView(receipt: receipt, currencyCode: settings.currencyCode)
         }
     }
 

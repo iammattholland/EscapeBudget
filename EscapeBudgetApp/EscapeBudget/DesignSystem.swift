@@ -565,6 +565,13 @@ extension View {
         self.font(.system(size: AppTheme.IconSize.hero))
     }
 
+    /// Toolbar/menu ellipsis styling (consistent across app)
+    func appEllipsisIcon() -> some View {
+        self
+            .imageScale(.large)
+            .foregroundStyle(.primary)
+    }
+
     // MARK: Shape Helpers
 
     /// Convenience for rounded rectangle clip shape.

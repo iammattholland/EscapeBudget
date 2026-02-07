@@ -6,8 +6,8 @@ struct TransfersInboxView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-
+    @Environment(\.appSettings) private var settings
+    
     @Query private var unmatchedTransfers: [Transaction]
     @State private var suggestions: [TransferMatcher.Suggestion] = []
     @State private var isLoadingSuggestions = false
@@ -126,7 +126,7 @@ struct TransfersInboxView: View {
                                     SuggestedTransferRow(
                                         suggestion: suggestion,
                                         modelContext: modelContext,
-                                        currencyCode: currencyCode
+                                        currencyCode: settings.currencyCode
                                     )
                                 }
                             }
@@ -162,15 +162,15 @@ struct TransfersInboxView: View {
                                         HStack(spacing: AppDesign.Theme.Spacing.tight) {
                                             Image(systemName: selectedUnmatchedIDs.contains(transaction.persistentModelID) ? "checkmark.circle.fill" : "circle")
                                                 .foregroundStyle(selectedUnmatchedIDs.contains(transaction.persistentModelID) ? AppDesign.Colors.tint(for: appColorMode) : .secondary)
-                                            UnmatchedTransferRow(transaction: transaction, currencyCode: currencyCode)
+                                            UnmatchedTransferRow(transaction: transaction, currencyCode: settings.currencyCode)
                                         }
                                     }
                                     .buttonStyle(.plain)
                                 } else {
                                     NavigationLink {
-                                        TransferMatchPickerView(base: transaction, currencyCode: currencyCode)
+                                        TransferMatchPickerView(base: transaction, currencyCode: settings.currencyCode)
                                     } label: {
-                                        UnmatchedTransferRow(transaction: transaction, currencyCode: currencyCode)
+                                        UnmatchedTransferRow(transaction: transaction, currencyCode: settings.currencyCode)
                                     }
                                 }
                             }
@@ -228,8 +228,7 @@ struct TransfersInboxView: View {
                     Button {
                         showingInboxActions = true
                     } label: {
-                        Image(systemName: "ellipsis")
-                            .imageScale(.large)
+                        Image(systemName: "ellipsis").appEllipsisIcon()
                     }
                     .accessibilityLabel("More")
                 }
@@ -238,7 +237,7 @@ struct TransfersInboxView: View {
                 NavigationStack {
                     TransferSuggestionConfirmView(
                         suggestion: suggestion,
-                        currencyCode: currencyCode,
+                        currencyCode: settings.currencyCode,
                         onLinked: { transferID in
                             editTransfer = TransferEditorDestination(id: transferID)
                             removeSuggestionPair(baseID: suggestion.baseID, matchID: suggestion.matchID)
@@ -707,6 +706,7 @@ private struct TransferTransactionRow: View {
     let transaction: Transaction
     let currencyCode: String
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
 
     var body: some View {
         HStack(spacing: AppDesign.Theme.Spacing.tight) {
@@ -725,7 +725,7 @@ private struct TransferTransactionRow: View {
 
             Spacer()
 
-            Text(transaction.amount, format: .currency(code: currencyCode))
+            Text(transaction.amount, format: .currency(code: settings.currencyCode))
                 .appSecondaryBodyText()
                 .fontWeight(.semibold)
                 .foregroundStyle(transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))

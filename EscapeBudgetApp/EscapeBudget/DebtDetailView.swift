@@ -5,8 +5,8 @@ struct DebtDetailView: View {
     @Bindable var debt: DebtAccount
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-
+    @Environment(\.appSettings) private var settings
+    
     @State private var showingEditSheet = false
 
     private var color: Color {
@@ -62,7 +62,7 @@ struct DebtDetailView: View {
             Section("Balance") {
                 LabeledContent("Current Balance") {
                     HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
-                        Text(debt.effectiveBalance, format: .currency(code: currencyCode))
+                        Text(debt.effectiveBalance, format: .currency(code: settings.currencyCode))
                             .fontWeight(.semibold)
                             .foregroundStyle(debt.isPaidOff ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
                         if debt.isSyncedWithAccount {
@@ -81,11 +81,11 @@ struct DebtDetailView: View {
                 }
 
                 LabeledContent("Original Balance") {
-                    Text(debt.originalBalance, format: .currency(code: currencyCode))
+                    Text(debt.originalBalance, format: .currency(code: settings.currencyCode))
                 }
 
                 LabeledContent("Amount Paid") {
-                    Text(debt.originalBalance - debt.effectiveBalance, format: .currency(code: currencyCode))
+                    Text(debt.originalBalance - debt.effectiveBalance, format: .currency(code: settings.currencyCode))
                         .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                 }
             }
@@ -98,18 +98,18 @@ struct DebtDetailView: View {
                 }
 
                 LabeledContent("Minimum Payment") {
-                    Text(debt.minimumPayment, format: .currency(code: currencyCode))
+                    Text(debt.minimumPayment, format: .currency(code: settings.currencyCode))
                 }
 
                 if debt.extraPayment > 0 {
                     LabeledContent("Extra Payment") {
-                        Text(debt.extraPayment, format: .currency(code: currencyCode))
+                        Text(debt.extraPayment, format: .currency(code: settings.currencyCode))
                             .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                     }
                 }
 
                 LabeledContent("Total Monthly Payment") {
-                    Text(debt.totalMonthlyPayment, format: .currency(code: currencyCode))
+                    Text(debt.totalMonthlyPayment, format: .currency(code: settings.currencyCode))
                         .fontWeight(.semibold)
                 }
             }
@@ -134,7 +134,7 @@ struct DebtDetailView: View {
 
                     if let totalInterest = debt.projectedTotalInterest {
                         LabeledContent("Total Interest to Pay") {
-                            Text(totalInterest, format: .currency(code: currencyCode))
+                            Text(totalInterest, format: .currency(code: settings.currencyCode))
                                 .fontWeight(.medium)
                                 .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                         }
@@ -185,8 +185,8 @@ struct DebtDetailView: View {
 struct DebtWhatIfView: View {
     let debt: DebtAccount
     @Environment(\.appColorMode) private var appColorMode
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-
+    @Environment(\.appSettings) private var settings
+    
     @State private var extraPaymentAmount: Double = 0
 
     private var maxExtraPayment: Double {
@@ -220,7 +220,7 @@ struct DebtWhatIfView: View {
                         .appCaptionText()
                         .foregroundStyle(.secondary)
 
-                    Text(Decimal(extraPaymentAmount), format: .currency(code: currencyCode))
+                    Text(Decimal(extraPaymentAmount), format: .currency(code: settings.currencyCode))
                         .appTitleText()
                         .fontWeight(.bold)
                         .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
@@ -247,11 +247,11 @@ struct DebtWhatIfView: View {
 
                     LabeledContent("Total Interest") {
                         VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.micro) {
-                            Text(projection.totalInterestPaid, format: .currency(code: currencyCode))
+                            Text(projection.totalInterestPaid, format: .currency(code: settings.currencyCode))
                                 .fontWeight(.semibold)
                             if projection.totalInterestPaid < original.totalInterestPaid {
                                 let saved = original.totalInterestPaid - projection.totalInterestPaid
-                                Text("Save \(saved, format: .currency(code: currencyCode))")
+                                Text("Save \(saved, format: .currency(code: settings.currencyCode))")
                                     .appCaptionText()
                                     .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                             }
@@ -272,7 +272,7 @@ struct DebtWhatIfView: View {
                     }
 
                     LabeledContent("Total Interest") {
-                        Text(original.totalInterestPaid, format: .currency(code: currencyCode))
+                        Text(original.totalInterestPaid, format: .currency(code: settings.currencyCode))
                             .foregroundStyle(.secondary)
                     }
 

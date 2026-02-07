@@ -5,10 +5,10 @@ struct ReconcileAccountView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
 
     @Query(sort: \Account.name) private var accounts: [Account]
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-
+    
     @State private var selectedAccount: Account?
     @State private var actualBalanceInput: String = ""
     @State private var showingConfirm = false
@@ -109,7 +109,7 @@ struct ReconcileAccountView: View {
                     .appCaptionText()
                     .foregroundStyle(.secondary)
                 HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
-                    Text(currencySymbol(for: currencyCode))
+                    Text(currencySymbol(for: settings.currencyCode))
                         .foregroundStyle(.secondary)
                     TextField("0.00", text: $actualBalanceInput)
                         .keyboardType(.decimalPad)
@@ -134,7 +134,7 @@ struct ReconcileAccountView: View {
         HStack {
             Text(title)
             Spacer()
-            Text(value, format: .currency(code: currencyCode))
+            Text(value, format: .currency(code: settings.currencyCode))
                 .monospacedDigit()
                 .foregroundStyle(tint)
         }
@@ -168,7 +168,7 @@ struct ReconcileAccountView: View {
         guard let account = selectedAccount, let delta else {
             return "Create an adjustment transaction to match your entered balance?"
         }
-        let formattedDelta = delta.formatted(.currency(code: currencyCode))
+        let formattedDelta = delta.formatted(.currency(code: settings.currencyCode))
         return "Create a \(formattedDelta) adjustment for \(account.name)?"
     }
 

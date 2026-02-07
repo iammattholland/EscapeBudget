@@ -3,15 +3,30 @@ import SwiftData
 
 struct SavingsGoalsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Query(sort: \CategoryGroup.order) private var categoryGroups: [CategoryGroup]
     @Query(sort: \SavingsGoal.createdDate, order: .reverse) private var savingsGoals: [SavingsGoal]
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
+    @Query(
+        filter: #Predicate<Transaction> { tx in
+            tx.kindRawValue == "Standard"
+        },
+        sort: [SortDescriptor(\Transaction.date, order: .reverse)]
+    ) private var standardTransactions: [Transaction]
+    @Query(sort: \MonthlyCategoryBudget.monthStart, order: .reverse) private var monthlyCategoryBudgets: [MonthlyCategoryBudget]
+        @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appSettings) private var settings
 
     @State private var showingAddGoal = false
     @State private var showingQuickContribute = false
     @State private var selectedGoalForContribution: SavingsGoal?
     @State private var contributionAmount = ""
+    @State private var budgetCalculator = CategoryBudgetCalculator(transactions: [], monthlyBudgets: [])
     private let topChrome: AnyView?
+    private struct EnvelopeSyncTaskID: Equatable {
+        let goalsCount: Int
+        let transactionCount: Int
+        let budgetsCount: Int
+        let token: Int
+    }
 
     init(topChrome: (() -> AnyView)? = nil) {
         self.topChrome = topChrome?()
@@ -55,7 +70,7 @@ struct SavingsGoalsView: View {
                                     Text("Total Saved")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
-                                    Text(totalSaved, format: .currency(code: currencyCode))
+                                    Text(totalSaved, format: .currency(code: settings.currencyCode))
                                         .appTitleText()
                                         .fontWeight(.bold)
                                 }
@@ -66,7 +81,7 @@ struct SavingsGoalsView: View {
                                     Text("Total Goal")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
-                                    Text(totalTarget, format: .currency(code: currencyCode))
+                                    Text(totalTarget, format: .currency(code: settings.currencyCode))
                                         .appTitleText()
                                 }
                             }
@@ -116,10 +131,9 @@ struct SavingsGoalsView: View {
                         Label("Add Goal", systemImage: "plus")
                     }
                 } label: {
-                    Image(systemName: "ellipsis")
-                        .imageScale(.large)
+                    Image(systemName: "ellipsis").appEllipsisIcon()
                 }
-                .tint(.black)
+                .tint(.primary)
                 .accessibilityLabel("Savings Goals Menu")
                 .accessibilityIdentifier("savingsGoals.menu")
             }
@@ -137,8 +151,24 @@ struct SavingsGoalsView: View {
                 addContribution()
             }
         } message: {
-            Text("How much would you like to add?")
+            Text("How much would you like to assign this month?")
         }
+        .task(id: envelopeSyncTaskID) {
+            syncEnvelopeState()
+        }
+    }
+
+    private var currentMonthStart: Date {
+        Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date())) ?? Date()
+    }
+
+    private var envelopeSyncTaskID: EnvelopeSyncTaskID {
+        EnvelopeSyncTaskID(
+            goalsCount: savingsGoals.count,
+            transactionCount: standardTransactions.count,
+            budgetsCount: monthlyCategoryBudgets.count,
+            token: DataChangeTracker.token
+        )
     }
     
     private var totalSaved: Decimal {
@@ -155,7 +185,24 @@ struct SavingsGoalsView: View {
     }
     
     private func deleteGoal(_ goal: SavingsGoal) {
+        if let category = goal.category {
+            let categoryID = category.persistentModelID
+            var descriptor = FetchDescriptor<Transaction>(
+                predicate: #Predicate<Transaction> { tx in
+                    tx.category?.persistentModelID == categoryID
+                }
+            )
+            descriptor.fetchLimit = 1
+            let hasTransactions = !(((try? modelContext.fetch(descriptor)) ?? []).isEmpty)
+            if hasTransactions {
+                let cutoff = Calendar.current.date(byAdding: .month, value: -1, to: currentMonthStart) ?? currentMonthStart
+                category.archivedAfterMonthStart = cutoff
+            } else {
+                modelContext.delete(category)
+            }
+        }
         modelContext.delete(goal)
+        modelContext.safeSave(context: "SavingsGoalsView.deleteGoal")
     }
 
     private func addContribution() {
@@ -166,11 +213,108 @@ struct SavingsGoalsView: View {
             return
         }
 
-        goal.currentAmount += amount
+        let category = ensureEnvelopeCategory(for: goal)
+        let categoryID = category.persistentModelID
+        var descriptor = FetchDescriptor<MonthlyCategoryBudget>(
+            predicate: #Predicate<MonthlyCategoryBudget> { entry in
+                entry.category?.persistentModelID == categoryID &&
+                entry.monthStart == currentMonthStart
+            }
+        )
+        descriptor.fetchLimit = 1
+        let existing = (try? modelContext.fetch(descriptor))?.first
+        let baseline = existing?.amount ?? category.assigned
+        let updatedAmount = baseline + amount
+        if let existing {
+            existing.amount = updatedAmount
+        } else if updatedAmount != category.assigned {
+            modelContext.insert(
+                MonthlyCategoryBudget(
+                    monthStart: currentMonthStart,
+                    amount: updatedAmount,
+                    category: category,
+                    isDemoData: goal.isDemoData
+                )
+            )
+        }
+
         contributionAmount = ""
         selectedGoalForContribution = nil
 
-        try? modelContext.save()
+        syncEnvelopeState()
+    }
+
+    @discardableResult
+    private func ensureEnvelopeCategory(for goal: SavingsGoal) -> Category {
+        if let existing = goal.category {
+            existing.budgetType = .monthlyRollover
+            existing.overspendHandling = .carryNegative
+            if let monthlyContribution = goal.monthlyContribution, monthlyContribution >= 0 {
+                existing.assigned = monthlyContribution
+            }
+            return existing
+        }
+
+        let expenseGroup: CategoryGroup = {
+            if let existing = categoryGroups.first(where: { $0.type == .expense && $0.name == "Savings Goals" }) {
+                return existing
+            }
+            let nextOrder = (categoryGroups.map(\.order).max() ?? -1) + 1
+            let group = CategoryGroup(name: "Savings Goals", order: nextOrder, type: .expense, isDemoData: goal.isDemoData)
+            modelContext.insert(group)
+            return group
+        }()
+
+        let nextOrder = ((expenseGroup.categories ?? []).map(\.order).max() ?? -1) + 1
+        let category = Category(
+            name: goal.name,
+            assigned: goal.monthlyContribution ?? 0,
+            activity: 0,
+            order: nextOrder,
+            icon: "🎯",
+            memo: "Savings goal envelope",
+            isDemoData: goal.isDemoData
+        )
+        category.group = expenseGroup
+        category.budgetType = .monthlyRollover
+        category.overspendHandling = .carryNegative
+        category.createdAt = currentMonthStart
+        category.savingsGoal = goal
+        goal.category = category
+        modelContext.insert(category)
+        return category
+    }
+
+    private func syncEnvelopeState() {
+        budgetCalculator = CategoryBudgetCalculator(
+            transactions: standardTransactions,
+            monthlyBudgets: monthlyCategoryBudgets
+        )
+
+        var changed = false
+        for goal in savingsGoals {
+            let category = ensureEnvelopeCategory(for: goal)
+            let summary = budgetCalculator.monthSummary(for: category, monthStart: currentMonthStart)
+            let envelopeBalance = max(Decimal.zero, summary.endingAvailable)
+            if goal.currentAmount != envelopeBalance {
+                goal.currentAmount = envelopeBalance
+                changed = true
+            }
+
+            if category.name != goal.name {
+                category.name = goal.name
+                changed = true
+            }
+
+            if let monthlyContribution = goal.monthlyContribution, monthlyContribution >= 0, category.assigned != monthlyContribution {
+                category.assigned = monthlyContribution
+                changed = true
+            }
+        }
+
+        if changed {
+            modelContext.safeSave(context: "SavingsGoalsView.syncEnvelopeState")
+        }
     }
 }
 
@@ -178,8 +322,8 @@ struct SavingsGoalsView: View {
 
 struct SavingsGoalRow: View {
     let goal: SavingsGoal
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appSettings) private var settings
 
     private var color: Color {
         Color(hex: goal.colorHex) ?? AppDesign.Colors.tint(for: appColorMode)
@@ -194,7 +338,7 @@ struct SavingsGoalRow: View {
 
         // Show how close they are
         if remaining <= 50 {
-            return "Almost there! Just \(remaining.formatted(.currency(code: currencyCode))) to go"
+            return "Almost there! Just \(remaining.formatted(.currency(code: settings.currencyCode))) to go"
         }
 
         // Show timeline projection based on monthly contribution
@@ -253,7 +397,7 @@ struct SavingsGoalRow: View {
                     Text(goal.name)
                         .appSectionTitleText()
 
-                    Text("\(goal.currentAmount, format: .currency(code: currencyCode)) of \(goal.targetAmount, format: .currency(code: currencyCode))")
+                    Text("\(goal.currentAmount, format: .currency(code: settings.currencyCode)) of \(goal.targetAmount, format: .currency(code: settings.currencyCode))")
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
 
@@ -277,8 +421,7 @@ struct AddSavingsGoalView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query private var goals: [SavingsGoal]
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appColorMode) private var appColorMode
     
     @State private var name = ""
     @State private var targetAmount = ""
@@ -411,8 +554,8 @@ struct AddSavingsGoalView: View {
 
 struct SavingsGoalDetailView: View {
     let goal: SavingsGoal
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appSettings) private var settings
     
     var body: some View {
         List {
@@ -430,21 +573,21 @@ struct SavingsGoalDetailView: View {
             }
             
             Section("Progress") {
-                LabeledContent("Current Amount", value: goal.currentAmount, format: .currency(code: currencyCode))
-                LabeledContent("Target Amount", value: goal.targetAmount, format: .currency(code: currencyCode))
-                LabeledContent("Remaining", value: goal.amountRemaining, format: .currency(code: currencyCode))
+                LabeledContent("Current Amount", value: goal.currentAmount, format: .currency(code: settings.currencyCode))
+                LabeledContent("Target Amount", value: goal.targetAmount, format: .currency(code: settings.currencyCode))
+                LabeledContent("Remaining", value: goal.amountRemaining, format: .currency(code: settings.currencyCode))
             }
             
             if let targetDate = goal.targetDate {
                 Section("Timeline") {
                     LabeledContent("Target Date", value: targetDate, format: .dateTime.day().month().year())
                     if let suggested = goal.calculatedMonthlyContribution {
-                        LabeledContent("Suggested Monthly", value: suggested, format: .currency(code: currencyCode))
+                        LabeledContent("Suggested Monthly", value: suggested, format: .currency(code: settings.currencyCode))
                     }
                 }
             } else if let monthly = goal.monthlyContribution {
                 Section("Timeline") {
-                    LabeledContent("Monthly Contribution", value: monthly, format: .currency(code: currencyCode))
+                    LabeledContent("Monthly Contribution", value: monthly, format: .currency(code: settings.currencyCode))
                     if let completionDate = goal.calculatedCompletionDate {
                         LabeledContent("Expected Completion", value: completionDate, format: .dateTime.day().month().year())
                     }

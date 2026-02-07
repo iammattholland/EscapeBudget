@@ -52,6 +52,7 @@ struct LockScreenView: View {
                         subtitle: authService.isBiometricsEnabled ? "You can also unlock with \(authService.biometricType.displayName)" : nil,
                         showsBiometricButton: authService.isBiometricsEnabled,
                         biometricTitle: "Unlock with \(authService.biometricType.displayName)",
+                        resetKey: 0,
                         onBiometricTap: authenticate,
                         onComplete: { code in
                             let success = authService.verifyAppPasscode(code)

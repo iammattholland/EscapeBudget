@@ -141,18 +141,22 @@ final class AutoRulesService {
 
         // Set category
         if let category = rule.actionCategory {
-            let oldCategory = transaction.category?.name
-            if transaction.category?.persistentModelID != category.persistentModelID {
-                let app = AutoRuleApplication(
-                    rule: rule,
-                    transaction: transaction,
-                    fieldChanged: AutoRuleFieldChange.category.rawValue,
-                    oldValue: oldCategory,
-                    newValue: category.name
-                )
-                modelContext.insert(app)
-                applications.append(app)
-                transaction.category = category
+            let calendar = Calendar.current
+            let txMonthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: transaction.date)) ?? transaction.date
+            if category.isActive(inMonthStart: txMonthStart) {
+                let oldCategory = transaction.category?.name
+                if transaction.category?.persistentModelID != category.persistentModelID {
+                    let app = AutoRuleApplication(
+                        rule: rule,
+                        transaction: transaction,
+                        fieldChanged: AutoRuleFieldChange.category.rawValue,
+                        oldValue: oldCategory,
+                        newValue: category.name
+                    )
+                    modelContext.insert(app)
+                    applications.append(app)
+                    transaction.category = category
+                }
             }
         }
 

@@ -12,13 +12,14 @@ private struct MonthlyNetWorthPoint: Identifiable {
 
 // MARK: - Overview View
 	struct ReportsOverviewView: View {
+	    @Environment(\.appSettings) private var appSettings
 	    @Environment(\.modelContext) private var modelContext
         @EnvironmentObject private var navigator: AppNavigator
-	    @AppStorage("currencyCode") private var currencyCode = "USD"
-	    @Query private var accounts: [Account]
+	    	    @Query private var accounts: [Account]
 	    @Query private var savingsGoals: [SavingsGoal]
-	    @Query private var categoryGroups: [CategoryGroup]
-	    @Query(sort: \MonthlyAccountTotal.monthStart, order: .reverse) private var monthlyAccountTotals: [MonthlyAccountTotal]
+		    @Query private var categoryGroups: [CategoryGroup]
+		    @Query(sort: \MonthlyAccountTotal.monthStart, order: .reverse) private var monthlyAccountTotals: [MonthlyAccountTotal]
+	        @Query(sort: \MonthlyCategoryBudget.monthStart, order: .reverse) private var monthlyCategoryBudgets: [MonthlyCategoryBudget]
 
     @Binding var selectedDate: Date
     @State private var showingIncomeExpenseDetail: IncomeExpenseDetail?
@@ -28,19 +29,23 @@ private struct MonthlyNetWorthPoint: Identifiable {
         @State private var categoryToReview: Category?
         @State private var payeeToReview: PayeeReviewSheetItem?
         @State private var newRulePrefill: NewRulePrefillSheetItem?
-    @State private var filterMode: DateRangeFilterHeader.FilterMode = .month
-    @State private var customStartDate = Date()
-    @State private var customEndDate = Date()
-	    @State private var isRangeHeaderCompact = false
-	    @State private var rangeTransactions: [Transaction] = []
-	    @State private var accountBalances: [PersistentIdentifier: Decimal] = [:]
-	    
-	    private var filteredTransactions: [Transaction] {
-	        rangeTransactions.filter {
-	            $0.kind == .standard &&
-            $0.account?.isTrackingOnly != true
-        }
-    }
+	    @State private var filterMode: DateRangeFilterHeader.FilterMode = .month
+	    @State private var customStartDate = Date()
+	    @State private var customEndDate = Date()
+		    @State private var isRangeHeaderCompact = false
+			    @State private var rangeTransactions: [Transaction] = []
+			    @State private var accountBalances: [PersistentIdentifier: Decimal] = [:]
+			    @State private var budgetCalculator = CategoryBudgetCalculator(transactions: [], monthlyBudgets: [])
+		    
+		    private var filteredTransactions: [Transaction] {
+		        let (start, end) = dateRangeDates
+		        return rangeTransactions.filter {
+		            $0.kind == .standard &&
+		            $0.account?.isTrackingOnly != true &&
+		            $0.date >= start &&
+		            $0.date <= end
+		        }
+	    }
     
     private var dateRangeDates: (Date, Date) {
         let calendar = Calendar.current
@@ -305,13 +310,18 @@ private struct MonthlyNetWorthPoint: Identifiable {
         expenseGroups.flatMap { $0.sortedCategories }
     }
 
-    private func spent(for category: Category) -> Decimal {
-        spentByCategoryID[category.persistentModelID, default: 0]
-    }
+	    private func spent(for category: Category) -> Decimal {
+	        spentByCategoryID[category.persistentModelID, default: 0]
+	    }
 
-    private var budgetAssigned: Decimal {
-        expenseCategories.reduce(0) { $0 + $1.assigned }
-    }
+	    private func effectiveLimitForPeriod(category: Category) -> Decimal {
+	        let summary = budgetCalculator.periodSummary(for: category, start: dateRangeDates.0, end: dateRangeDates.1)
+	        return max(0, summary.effectiveLimitForPeriod)
+	    }
+
+	    private var budgetAssigned: Decimal {
+	        expenseCategories.reduce(0) { $0 + effectiveLimitForPeriod(category: $1) }
+	    }
 
     private var budgetSpent: Decimal {
         expenseCategories.reduce(0) { $0 + spent(for: $1) }
@@ -335,13 +345,13 @@ private struct MonthlyNetWorthPoint: Identifiable {
         )
     }
 
-    private var overBudgetCategories: [(category: Category, overBy: Decimal)] {
-        expenseCategories.compactMap { category in
-            let over = spent(for: category) - category.assigned
-            guard over > 0 else { return nil }
-            return (category: category, overBy: over)
-        }
-        .sorted { $0.overBy > $1.overBy }
+	    private var overBudgetCategories: [(category: Category, overBy: Decimal)] {
+	        expenseCategories.compactMap { category in
+	            let over = spent(for: category) - effectiveLimitForPeriod(category: category)
+	            guard over > 0 else { return nil }
+	            return (category: category, overBy: over)
+	        }
+	        .sorted { $0.overBy > $1.overBy }
     }
 
     private var activeGoals: [SavingsGoal] {
@@ -403,7 +413,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
 	            currentIncome: periodIncome,
 	            currentExpenses: periodExpenses,
 	            savingsRate: savingsRate,
-	            currencyCode: currencyCode
+	            currencyCode: appSettings.currencyCode
 	        )
             let predictiveInsightsForDisplay = predictiveInsights.filter { insight in
                 // We already show a dedicated uncategorized row; avoid duplicating it via "unusual spending".
@@ -466,7 +476,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                         stableID: "uncategorized",
                         icon: "tag.slash.fill",
                         title: "Categorize uncategorized spending",
-                        detail: "\(uncategorizedCount) transaction\(uncategorizedCount == 1 ? "" : "s") totaling \(uncategorizedAmount.formatted(.currency(code: currencyCode)))",
+                        detail: "\(uncategorizedCount) transaction\(uncategorizedCount == 1 ? "" : "s") totaling \(uncategorizedAmount.formatted(.currency(code: appSettings.currencyCode)))",
                         why: "Uncategorized transactions can hide trends and reduce report accuracy.",
                         severity: .warning,
                         actionTitle: actionTitle(for: .openUncategorized),
@@ -498,7 +508,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                                 stableID: "over_income",
                                 icon: PredictiveInsightsEngine.Insight.Severity.alert.icon,
                                 title: "Spending over income",
-                                detail: "\(periodExpenses.formatted(.currency(code: currencyCode))) expenses vs \(periodIncome.formatted(.currency(code: currencyCode))) income",
+                                detail: "\(periodExpenses.formatted(.currency(code: appSettings.currencyCode))) expenses vs \(periodIncome.formatted(.currency(code: appSettings.currencyCode))) income",
                                 why: "This period’s expenses exceed your income.",
                                 severity: .alert,
                                 actionTitle: actionTitle(for: .openReview(.expenses)),
@@ -553,7 +563,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                             stableID: "over_budget_top",
                             icon: PredictiveInsightsEngine.Insight.Severity.warning.icon,
                             title: "\(topOver.category.name) is over budget",
-                            detail: "Over by \(topOver.overBy.formatted(.currency(code: currencyCode))).",
+                            detail: "Over by \(topOver.overBy.formatted(.currency(code: appSettings.currencyCode))).",
                             why: "Based on spending in this period.",
                             severity: .warning,
                             actionTitle: actionTitle(for: .fixBudgetCategory(topOver.category.persistentModelID)),
@@ -589,7 +599,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                             insights: insightRows,
                             income: periodIncome,
                             expenses: periodExpenses,
-                            currencyCode: currencyCode,
+                            currencyCode: appSettings.currencyCode,
                             savingsRate: savingsRate,
                             onTapIncome: { showingIncomeExpenseDetail = .income },
                             onTapExpenses: { showingIncomeExpenseDetail = .expenses },
@@ -603,7 +613,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                             assets: totalAssets,
                             debt: totalDebt,
                             accountsCount: accounts.count,
-                            currencyCode: currencyCode,
+                            currencyCode: appSettings.currencyCode,
                             series: monthlyNetWorthSeries
                         )
                     }
@@ -615,7 +625,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                             netChange: netChange,
                             averageDailyIncome: averageDailyIncome,
                             averageDailySpend: averageDailySpend,
-                            currencyCode: currencyCode,
+                            currencyCode: appSettings.currencyCode,
                             savingsRate: savingsRate
                         )
                     }
@@ -623,7 +633,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                     BudgetReviewSectionCard {
                         OverviewSpendingVelocityCard(
                             velocityData: velocityData,
-                            currencyCode: currencyCode
+                            currencyCode: appSettings.currencyCode
                         )
                     }
 
@@ -632,7 +642,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                             assigned: budgetAssigned,
                             spent: budgetSpent,
                             remaining: budgetRemaining,
-                            currencyCode: currencyCode,
+                            currencyCode: appSettings.currencyCode,
                             utilization: budgetUtilization,
                             overBudgetCategories: Array(overBudgetCategories.prefix(3))
                         )
@@ -642,7 +652,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                         OverviewTopSpendingCard(
                             totalSpending: periodExpenses,
                             items: Array(topSpendingCategories.prefix(5)),
-                            currencyCode: currencyCode
+                            currencyCode: appSettings.currencyCode
                         )
                     }
 
@@ -652,7 +662,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                             categorizedAmount: topSpendingCategories.filter { $0.name != "Uncategorized" }.reduce(0) { $0 + $1.total },
                             uncategorizedCount: uncategorizedCount,
                             uncategorizedAmount: uncategorizedAmount,
-                            currencyCode: currencyCode
+                            currencyCode: appSettings.currencyCode
                         )
                     }
 
@@ -661,7 +671,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                             OverviewGoalsCard(
                                 goals: Array(activeGoals.prefix(3)),
                                 totalProgress: goalsProgress,
-                                currencyCode: currencyCode
+                                currencyCode: appSettings.currencyCode
                             )
                         }
                     }
@@ -671,7 +681,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
                             transactionCount: filteredTransactions.count,
                             largestExpense: largestExpense,
                             largestIncome: largestIncome,
-                            currencyCode: currencyCode
+                            currencyCode: appSettings.currencyCode
                         )
                     }
 
@@ -684,16 +694,20 @@ private struct MonthlyNetWorthPoint: Identifiable {
             }
         }
         .background(Color(.systemGroupedBackground))
-        .background(
-            ReportsRangeTransactionsQuery(
-                start: dateRangeDates.0,
-                end: dateRangeDates.1
-            ) { fetched in
-                rangeTransactions = fetched
-            }
-            .id("\(dateRangeDates.0.timeIntervalSinceReferenceDate)-\(dateRangeDates.1.timeIntervalSinceReferenceDate)")
-        )
-        .coordinateSpace(name: "ReportsOverviewView.scroll")
+	        .background(
+	            ReportsRangeTransactionsQuery(
+	                start: dateRangeDates.0,
+	                end: dateRangeDates.1
+	            ) { fetched in
+	                rangeTransactions = fetched
+	                budgetCalculator = CategoryBudgetCalculator(transactions: fetched, monthlyBudgets: monthlyCategoryBudgets)
+	            }
+	            .id("\(dateRangeDates.0.timeIntervalSinceReferenceDate)-\(dateRangeDates.1.timeIntervalSinceReferenceDate)")
+	        )
+	        .onChange(of: monthlyCategoryBudgets.count) { _, _ in
+	            budgetCalculator = CategoryBudgetCalculator(transactions: rangeTransactions, monthlyBudgets: monthlyCategoryBudgets)
+	        }
+	        .coordinateSpace(name: "ReportsOverviewView.scroll")
         .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
             let shouldCompact = offset < -AppDesign.Theme.Layout.scrollCompactThreshold
             if shouldCompact != isRangeHeaderCompact {
@@ -735,7 +749,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
             IncomeExpenseDetailSheet(
                 detail: detail,
                 transactions: items,
-                currencyCode: currencyCode,
+                currencyCode: appSettings.currencyCode,
                 dateRange: dateRangeDates,
                 accounts: accounts,
                 categoryGroups: categoryGroups
@@ -748,7 +762,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
             IncomeExpenseDetailSheet(
                 detail: .expenses,
                 transactions: items,
-                currencyCode: currencyCode,
+                currencyCode: appSettings.currencyCode,
                 dateRange: dateRangeDates,
                 accounts: accounts,
                 categoryGroups: categoryGroups,
@@ -758,7 +772,7 @@ private struct MonthlyNetWorthPoint: Identifiable {
         .sheet(isPresented: $showingUncategorizedFix) {
             UncategorizedTransactionsView(
                 transactions: uncategorizedExpenses,
-                currencyCode: currencyCode,
+                currencyCode: appSettings.currencyCode,
                 categoryGroups: categoryGroups,
                 onDismiss: {}
             )
@@ -788,16 +802,25 @@ private struct MonthlyNetWorthPoint: Identifiable {
             BudgetCategoryFixSheet(
                 category: category,
                 spent: spent(for: category),
-                currencyCode: currencyCode,
+                currencyCode: appSettings.currencyCode,
                 dateRange: dateRangeDates,
-                transactions: filteredTransactions.filter { $0.category?.persistentModelID == category.persistentModelID }
+                transactions: filteredTransactions.filter { $0.category?.persistentModelID == category.persistentModelID },
+                transactionsForBudgeting: rangeTransactions,
+                monthlyBudgets: monthlyCategoryBudgets
             )
         }
         .sheet(item: $categoryToReview) { category in
+            let monthStart = budgetCalculator.startOfMonth(for: dateRangeDates.1)
             CategoryTransactionsSheet(
                 category: category,
                 transactions: filteredTransactions.filter { $0.category?.persistentModelID == category.persistentModelID },
-                dateRange: dateRangeDates
+                dateRange: dateRangeDates,
+                budgetLogic: CategoryBudgetLogicSnapshot(
+                    periodSummary: budgetCalculator.periodSummary(for: category, start: dateRangeDates.0, end: dateRangeDates.1),
+                    monthSummary: budgetCalculator.monthSummary(for: category, monthStart: monthStart),
+                    periodRange: dateRangeDates,
+                    monthStart: monthStart
+                )
             )
         }
     }
@@ -883,27 +906,29 @@ private struct NewRulePrefillSheetItem: Identifiable {
     let prefill: AutoRuleEditorView.Prefill
 }
 
-private struct ReportsRangeTransactionsQuery: View {
+	private struct ReportsRangeTransactionsQuery: View {
+
+	    @Environment(\.appSettings) private var appSettings
     @Query private var transactions: [Transaction]
     private let onUpdate: ([Transaction]) -> Void
     private let start: Date
     private let end: Date
 
-    init(start: Date, end: Date, onUpdate: @escaping ([Transaction]) -> Void) {
+	    init(start: Date, end: Date, onUpdate: @escaping ([Transaction]) -> Void) {
         self.start = start
         self.end = end
         self.onUpdate = onUpdate
         let kind = TransactionKind.standard.rawValue
-        _transactions = Query(
-            filter: #Predicate<Transaction> { tx in
-                tx.date >= start &&
-                tx.date <= end &&
-                tx.kindRawValue == kind
-            },
-            sort: \Transaction.date,
-            order: .reverse
-        )
-    }
+	        _transactions = Query(
+	            filter: #Predicate<Transaction> { tx in
+	                tx.date >= start &&
+	                tx.date <= end &&
+	                tx.kindRawValue == kind
+	            },
+	            sort: \Transaction.date,
+	            order: .reverse
+	        )
+	    }
 
     var body: some View {
         Color.clear
@@ -959,6 +984,8 @@ private enum IncomeExpenseDetail: String, Identifiable {
 }
 
 private struct OverviewHealthCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let score: Int
     let insights: [OverviewInsightRowModel]
     let income: Decimal
@@ -1009,7 +1036,7 @@ private struct OverviewHealthCard: View {
                         icon: "arrow.down.circle.fill",
                         label: "Income",
                         value: income,
-                        currencyCode: currencyCode,
+                        currencyCode: appSettings.currencyCode,
                         tint: AppDesign.Colors.success(for: appColorMode)
                     )
                 }
@@ -1020,7 +1047,7 @@ private struct OverviewHealthCard: View {
                         icon: "arrow.up.circle.fill",
                         label: "Expenses",
                         value: expenses,
-                        currencyCode: currencyCode,
+                        currencyCode: appSettings.currencyCode,
                         tint: AppDesign.Colors.danger(for: appColorMode)
                     )
                 }
@@ -1122,6 +1149,8 @@ private struct OverviewInsightRowModel: Identifiable, Hashable {
 }
 
 private struct IncomeExpenseDetailSheet: View {
+
+    @Environment(\.appSettings) private var appSettings
     @Environment(\.dismiss) private var dismiss
     @Environment(\.appColorMode) private var appColorMode
 
@@ -1198,7 +1227,7 @@ private struct IncomeExpenseDetailSheet: View {
 
                         Spacer()
 
-	                        Text(total, format: .currency(code: currencyCode))
+	                        Text(total, format: .currency(code: appSettings.currencyCode))
 	                            .appSectionTitleText()
 	                            .fontWeight(.semibold)
 	                            .foregroundStyle(detail == .income ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
@@ -1224,7 +1253,7 @@ private struct IncomeExpenseDetailSheet: View {
                             } label: {
                                 OverviewTransactionRow(
                                     transaction: transaction,
-                                    currencyCode: currencyCode,
+                                    currencyCode: appSettings.currencyCode,
                                     emphasizeOutflow: detail == .expenses
                                 )
                             }
@@ -1309,6 +1338,8 @@ private struct IncomeExpenseDetailSheet: View {
 }
 
 struct OverviewTransactionRow: View {
+
+    @Environment(\.appSettings) private var appSettings
     let transaction: Transaction
     let currencyCode: String
     let emphasizeOutflow: Bool
@@ -1363,7 +1394,7 @@ struct OverviewTransactionRow: View {
 
             Spacer()
 
-	            Text(transaction.amount, format: .currency(code: currencyCode))
+	            Text(transaction.amount, format: .currency(code: appSettings.currencyCode))
 	                .appSecondaryBodyText()
 	                .fontWeight(.semibold)
 	                .foregroundStyle(amountColor)
@@ -1376,6 +1407,8 @@ struct OverviewTransactionRow: View {
 }
 
 private struct OverviewNetWorthCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let netWorth: Decimal
     let assets: Decimal
     let debt: Decimal
@@ -1394,9 +1427,9 @@ private struct OverviewNetWorthCard: View {
     private var currencySymbol: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = currencyCode
+        formatter.currencyCode = appSettings.currencyCode
         formatter.maximumFractionDigits = 0
-        return formatter.currencySymbol ?? currencyCode
+        return formatter.currencySymbol ?? appSettings.currencyCode
     }
 
     private func compactCurrencyLabel(_ value: Double) -> String {
@@ -1422,7 +1455,7 @@ private struct OverviewNetWorthCard: View {
 	                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                     Text("Net Worth")
                         .appSectionTitleText()
-                    Text(netWorth, format: .currency(code: currencyCode))
+                    Text(netWorth, format: .currency(code: appSettings.currencyCode))
                         .appDisplayText(AppDesign.Theme.DisplaySize.xxxLarge, weight: .bold)
                         .monospacedDigit()
                         .lineLimit(1)
@@ -1442,13 +1475,13 @@ private struct OverviewNetWorthCard: View {
             ) {
                 OverviewMetricTile(
                     title: "Assets",
-                    valueText: assets.formatted(.currency(code: currencyCode)),
+                    valueText: assets.formatted(.currency(code: appSettings.currencyCode)),
                     icon: "building.columns.fill",
                     tint: AppDesign.Colors.tint(for: appColorMode)
                 )
                 OverviewMetricTile(
                     title: "Debt",
-                    valueText: debt.formatted(.currency(code: currencyCode)),
+                    valueText: debt.formatted(.currency(code: appSettings.currencyCode)),
                     icon: "creditcard.fill",
                     tint: AppDesign.Colors.warning(for: appColorMode)
                 )
@@ -1520,7 +1553,7 @@ private struct OverviewNetWorthCard: View {
                                     Text(selectedPoint.monthStart, format: .dateTime.month(.abbreviated).year())
                                         .appCaption2Text()
                                         .foregroundStyle(.secondary)
-                                    Text(selectedPoint.value, format: .currency(code: currencyCode))
+                                    Text(selectedPoint.value, format: .currency(code: appSettings.currencyCode))
                                         .appCaptionText()
                                         .fontWeight(.semibold)
                                         .monospacedDigit()
@@ -1577,6 +1610,8 @@ private struct OverviewNetWorthCard: View {
 }
 
 private struct OverviewCashFlowCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let income: Decimal
     let expenses: Decimal
     let netChange: Decimal
@@ -1599,25 +1634,25 @@ private struct OverviewCashFlowCard: View {
                 OverviewValueTile(
                     title: "Income",
                     value: income,
-                    currencyCode: currencyCode,
+                    currencyCode: appSettings.currencyCode,
                     tint: AppDesign.Colors.success(for: appColorMode)
                 )
                 OverviewValueTile(
                     title: "Expenses",
                     value: expenses,
-                    currencyCode: currencyCode,
+                    currencyCode: appSettings.currencyCode,
                     tint: AppDesign.Colors.danger(for: appColorMode)
                 )
                 OverviewValueTile(
                     title: "Net Change",
                     value: netChange,
-                    currencyCode: currencyCode,
+                    currencyCode: appSettings.currencyCode,
                     tint: netColor
                 )
                 OverviewValueTile(
                     title: "Avg / Day Spend",
                     value: averageDailySpend,
-                    currencyCode: currencyCode,
+                    currencyCode: appSettings.currencyCode,
                     tint: .secondary
                 )
             }
@@ -1633,7 +1668,7 @@ private struct OverviewCashFlowCard: View {
                 )
             }
 
-            Text("Avg / Day Income: \(averageDailyIncome.formatted(.currency(code: currencyCode)))")
+            Text("Avg / Day Income: \(averageDailyIncome.formatted(.currency(code: appSettings.currencyCode)))")
                 .appCaptionText()
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
@@ -1642,6 +1677,8 @@ private struct OverviewCashFlowCard: View {
 }
 
 private struct OverviewBudgetHealthCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let assigned: Decimal
     let spent: Decimal
     let remaining: Decimal
@@ -1689,7 +1726,7 @@ private struct OverviewBudgetHealthCard: View {
             } else {
                 OverviewInlineMeter(
                     title: "Spent vs Assigned",
-                    valueText: "\(spent.formatted(.currency(code: currencyCode))) of \(assigned.formatted(.currency(code: currencyCode)))",
+                    valueText: "\(spent.formatted(.currency(code: appSettings.currencyCode))) of \(assigned.formatted(.currency(code: appSettings.currencyCode)))",
                     progress: utilization ?? 0,
                     tint: utilizationColor
                 )
@@ -1698,13 +1735,13 @@ private struct OverviewBudgetHealthCard: View {
                     OverviewValueTile(
                         title: "Assigned",
                         value: assigned,
-                        currencyCode: currencyCode,
+                        currencyCode: appSettings.currencyCode,
                         tint: .primary
                     )
                     OverviewValueTile(
                         title: "Left",
                         value: remaining,
-                        currencyCode: currencyCode,
+                        currencyCode: appSettings.currencyCode,
                         tint: remaining >= 0 ? .secondary : AppDesign.Colors.danger(for: appColorMode)
                     )
                 }
@@ -1721,7 +1758,7 @@ private struct OverviewBudgetHealthCard: View {
                                     .foregroundStyle(.primary)
                                     .lineLimit(1)
                                 Spacer()
-                                Text("+\(item.overBy.formatted(.currency(code: currencyCode)))")
+                                Text("+\(item.overBy.formatted(.currency(code: appSettings.currencyCode)))")
                                     .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                                     .monospacedDigit()
                             }
@@ -1735,6 +1772,8 @@ private struct OverviewBudgetHealthCard: View {
 }
 
 private struct OverviewTopSpendingCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let totalSpending: Decimal
     let items: [(name: String, total: Decimal)]
     let currencyCode: String
@@ -1748,7 +1787,7 @@ private struct OverviewTopSpendingCard: View {
 
                 Spacer()
 
-	                Text(totalSpending, format: .currency(code: currencyCode))
+	                Text(totalSpending, format: .currency(code: appSettings.currencyCode))
 	                    .appSecondaryBodyText()
 	                    .fontWeight(.semibold)
 	                    .foregroundStyle(.secondary)
@@ -1774,7 +1813,7 @@ private struct OverviewTopSpendingCard: View {
 	                                    .appSecondaryBodyText()
 	                                    .lineLimit(1)
 	                                Spacer()
-	                                Text(item.total, format: .currency(code: currencyCode))
+	                                Text(item.total, format: .currency(code: appSettings.currencyCode))
 	                                    .appSecondaryBodyText()
 	                                    .fontWeight(.semibold)
 	                                    .monospacedDigit()
@@ -1793,6 +1832,8 @@ private struct OverviewTopSpendingCard: View {
 }
 
 private struct OverviewCategorizationCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let categorizedCount: Int
     let categorizedAmount: Decimal
     let uncategorizedCount: Int
@@ -1823,13 +1864,13 @@ private struct OverviewCategorizationCard: View {
                 OverviewValueTile(
                     title: "Categorized",
                     value: categorizedAmount,
-                    currencyCode: currencyCode,
+                    currencyCode: appSettings.currencyCode,
                     tint: .primary
                 )
                 OverviewValueTile(
                     title: "Uncategorized",
                     value: uncategorizedAmount,
-                    currencyCode: currencyCode,
+                    currencyCode: appSettings.currencyCode,
                     tint: uncategorizedCount > 0 ? AppDesign.Colors.warning(for: appColorMode) : .secondary
                 )
             }
@@ -1842,6 +1883,8 @@ private struct OverviewCategorizationCard: View {
 }
 
 private struct OverviewGoalsCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let goals: [SavingsGoal]
     let totalProgress: Double?
     let currencyCode: String
@@ -1881,7 +1924,7 @@ private struct OverviewGoalsCard: View {
 
                             Spacer()
 
-                            Text("\(goal.currentAmount.formatted(.currency(code: currencyCode))) / \(goal.targetAmount.formatted(.currency(code: currencyCode)))")
+                            Text("\(goal.currentAmount.formatted(.currency(code: appSettings.currencyCode))) / \(goal.targetAmount.formatted(.currency(code: appSettings.currencyCode)))")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
@@ -1905,6 +1948,8 @@ private struct OverviewGoalsCard: View {
 }
 
 private struct OverviewHighlightsCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let transactionCount: Int
     let largestExpense: Transaction?
     let largestIncome: Transaction?
@@ -1926,7 +1971,7 @@ private struct OverviewHighlightsCard: View {
                 OverviewInfoRow(
                     icon: "arrow.up.right.circle.fill",
                     title: "Largest Expense",
-                    value: abs(largestExpense.amount).formatted(.currency(code: currencyCode)),
+                    value: abs(largestExpense.amount).formatted(.currency(code: appSettings.currencyCode)),
                     subtitle: largestExpense.payee,
                     tint: AppDesign.Colors.danger(for: appColorMode)
                 )
@@ -1936,7 +1981,7 @@ private struct OverviewHighlightsCard: View {
                 OverviewInfoRow(
                     icon: "arrow.down.left.circle.fill",
                     title: "Largest Income",
-                    value: largestIncome.amount.formatted(.currency(code: currencyCode)),
+                    value: largestIncome.amount.formatted(.currency(code: appSettings.currencyCode)),
                     subtitle: largestIncome.payee,
                     tint: AppDesign.Colors.success(for: appColorMode)
                 )
@@ -1946,6 +1991,8 @@ private struct OverviewHighlightsCard: View {
 }
 
 private struct OverviewDeepDiveLinks: View {
+
+    @Environment(\.appSettings) private var appSettings
     @Binding var selectedDate: Date
 
 	    var body: some View {
@@ -1999,6 +2046,8 @@ private struct OverviewDeepDiveLinks: View {
 }
 
 private struct ReportsSpendingStandaloneView: View {
+
+    @Environment(\.appSettings) private var appSettings
     @State private var selectedDate: Date
     @State private var filterMode: DateRangeFilterHeader.FilterMode = .month
     @State private var customStartDate = Date()
@@ -2045,6 +2094,8 @@ private struct ReportsSpendingStandaloneView: View {
 }
 
 private struct ReportsIncomeStandaloneView: View {
+
+    @Environment(\.appSettings) private var appSettings
     @State private var selectedDate: Date
     @State private var filterMode: DateRangeFilterHeader.FilterMode = .month
     @State private var customStartDate = Date()
@@ -2091,6 +2142,8 @@ private struct ReportsIncomeStandaloneView: View {
 }
 
 private struct BudgetPerformanceStandaloneView: View {
+
+    @Environment(\.appSettings) private var appSettings
     @Binding var selectedDate: Date
     @State private var filterMode: DateRangeFilterHeader.FilterMode = .month
     @State private var customStartDate = Date()
@@ -2133,6 +2186,8 @@ private struct BudgetPerformanceStandaloneView: View {
 }
 
 struct OverviewMetricTile: View {
+
+    @Environment(\.appSettings) private var appSettings
     let title: String
     let valueText: String
     let icon: String
@@ -2170,6 +2225,8 @@ struct OverviewMetricTile: View {
 }
 
 struct OverviewValueTile: View {
+
+    @Environment(\.appSettings) private var appSettings
     let title: String
     let value: Decimal
     let currencyCode: String
@@ -2181,7 +2238,7 @@ struct OverviewValueTile: View {
                 .appCaptionText()
                 .foregroundStyle(.secondary)
 
-            Text(value, format: .currency(code: currencyCode))
+            Text(value, format: .currency(code: appSettings.currencyCode))
                 .font(AppDesign.Theme.Typography.secondaryBody)
                 .fontWeight(.semibold)
                 .foregroundStyle(tint)
@@ -2203,6 +2260,8 @@ struct OverviewValueTile: View {
 }
 
 struct OverviewInlineMeter: View {
+
+    @Environment(\.appSettings) private var appSettings
     let title: String
     let valueText: String
     let progress: Double
@@ -2229,6 +2288,8 @@ struct OverviewInlineMeter: View {
 }
 
 private struct OverviewInsightRow: View {
+
+    @Environment(\.appSettings) private var appSettings
     let model: OverviewInsightRowModel
     let onAction: (OverviewInsightAction) -> Void
     @Environment(\.appColorMode) private var appColorMode
@@ -2294,6 +2355,8 @@ private struct OverviewInsightRow: View {
 }
 
 struct OverviewStatChip: View {
+
+    @Environment(\.appSettings) private var appSettings
     let icon: String
     let label: String
     let value: Decimal
@@ -2310,7 +2373,7 @@ struct OverviewStatChip: View {
                 Text(label)
                     .appCaptionText()
                     .foregroundStyle(.secondary)
-	                Text(value, format: .currency(code: currencyCode))
+	                Text(value, format: .currency(code: appSettings.currencyCode))
 	                    .appSecondaryBodyText()
 	                    .fontWeight(.semibold)
 	                    .foregroundStyle(.primary)
@@ -2335,6 +2398,8 @@ struct OverviewStatChip: View {
 }
 
 struct OverviewInfoRow: View {
+
+    @Environment(\.appSettings) private var appSettings
     let icon: String
     let title: String
     let value: String
@@ -2385,10 +2450,13 @@ struct OverviewInfoRow: View {
 }
 
 struct OverviewLinkRow: View {
+
+    @Environment(\.appSettings) private var appSettings
     let icon: String
     let title: String
     let subtitle: String
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
 
 	    var body: some View {
             HStack(spacing: AppDesign.Theme.Spacing.tight) {

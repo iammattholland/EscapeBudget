@@ -3,8 +3,8 @@ import SwiftUI
 struct ReceiptReviewView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-
+    @Environment(\.appSettings) private var settings
+    
     let image: UIImage
     let parsedReceipt: ReceiptOCRService.ParsedReceipt
 
@@ -63,7 +63,7 @@ struct ReceiptReviewView: View {
                             .appCaptionText()
                             .foregroundStyle(.secondary)
                         HStack {
-                            Text(currencyCode)
+                            Text(settings.currencyCode)
                                 .foregroundStyle(.secondary)
                             TextField("0.00", text: $total)
                                 .keyboardType(.decimalPad)
@@ -88,14 +88,14 @@ struct ReceiptReviewView: View {
                                 VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
                                     Text(item.name)
                                         .appSecondaryBodyText()
-                                    Text("\(item.quantity) × \(item.price.formatted(.currency(code: currencyCode)))")
+                                    Text("\(item.quantity) × \(item.price.formatted(.currency(code: settings.currencyCode)))")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
                                 }
 
                                 Spacer()
 
-                                Text((item.price * Decimal(item.quantity)).formatted(.currency(code: currencyCode)))
+                                Text((item.price * Decimal(item.quantity)).formatted(.currency(code: settings.currencyCode)))
                                     .appSecondaryBodyText()
                                     .fontWeight(.medium)
                             }

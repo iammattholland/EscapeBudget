@@ -268,3 +268,58 @@ struct SavingsGoalSnapshot {
         self.isDemoData = isDemoData
     }
 }
+
+// MARK: - Savings Goal Envelope Sync
+
+@MainActor
+enum SavingsGoalEnvelopeSyncService {
+    static func syncCurrentBalances(
+        modelContext: ModelContext,
+        referenceDate: Date = Date(),
+        saveContext: String = "SavingsGoalEnvelopeSyncService.syncCurrentBalances"
+    ) {
+        let goals = (try? modelContext.fetch(FetchDescriptor<SavingsGoal>())) ?? []
+        let linkedGoals = goals.filter { $0.category != nil }
+        guard !linkedGoals.isEmpty else { return }
+
+        let standardTransactions = (
+            try? modelContext.fetch(
+                FetchDescriptor<Transaction>(
+                    predicate: #Predicate<Transaction> { tx in
+                        tx.kindRawValue == "Standard"
+                    }
+                )
+            )
+        ) ?? []
+        let monthlyBudgets = (try? modelContext.fetch(FetchDescriptor<MonthlyCategoryBudget>())) ?? []
+
+        let calculator = CategoryBudgetCalculator(
+            transactions: standardTransactions,
+            monthlyBudgets: monthlyBudgets
+        )
+        let monthStart = Calendar.current.date(
+            from: Calendar.current.dateComponents([.year, .month], from: referenceDate)
+        ) ?? referenceDate
+
+        var changed = false
+        for goal in linkedGoals {
+            guard let category = goal.category else { continue }
+            let summary = calculator.monthSummary(for: category, monthStart: monthStart)
+            let envelopeBalance = max(Decimal.zero, summary.endingAvailable)
+            if goal.currentAmount != envelopeBalance {
+                goal.currentAmount = envelopeBalance
+                changed = true
+            }
+
+            let shouldBeAchieved = goal.targetAmount > 0 && envelopeBalance >= goal.targetAmount
+            if goal.isAchieved != shouldBeAchieved {
+                goal.isAchieved = shouldBeAchieved
+                changed = true
+            }
+        }
+
+        if changed {
+            modelContext.safeSave(context: saveContext)
+        }
+    }
+}

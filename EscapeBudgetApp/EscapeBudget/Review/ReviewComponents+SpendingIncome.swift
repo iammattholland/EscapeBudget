@@ -3,8 +3,9 @@ import SwiftData
 import Charts
 
 struct ReportsSpendingView: View {
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.modelContext) private var modelContext
+
+    @Environment(\.appSettings) private var appSettings
+        @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
     @Query(sort: \CategoryGroup.order) private var categoryGroups: [CategoryGroup]
 
@@ -133,7 +134,7 @@ struct ReportsSpendingView: View {
                         title: "All Expenses",
                         subtitle: ReviewTrendSeries.subtitleText(for: dateRangeDates),
                         transactions: filteredTransactions.sorted { $0.date > $1.date },
-                        currencyCode: currencyCode,
+                        currencyCode: appSettings.currencyCode,
                         emphasizeOutflow: true
                     )
                 }
@@ -147,7 +148,7 @@ struct ReportsSpendingView: View {
                     id: "uncategorized_expenses",
                     systemImage: "tag.slash",
                     title: "Uncategorized",
-                    value: "\(uncategorizedAmount.formatted(.currency(code: currencyCode))) • \(uncategorizedCount) tx",
+                    value: "\(uncategorizedAmount.formatted(.currency(code: appSettings.currencyCode))) • \(uncategorizedCount) tx",
                     tint: AppDesign.Colors.warning(for: appColorMode),
                     action: { showingUncategorizedFix = true }
                 )
@@ -160,7 +161,7 @@ struct ReportsSpendingView: View {
                     id: "largest_expense",
                     systemImage: "arrow.up.right.circle.fill",
                     title: "Largest expense",
-                    value: abs(largestExpense.amount).formatted(.currency(code: currencyCode)),
+                    value: abs(largestExpense.amount).formatted(.currency(code: appSettings.currencyCode)),
                     tint: AppDesign.Colors.danger(for: appColorMode),
                     action: { transactionToEdit = largestExpense }
                 )
@@ -180,7 +181,7 @@ struct ReportsSpendingView: View {
                             transactionCount: filteredTransactions.count,
                             avgDaily: averageDailySpend,
                             avgTransaction: averageExpense,
-                            currencyCode: currencyCode,
+                            currencyCode: appSettings.currencyCode,
                             uncategorizedAmount: uncategorizedAmount,
                             largestExpense: largestExpense
                         )
@@ -199,7 +200,7 @@ struct ReportsSpendingView: View {
                             title: "Spending Trend",
                             subtitle: "How spending changes across your selected range",
                             series: spendingTrend,
-                            currencyCode: currencyCode,
+                            currencyCode: appSettings.currencyCode,
                             tint: AppDesign.Colors.danger(for: appColorMode)
                         )
                     }
@@ -210,7 +211,7 @@ struct ReportsSpendingView: View {
                             subtitle: "Where your money goes",
                             items: Array(spendingByCategory.prefix(8)),
                             total: totalSpending,
-                            currencyCode: currencyCode,
+                            currencyCode: appSettings.currencyCode,
                             tint: AppDesign.Colors.danger(for: appColorMode)
                         ) { name in
                             let matching = filteredTransactions.filter { ($0.category?.name ?? "Uncategorized") == name }.sorted { $0.date > $1.date }
@@ -218,7 +219,7 @@ struct ReportsSpendingView: View {
                                 title: name,
                                 subtitle: "Expenses",
                                 transactions: matching,
-                                currencyCode: currencyCode,
+                                currencyCode: appSettings.currencyCode,
                                 emphasizeOutflow: true
                             )
                         }
@@ -230,7 +231,7 @@ struct ReportsSpendingView: View {
                             subtitle: "Who you pay most often",
                             items: Array(spendingByMerchant.prefix(8)),
                             total: totalSpending,
-                            currencyCode: currencyCode,
+                            currencyCode: appSettings.currencyCode,
                             tint: AppDesign.Colors.warning(for: appColorMode)
                         ) { merchant in
                             let matching = filteredTransactions.filter { $0.payee.trimmingCharacters(in: .whitespacesAndNewlines) == merchant }.sorted { $0.date > $1.date }
@@ -238,7 +239,7 @@ struct ReportsSpendingView: View {
                                 title: merchant,
                                 subtitle: "Expenses",
                                 transactions: matching,
-                                currencyCode: currencyCode,
+                                currencyCode: appSettings.currencyCode,
                                 emphasizeOutflow: true
                             )
                         }
@@ -270,7 +271,7 @@ struct ReportsSpendingView: View {
                 .sorted { $0.date > $1.date }
             UncategorizedTransactionsView(
                 transactions: uncategorized,
-                currencyCode: currencyCode,
+                currencyCode: appSettings.currencyCode,
                 categoryGroups: categoryGroups,
                 onDismiss: { }
             )
@@ -346,6 +347,8 @@ private struct SpendingQueryTaskID: Equatable {
 }
 
 private struct SpendingTransactionsQuery: View {
+
+    @Environment(\.appSettings) private var appSettings
     @Query private var transactions: [Transaction]
     private let onUpdate: ([Transaction]) -> Void
     private let start: Date
@@ -383,8 +386,8 @@ private struct SpendingTransactionsQuery: View {
 
 // MARK: - Income Trends
 struct ReportsIncomeView: View {
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.appSettings) private var appSettings
+        @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
 
     @Binding var selectedDate: Date
@@ -472,7 +475,7 @@ struct ReportsIncomeView: View {
                         title: "All Income",
                         subtitle: ReviewTrendSeries.subtitleText(for: dateRangeDates),
                         transactions: filteredTransactions.sorted { $0.date > $1.date },
-                        currencyCode: currencyCode,
+                        currencyCode: appSettings.currencyCode,
                         emphasizeOutflow: false
                     )
                 }
@@ -485,7 +488,7 @@ struct ReportsIncomeView: View {
                     id: "top_payer",
                     systemImage: "person.crop.circle.fill",
                     title: "Top payer",
-                    value: "\(payer) • \(amount.formatted(.currency(code: currencyCode)))",
+                    value: "\(payer) • \(amount.formatted(.currency(code: appSettings.currencyCode)))",
                     tint: AppDesign.Colors.tint(for: appColorMode),
                     action: {
                         let matching = filteredTransactions
@@ -495,7 +498,7 @@ struct ReportsIncomeView: View {
                             title: payer,
                             subtitle: "Income",
                             transactions: matching,
-                            currencyCode: currencyCode,
+                            currencyCode: appSettings.currencyCode,
                             emphasizeOutflow: false
                         )
                     }
@@ -509,7 +512,7 @@ struct ReportsIncomeView: View {
                     id: "largest_income",
                     systemImage: "arrow.down.left.circle.fill",
                     title: "Largest income",
-                    value: largestIncome.amount.formatted(.currency(code: currencyCode)),
+                    value: largestIncome.amount.formatted(.currency(code: appSettings.currencyCode)),
                     tint: AppDesign.Colors.success(for: appColorMode),
                     action: { transactionToEdit = largestIncome }
                 )
@@ -584,7 +587,7 @@ struct ReportsIncomeView: View {
                             transactionCount: filteredTransactions.count,
                             avgDaily: averageDailyIncome,
                             avgDeposit: averageDeposit,
-                            currencyCode: currencyCode,
+                            currencyCode: appSettings.currencyCode,
                             largestIncome: largestIncome,
                             payerConcentration: payerConcentration
                         )
@@ -603,7 +606,7 @@ struct ReportsIncomeView: View {
                             title: "Income Trend",
                             subtitle: "How income changes across your selected range",
                             series: incomeTrend,
-                            currencyCode: currencyCode,
+                            currencyCode: appSettings.currencyCode,
                             tint: AppDesign.Colors.success(for: appColorMode)
                         )
                     }
@@ -614,7 +617,7 @@ struct ReportsIncomeView: View {
                             subtitle: "Where your income comes from",
                             items: Array(incomeByPayer.prefix(8)),
                             total: totalIncome,
-                            currencyCode: currencyCode,
+                            currencyCode: appSettings.currencyCode,
                             tint: AppDesign.Colors.success(for: appColorMode)
                         ) { payer in
                             let matching = filteredTransactions.filter { $0.payee.trimmingCharacters(in: .whitespacesAndNewlines) == payer }.sorted { $0.date > $1.date }
@@ -622,7 +625,7 @@ struct ReportsIncomeView: View {
                                 title: payer,
                                 subtitle: "Income",
                                 transactions: matching,
-                                currencyCode: currencyCode,
+                                currencyCode: appSettings.currencyCode,
                                 emphasizeOutflow: false
                             )
                         }
@@ -635,7 +638,7 @@ struct ReportsIncomeView: View {
                                 subtitle: "If you track income categories",
                                 items: Array(incomeBySource.prefix(6)),
                                 total: totalIncome,
-                                currencyCode: currencyCode,
+                                currencyCode: appSettings.currencyCode,
                                 tint: AppDesign.Colors.tint(for: appColorMode)
                             ) { source in
                                 let matching = filteredTransactions.filter { ($0.category?.name ?? $0.payee) == source }.sorted { $0.date > $1.date }
@@ -643,7 +646,7 @@ struct ReportsIncomeView: View {
                                     title: source,
                                     subtitle: "Income",
                                     transactions: matching,
-                                    currencyCode: currencyCode,
+                                    currencyCode: appSettings.currencyCode,
                                     emphasizeOutflow: false
                                 )
                             }
@@ -678,6 +681,8 @@ private struct ReviewTransactionDrilldown: Identifiable {
 }
 
 private struct ReviewTransactionsSheet: View {
+
+    @Environment(\.appSettings) private var appSettings
     @Environment(\.dismiss) private var dismiss
     @Environment(\.appColorMode) private var appColorMode
     let drilldown: ReviewTransactionDrilldown
@@ -872,6 +877,8 @@ private struct ReviewTrendSeries {
 }
 
 private struct ReviewTrendCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let title: String
     let subtitle: String
     let series: ReviewTrendSeries
@@ -896,7 +903,7 @@ private struct ReviewTrendCard: View {
                 Spacer()
 
                 if maxValue > 0 {
-                    Text("Peak \(maxValue.formatted(.currency(code: currencyCode)))")
+                    Text("Peak \(maxValue.formatted(.currency(code: appSettings.currencyCode)))")
                         .appCaptionText()
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
@@ -956,6 +963,8 @@ private struct ReviewTrendCard: View {
 }
 
 private struct ReviewBreakdownCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let title: String
     let subtitle: String
     let items: [(String, Decimal)]
@@ -998,7 +1007,7 @@ private struct ReviewBreakdownCard: View {
 
                                     Spacer()
 
-	                                    Text(item.1, format: .currency(code: currencyCode))
+	                                    Text(item.1, format: .currency(code: appSettings.currencyCode))
 	                                        .appSecondaryBodyText()
 	                                        .fontWeight(.semibold)
 	                                        .foregroundStyle(tint)
@@ -1020,6 +1029,8 @@ private struct ReviewBreakdownCard: View {
 }
 
 private struct SpendingSummaryCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let total: Decimal
     let transactionCount: Int
     let avgDaily: Decimal
@@ -1040,7 +1051,7 @@ private struct SpendingSummaryCard: View {
 	                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                    Text("Spending")
 	                        .appSectionTitleText()
-                    Text(total, format: .currency(code: currencyCode))
+                    Text(total, format: .currency(code: appSettings.currencyCode))
                         .appDisplayText(AppDesign.Theme.DisplaySize.xxxLarge, weight: .bold)
                         .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                         .monospacedDigit()
@@ -1056,14 +1067,14 @@ private struct SpendingSummaryCard: View {
             }
 
             LazyVGrid(columns: [GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small), GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small)], spacing: AppDesign.Theme.Spacing.small) {
-                OverviewValueTile(title: "Avg / Day", value: avgDaily, currencyCode: currencyCode, tint: .secondary)
-                OverviewValueTile(title: "Avg / Tx", value: avgTransaction, currencyCode: currencyCode, tint: .secondary)
+                OverviewValueTile(title: "Avg / Day", value: avgDaily, currencyCode: appSettings.currencyCode, tint: .secondary)
+                OverviewValueTile(title: "Avg / Tx", value: avgTransaction, currencyCode: appSettings.currencyCode, tint: .secondary)
             }
 
             if uncategorizedAmount > 0 {
                 OverviewInlineMeter(
                     title: "Uncategorized",
-                    valueText: "\(uncategorizedAmount.formatted(.currency(code: currencyCode))) • \(Int(uncategorizedShare * 100))%",
+                    valueText: "\(uncategorizedAmount.formatted(.currency(code: appSettings.currencyCode))) • \(Int(uncategorizedShare * 100))%",
                     progress: uncategorizedShare,
                     tint: AppDesign.Colors.warning(for: appColorMode)
                 )
@@ -1073,7 +1084,7 @@ private struct SpendingSummaryCard: View {
                 OverviewInfoRow(
                     icon: "arrow.up.right.circle.fill",
                     title: "Largest Expense",
-                    value: abs(largestExpense.amount).formatted(.currency(code: currencyCode)),
+                    value: abs(largestExpense.amount).formatted(.currency(code: appSettings.currencyCode)),
                     subtitle: largestExpense.payee,
                     tint: AppDesign.Colors.danger(for: appColorMode)
                 )
@@ -1083,6 +1094,8 @@ private struct SpendingSummaryCard: View {
 }
 
 private struct IncomeSummaryCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let total: Decimal
     let transactionCount: Int
     let avgDaily: Decimal
@@ -1091,6 +1104,7 @@ private struct IncomeSummaryCard: View {
     let largestIncome: Transaction?
     let payerConcentration: Double?
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
@@ -1098,7 +1112,7 @@ private struct IncomeSummaryCard: View {
 	                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
 	                    Text("Income")
 	                        .appSectionTitleText()
-                    Text(total, format: .currency(code: currencyCode))
+                    Text(total, format: .currency(code: appSettings.currencyCode))
                         .appDisplayText(AppDesign.Theme.DisplaySize.xxxLarge, weight: .bold)
                         .foregroundStyle(AppDesign.Colors.success(for: appColorMode))
                         .monospacedDigit()
@@ -1114,8 +1128,8 @@ private struct IncomeSummaryCard: View {
             }
 
             LazyVGrid(columns: [GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small), GridItem(.flexible(), spacing: AppDesign.Theme.Spacing.small)], spacing: AppDesign.Theme.Spacing.small) {
-                OverviewValueTile(title: "Avg / Day", value: avgDaily, currencyCode: currencyCode, tint: .secondary)
-                OverviewValueTile(title: "Avg / Deposit", value: avgDeposit, currencyCode: currencyCode, tint: .secondary)
+                OverviewValueTile(title: "Avg / Day", value: avgDaily, currencyCode: appSettings.currencyCode, tint: .secondary)
+                OverviewValueTile(title: "Avg / Deposit", value: avgDeposit, currencyCode: appSettings.currencyCode, tint: .secondary)
             }
 
             if let payerConcentration {
@@ -1133,7 +1147,7 @@ private struct IncomeSummaryCard: View {
                 OverviewInfoRow(
                     icon: "arrow.down.left.circle.fill",
                     title: "Largest Income",
-                    value: largestIncome.amount.formatted(.currency(code: currencyCode)),
+                    value: largestIncome.amount.formatted(.currency(code: appSettings.currencyCode)),
                     subtitle: largestIncome.payee,
                     tint: AppDesign.Colors.success(for: appColorMode)
                 )
@@ -1143,6 +1157,8 @@ private struct IncomeSummaryCard: View {
 }
 
 struct ReviewStoryCard: View {
+
+    @Environment(\.appSettings) private var appSettings
     let title: String
     let text: String
     let systemImage: String

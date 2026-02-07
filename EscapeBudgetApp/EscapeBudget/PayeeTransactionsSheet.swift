@@ -7,9 +7,9 @@ struct PayeeTransactionsSheet: View {
     let dateRange: (start: Date, end: Date)
     let onCreateRule: () -> Void
 
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.dismiss) private var dismiss
+        @Environment(\.dismiss) private var dismiss
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
     @State private var selectedTransaction: Transaction?
 
     private var totalSpent: Decimal {
@@ -40,7 +40,7 @@ struct PayeeTransactionsSheet: View {
                             Text("Spent")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
-                            Text(totalSpent, format: .currency(code: currencyCode))
+                            Text(totalSpent, format: .currency(code: settings.currencyCode))
                                 .appTitleText()
                                 .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
                                 .lineLimit(1)
@@ -90,7 +90,7 @@ struct PayeeTransactionsSheet: View {
 
                                     Spacer()
 
-                                    Text(transaction.amount, format: .currency(code: currencyCode))
+                                    Text(transaction.amount, format: .currency(code: settings.currencyCode))
                                         .appSecondaryBodyText()
                                         .fontWeight(.semibold)
                                         .foregroundStyle(transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)

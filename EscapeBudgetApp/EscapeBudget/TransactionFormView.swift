@@ -5,11 +5,12 @@ struct TransactionFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.undoRedoManager) private var undoRedoManager
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
+        @Environment(\.appColorMode) private var appColorMode
     
     @Query(sort: \Account.name) private var accounts: [Account]
     @Query(sort: \CategoryGroup.name) private var categoryGroups: [CategoryGroup]
+    @Query(sort: \SavingsGoal.createdDate, order: .reverse) private var savingsGoals: [SavingsGoal]
     
     @State private var amount: Decimal = 0.0
     @State private var amountInput: String = ""
@@ -112,7 +113,7 @@ struct TransactionFormView: View {
     }
     
     private func formatCurrency(_ value: Decimal) -> String {
-        value.formatted(.currency(code: currencyCode))
+        value.formatted(.currency(code: settings.currencyCode))
     }
 
     private var purchasedItemsTotal: Decimal {
@@ -165,7 +166,7 @@ struct TransactionFormView: View {
                                 }
                             }
                             Spacer(minLength: 8)
-                            Text(item.price, format: .currency(code: currencyCode))
+                            Text(item.price, format: .currency(code: settings.currencyCode))
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
                         }
@@ -218,7 +219,7 @@ struct TransactionFormView: View {
                                 .foregroundStyle(.secondary)
                         }
                         if let total = receipt.totalAmount {
-                            Text(total.formatted(.currency(code: currencyCode)))
+                            Text(total.formatted(.currency(code: settings.currencyCode)))
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
@@ -488,7 +489,7 @@ struct TransactionFormView: View {
     }
     
     private var currencySymbol: String {
-        TransactionFormView.currencySymbol(for: currencyCode)
+        TransactionFormView.currencySymbol(for: settings.currencyCode)
     }
     
     private static func currencySymbol(for code: String) -> String {
@@ -501,6 +502,24 @@ struct TransactionFormView: View {
     
     private var isAmountIncome: Bool { amountType == .income }
 
+    private var transactionMonthStart: Date {
+        Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: date)) ?? date
+    }
+
+    private func selectableCategories(in group: CategoryGroup) -> [Category] {
+        let selectedID = selectedCategory?.persistentModelID
+        return group.sortedCategories.filter { category in
+            category.isActive(inMonthStart: transactionMonthStart) || category.persistentModelID == selectedID
+        }
+    }
+
+    private var selectableSavingsGoals: [SavingsGoal] {
+        savingsGoals.filter { goal in
+            guard let category = goal.category else { return true }
+            return category.isActive(inMonthStart: transactionMonthStart) || category.persistentModelID == selectedCategory?.persistentModelID
+        }
+    }
+
     private var categorySelectionLabel: String {
         if transactionKind == .transfer {
             return "Transfer"
@@ -508,7 +527,13 @@ struct TransactionFormView: View {
         if transactionKind == .ignored {
             return "Ignored"
         }
-        return selectedCategory?.name ?? "Uncategorized"
+        if let selectedCategory {
+            if !selectedCategory.isActive(inMonthStart: transactionMonthStart) {
+                return "\(selectedCategory.name) (Archived)"
+            }
+            return selectedCategory.name
+        }
+        return "Uncategorized"
     }
     
     private var distinctPayees: [String] {
@@ -532,6 +557,7 @@ struct TransactionFormView: View {
         return counts.values
             .sorted { $0.count > $1.count }
             .map { $0.category }
+            .filter { $0.isActive(inMonthStart: transactionMonthStart) }
             .prefix(4)
             .map { $0 }
     }
@@ -718,568 +744,26 @@ struct TransactionFormView: View {
         _amountType = State(initialValue: transaction == nil ? .expense : initialAmountType)
     }
     
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section("Details") {
-                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                        Text("Payee")
-                            .appCaptionText()
-                            .foregroundStyle(.secondary)
-                        TextField("Enter payee name", text: $payee)
-                            .accessibilityIdentifier("transactionForm.payee")
-                        if !payeeSuggestions.isEmpty {
-                            VStack(alignment: .leading, spacing: 0) {
-                                ForEach(payeeSuggestions, id: \.self) { suggestion in
-                                    Button {
-                                        payee = suggestion
-                                        payeeSuggestions = []
-                                    } label: {
-                                        HStack {
-                                            Text(suggestion)
-                                                .foregroundStyle(.primary)
-                                            Spacer()
-                                        }
-                                        .padding(.horizontal, AppDesign.Theme.Spacing.compact)
-                                        .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
-	                                    }
-	                                }
-	                            }
-	                            .background(Color(.systemGray6))
-	                            .cornerRadius(AppDesign.Theme.Radius.xSmall)
-	                        }
-	                    }
-                    
-                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                        Text("Amount")
-                            .appCaptionText()
-                            .foregroundStyle(.secondary)
-                        HStack(spacing: AppDesign.Theme.Spacing.compact) {
-                            Text(currencySymbol)
-                                .appTitleText()
-                                .foregroundStyle(amountColor)
-                            TextField("", text: amountTextBinding, prompt: Text("0.00"))
-                                .keyboardType(.decimalPad)
-                                .focused($focusedField, equals: .amount)
-                                .foregroundStyle(amountColor)
-                                .accessibilityIdentifier("transactionForm.amount")
-                            
-                            if let indicator = amountIndicator {
-                                Text(indicator.text)
-                                    .appCaptionText()
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(indicator.color)
-                                    .padding(.horizontal, AppDesign.Theme.Spacing.small)
-                                    .padding(.vertical, AppDesign.Theme.Spacing.micro)
-                                    .background(indicator.color.opacity(0.15))
-                                    .cornerRadius(AppDesign.Theme.Radius.button)
-                            }
-                        }
-                    }
-                    
-                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                        Text("Date")
-                            .appCaptionText()
-                            .foregroundStyle(.secondary)
-                        DatePicker("Transaction Date", selection: $date, displayedComponents: .date)
-                            .labelsHidden()
-                    }
-                    
-                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                        Text("Memo")
-                            .appCaptionText()
-                            .foregroundStyle(.secondary)
-                        TextField("Add notes...", text: $memo, axis: .vertical)
-                            .lineLimit(3, reservesSpace: true)
-                            .onChange(of: memo) { _, newValue in
-                                guard newValue.count > memoLimit else { return }
-                                memo = String(newValue.prefix(memoLimit))
-                            }
+	    var body: some View {
+	        NavigationStack {
+		            Form {
+                    detailsSection
+                    accountAndCategorySection
 
-                        HStack {
-                            Spacer()
-                            Text("\(min(memo.count, memoLimit))/\(memoLimit)")
-                                .appCaption2Text()
-                                .foregroundStyle(memo.count >= memoLimit ? AppDesign.Colors.warning(for: appColorMode) : .secondary)
-                                .monospacedDigit()
-                        }
-                    }
-                }
+                    transferInformationSection
+
+                    tagsSection
+
+                    autoRulesSection
                 
-                Section("Account & Category") {
-                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                        Text("Account")
-                            .appCaptionText()
-                            .foregroundStyle(.secondary)
-                        Menu {
-                            Button("Select") { selectedAccount = nil }
-                            Divider()
-                            ForEach(accounts) { account in
-                                Button(account.name) { selectedAccount = account }
-                            }
-                        } label: {
-                            HStack {
-                                Text(selectedAccount?.name ?? "Select")
-                                    .foregroundStyle(.primary)
-                                Spacer()
-                                Image(systemName: "chevron.up.chevron.down")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Account")
-                        .accessibilityIdentifier("transactionForm.account")
-                        
-                        Button {
-                            showingNewAccountSheet = true
-                        } label: {
-                            Label("Create New Account", systemImage: "plus.circle")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.top, AppDesign.Theme.Spacing.micro)
-                    }
-                    
-                    if !isSplit {
-                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                            Text("Category")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                            Menu {
-                                Button("Uncategorized") {
-                                    // If switching from transfer to uncategorized, unmatch
-                                    if transactionKind == .transfer, let transaction = transactionToEdit {
-                                        unmatchTransfer(transaction)
-                                    }
-                                    transactionKind = .standard
-                                    selectedCategory = nil
-                                }
-
-                                Divider()
-
-                                Button("Transfer") {
-                                    if let transaction = transactionToEdit {
-                                        // Convert to transfer but DON'T show picker
-                                        if transaction.kind == .standard {
-                                            transaction.kind = .transfer
-                                            transaction.category = nil
-                                            transaction.transferID = nil
-                                            transaction.transferInboxDismissed = false
-
-                                            // Update state variables to match
-                                            transactionKind = .transfer
-                                            selectedCategory = nil
-
-                                            logHistory(for: transaction, detail: "Converted from Standard to Transfer.")
-                                            _ = modelContext.safeSave(context: "TransactionFormView.Transfer button")
-                                        } else {
-                                            // Already a transfer, just update state
-                                            transactionKind = .transfer
-                                            selectedCategory = nil
-                                        }
-                                    } else {
-                                        // For new transactions, just set the kind
-                                        transactionKind = .transfer
-                                        selectedCategory = nil
-                                    }
-                                }
-
-                                Button("Ignore Transaction") {
-                                    transactionKind = .ignored
-                                    selectedCategory = nil
-                                }
-
-                                Divider()
-
-                                ForEach(categoryGroups.filter { $0.type != .transfer }) { group in
-                                    Menu(group.name) {
-                                        ForEach(group.sortedCategories) { category in
-                                            Button(category.name) {
-                                                // If switching from transfer to regular category, unmatch
-                                                if transactionKind == .transfer, let transaction = transactionToEdit {
-                                                    unmatchTransfer(transaction)
-                                                }
-                                                transactionKind = .standard
-                                                selectedCategory = category
-                                            }
-                                        }
-                                    }
-                                }
-	                            } label: {
-	                                HStack {
-	                                    Text(categorySelectionLabel)
-	                                        .foregroundStyle(.primary)
-	                                    Spacer()
-	                                    Image(systemName: "chevron.up.chevron.down")
-	                                        .appCaptionText()
-	                                        .foregroundStyle(.secondary)
-	                                }
-	                                .frame(maxWidth: .infinity, alignment: .leading)
-	                                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
-	                                .contentShape(Rectangle())
-	                            }
-	                            .buttonStyle(.plain)
-	                            .accessibilityLabel("Category")
-                                .accessibilityIdentifier("transactionForm.category")
-	                            
-	                        Button {
-	                            if newCategoryGroup == nil {
-	                                newCategoryGroup = selectedCategory?.group ?? categoryGroups.first
-	                            }
-                            categoryCreationStep = .groupSelection
-                            showingNewCategorySheet = true
-                        } label: {
-                                Label("Create New Category", systemImage: "plus.circle")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                            }
-	                            .buttonStyle(.plain)
-	                            .padding(.top, AppDesign.Theme.Spacing.micro)
-
-                                if let provenance = autoRuleApplications.first(where: { AutoRuleFieldChange.fromStored($0.fieldChanged) == .category }) {
-                                    HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
-                                        Image(systemName: "wand.and.stars")
-                                            .appCaptionText()
-                                            .foregroundStyle(.secondary)
-                                        Text(provenance.wasOverridden ? "Category rule overridden" : "Category set by: \(provenance.rule?.name ?? "Deleted Rule")")
-                                            .appCaptionText()
-                                            .foregroundStyle(.secondary)
-                                        Spacer()
-                                        if !provenance.wasOverridden, let rule = provenance.rule {
-                                            Button("Edit") { autoRuleEditSheet = AutoRuleEditSheetItem(rule: rule) }
-                                                .appCaptionStrongText()
-                                        }
-                                    }
-                                    .padding(.top, AppDesign.Theme.Spacing.micro)
-                                }
-		                            
-		                        if !categorySuggestions.isEmpty {
-	                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
-	                                Text("Quick Categories")
-                                        .appCaptionText()
-                                        .foregroundStyle(.secondary)
-                                    ScrollView(.horizontal, showsIndicators: false) {
-                                        HStack(spacing: AppDesign.Theme.Spacing.compact) {
-                                            ForEach(categorySuggestions) { suggestion in
-                                                Button {
-                                                    selectedCategory = suggestion
-                                                } label: {
-                                                    Text(suggestion.name)
-                                                        .appCaptionText()
-                                                        .fontWeight(.semibold)
-                                                        .padding(.horizontal, AppDesign.Theme.Spacing.tight)
-                                                        .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
-                                                        .background(
-                                                            Capsule()
-                                                                .fill((selectedCategory?.persistentModelID == suggestion.persistentModelID) ? AppDesign.Colors.tint(for: appColorMode).opacity(0.2) : Color(.systemGray6))
-                                                        )
-                                                        .overlay(
-                                                            Capsule()
-                                                                .stroke(selectedCategory?.persistentModelID == suggestion.persistentModelID ? AppDesign.Colors.tint(for: appColorMode) : Color(.systemGray4), lineWidth: 1)
-                                                        )
-                                                }
-                                                .buttonStyle(.plain)
-                                            }
-                                        }
-                                    }
-	                            }
-	                            .padding(.top, AppDesign.Theme.Spacing.micro)
-	                        }
-		                    }
-		                }
-                }
-
-                // Transfer Information Section - only shown when transactionKind is .transfer
-                if transactionKind == .transfer {
-                    if let transaction = transactionToEdit {
-                        Section("Transfer Information") {
-                            transferInformationContent(for: transaction)
-                        }
-                    } else {
-                        // For new transactions being created as transfers
-                        Section("Transfer Information") {
-                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
-                                Text("Save this transaction first to match it with a transfer in another account.")
-                                    .appCaptionText()
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                }
-
-                Section("Tags") {
-                    if selectedTags.isEmpty {
-                        Text("No tags")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: AppDesign.Theme.Spacing.compact) {
-                                ForEach(selectedTags) { tag in
-                                    TransactionTagChip(tag: tag)
-                                        .onTapGesture {
-                                            selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
-                                        }
-                                }
-                            }
-                            .padding(.vertical, AppDesign.Theme.Spacing.micro)
-                        }
-                    }
-
-                    Button {
-                        showingTagPicker = true
-                    } label: {
-                        Label(selectedTags.isEmpty ? "Add Tags" : "Edit Tags", systemImage: "tag")
-                    }
-                }
-
-                if let transaction = transactionToEdit, !autoRuleApplications.isEmpty {
-                    Section("Auto Rules") {
-                        ForEach(autoRuleApplications.prefix(6)) { application in
-                            HStack(alignment: .top, spacing: AppDesign.Theme.Spacing.compact) {
-                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
-                                    Text(application.rule?.name ?? "Deleted Rule")
-                                        .appSecondaryBodyText()
-                                        .fontWeight(.medium)
-
-                                    Text("\(AutoRuleFieldChange.fromStored(application.fieldChanged)?.displayName ?? application.fieldChanged): \(application.oldValue ?? "—") → \(application.newValue ?? "—")")
-                                        .appCaptionText()
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(2)
-
-                                    Text(application.appliedAt, format: .dateTime.month().day().hour().minute())
-                                        .appCaptionText()
-                                        .foregroundStyle(.tertiary)
-                                }
-
-                                Spacer(minLength: 0)
-
-                                if application.wasOverridden {
-                                    Text("Overridden")
-                                        .appCaptionText()
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
-                                } else if let rule = application.rule {
-                                    Menu {
-                                        Button {
-                                            autoRuleEditSheet = AutoRuleEditSheetItem(rule: rule)
-                                        } label: {
-                                            Label("Edit Rule", systemImage: "pencil")
-                                        }
-
-                                        Button(role: .destructive) {
-                                            let display = payeeExceptionCandidateDisplay(for: application)
-                                            payeeExceptionDisplay = display
-                                            payeeExceptionKey = PayeeNormalizer.normalizeForComparison(display)
-                                            payeeExceptionImpactCount = nil
-                                            computePayeeExceptionImpact(rule: rule, key: payeeExceptionKey)
-                                            ruleToExcludeFromPayee = rule
-                                        } label: {
-                                            Label("Stop applying to this payee", systemImage: "hand.raised.fill")
-                                        }
-                                        .accessibilityIdentifier("transactionForm.stopApplyingMenuItem")
-                                    } label: {
-                                        Text("Actions")
-                                    }
-                                    .buttonStyle(.glass)
-                                    .controlSize(.small)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                guard let rule = application.rule else { return }
-                                autoRuleEditSheet = AutoRuleEditSheetItem(rule: rule)
-                            }
-                        }
-
-                        if autoRuleApplications.count > 6 {
-                            Text("Showing the most recent 6 changes for this transaction.")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                        }
-
-                        Button("Refresh rule history") {
-                            refreshAutoRuleApplications(for: transaction)
-                        }
-                        .appCaptionText()
-                        .foregroundStyle(.secondary)
-                    }
-                }
+                splitTransactionSection
                 
-                Section("Split Transaction") {
-                    Toggle(isOn: $isSplit) {
-                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
-                            Text("Enable Split")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                            Text("Divide this amount across multiple categories.")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .onChange(of: isSplit) { _, newValue in
-                        if newValue {
-                            if subtransactions.isEmpty {
-                                subtransactions = [SubTransactionData(), SubTransactionData()]
-                            }
-                            selectedCategory = nil
-                            enforceSplitSigns()
-                        } else {
-                            subtransactions.removeAll()
-                            focusedField = nil
-                        }
-                    }
-                    
-                    if isSplit {
-                        ForEach($subtransactions) { $sub in
-                            let subID = sub.id
-                            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
-                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                                    Text("Split Amount")
-                                        .appCaptionText()
-                                        .foregroundStyle(.secondary)
-                                    HStack(spacing: AppDesign.Theme.Spacing.micro) {
-                                        Text(amount < 0 ? "-\(currencySymbol)" : currencySymbol)
-                                            .font(AppDesign.Theme.Typography.body)
-                                            .foregroundStyle(.secondary)
-                                        TextField("", text: splitAmountTextBinding(for: $sub), prompt: Text("0.00"))
-                                            .keyboardType(.decimalPad)
-                                            .focused($focusedField, equals: .splitAmount(subID))
-                                            .multilineTextAlignment(.leading)
-                                    }
-                                }
-                                
-                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                                    Text("Split Category")
-                                        .appCaptionText()
-                                        .foregroundStyle(.secondary)
-                                    Picker("Split Category", selection: $sub.category) {
-                                        Text("Select").tag(nil as Category?)
-                                        ForEach(categoryGroups.filter { $0.type != .transfer }) { group in
-                                            if let categories = group.categories {
-                                                ForEach(categories) { category in
-                                                    Text(category.name).tag(category as Category?)
-                                                }
-                                            }
-                                        }
-                                    }
-                                    .labelsHidden()
-                                }
-                                
-                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                                    Text("Split Memo")
-                                        .appCaptionText()
-                                        .foregroundStyle(.secondary)
-                                    TextField("Optional note", text: $sub.memo)
-                                        .appCaptionText()
-                                        .onChange(of: sub.memo) { _, newValue in
-                                            guard newValue.count > memoLimit else { return }
-                                            sub.memo = String(newValue.prefix(memoLimit))
-                                        }
-
-                                    HStack {
-                                        Spacer()
-                                        Text("\(min(sub.memo.count, memoLimit))/\(memoLimit)")
-                                            .appCaption2Text()
-                                            .foregroundStyle(sub.memo.count >= memoLimit ? AppDesign.Colors.warning(for: appColorMode) : .secondary)
-                                            .monospacedDigit()
-                                    }
-                                }
-                            }
-                            .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
-                        }
-                        .onDelete { indexSet in
-                            subtransactions.remove(atOffsets: indexSet)
-                        }
-                        
-                        Button {
-                            subtransactions.append(SubTransactionData())
-                            enforceSplitSigns()
-                        } label: {
-                            Label("Add Split", systemImage: "plus.circle")
-                        }
-                        
-                        VStack(spacing: AppDesign.Theme.Spacing.xSmall) {
-                            HStack {
-                                Text("Split Total")
-                                Spacer()
-                                Text(splitTotal, format: .currency(code: currencyCode))
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(splitTotal == amount ? .primary : AppDesign.Colors.warning(for: appColorMode))
-                            }
-                            
-                            HStack {
-                                Text("Remaining")
-                                Spacer()
-                                Text(splitRemaining, format: .currency(code: currencyCode))
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(splitRemaining == 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
-                            }
-                            
-                            Text("Split amounts must equal the transaction total before saving.")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.top, AppDesign.Theme.Spacing.micro)
-                    }
-                }
-                
-                if let parentTransaction = transactionToEdit?.parentTransaction {
-                    Section("Split Options") {
-                        Text("This transaction is part of a split (\(parentTransaction.payee)). Removing the split will restore the original transaction.")
-                            .appCaptionText()
-                            .foregroundStyle(.secondary)
-                        
-                        Button(role: .destructive) {
-                            showingRemoveSplitConfirmation = true
-                        } label: {
-                            Label("Remove Split", systemImage: "link.badge.minus")
-                        }
-                    }
-                }
+                splitOptionsSection
                 purchasedItemsSection
                 receiptSection
 
-                if transactionToEdit != nil {
-                    Section("History") {
-                        if sortedHistoryEntries.isEmpty {
-                            Text("No history yet")
-                                .appCaptionText()
-                                .foregroundStyle(.secondary)
-                                .padding(.vertical, AppDesign.Theme.Spacing.micro)
-                        } else {
-	                            ForEach(sortedHistoryEntries) { entry in
-	                                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-	                                    Text(entry.detail)
-	                                        .appSecondaryBodyText()
-	                                    Text(entry.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
-	                                        .appCaptionText()
-	                                        .foregroundStyle(.secondary)
-	                                }
-                                .padding(.vertical, AppDesign.Theme.Spacing.hairline)
-                            }
-                        }
-                    }
-                }
-
-                // Delete section - only show when editing
-                if transactionToEdit != nil {
-                    Section {
-                        Button(role: .destructive) {
-                            showingDeleteConfirmation = true
-                        } label: {
-                            HStack {
-                                Spacer()
-                                Label("Delete Transaction", systemImage: "trash")
-                                Spacer()
-                            }
-                        }
-                    }
-                }
+                historySection
+                deleteSection
             }
             .onChange(of: amount) { _, _ in
                 guard isSplit else { return }
@@ -1320,16 +804,16 @@ struct TransactionFormView: View {
                                         .appCaptionText()
                                         .fontWeight(.semibold)
                                         .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
-                                        .padding(.horizontal, AppDesign.Theme.Spacing.tight)
-                                        .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button)
-                                                .fill((amount < 0 ? AppDesign.Colors.danger(for: appColorMode).opacity(0.2) : AppDesign.Colors.danger(for: appColorMode).opacity(0.08)))
-                                        )
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button)
-                                                .stroke(AppDesign.Colors.danger(for: appColorMode).opacity(amount < 0 ? 1 : 0.4), lineWidth: amount < 0 ? 2 : 1)
-                                        )
+	                                        .padding(.horizontal, AppDesign.Theme.Spacing.tight)
+	                                        .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
+	                                        .background(
+	                                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button)
+	                                                .fill((amount < 0 ? AppDesign.Colors.danger(for: appColorMode).opacity(0.2) : AppDesign.Colors.danger(for: appColorMode).opacity(0.08)))
+	                                        )
+	                                        .overlay(
+	                                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.button)
+	                                                .stroke(AppDesign.Colors.danger(for: appColorMode).opacity(amount < 0 ? 1 : 0.4), lineWidth: amount < 0 ? 2 : 1)
+	                                        )
                                 }
                                 
                                 Button {
@@ -1602,7 +1086,7 @@ struct TransactionFormView: View {
                             get: { purchasedItems[index] },
                             set: { purchasedItems[index] = $0 }
                         ),
-                        currencyCode: currencyCode,
+                        currencyCode: settings.currencyCode,
                         currencySymbol: currencySymbol
                     )
                 } else {
@@ -1616,7 +1100,7 @@ struct TransactionFormView: View {
             NavigationStack {
                 TransferMatchPickerView(
                     base: base,
-                    currencyCode: currencyCode,
+                    currencyCode: settings.currencyCode,
                     onLinked: { _ in
                         selectedCategory = nil
                     },
@@ -1634,7 +1118,7 @@ struct TransactionFormView: View {
                 NavigationStack {
                     DirectTransferLinkView(
                         base: transaction,
-                        currencyCode: currencyCode,
+                        currencyCode: settings.currencyCode,
                         accounts: accounts,
                         onLinked: {
                             selectedCategory = nil
@@ -1693,23 +1177,621 @@ struct TransactionFormView: View {
                 }
             }
         }
-        .sheet(isPresented: $showingReceiptReview) {
-            if let scannedImage, let parsedReceipt {
-                ReceiptReviewView(
-                    image: scannedImage,
-                    parsedReceipt: parsedReceipt,
-                    onConfirm: { receipt, selectedItemIds in
-                        handleReceiptConfirmed(receipt: receipt, selectedItemIds: selectedItemIds)
+	        .sheet(isPresented: $showingReceiptReview) {
+	            if let scannedImage, let parsedReceipt {
+	                ReceiptReviewView(
+	                    image: scannedImage,
+	                    parsedReceipt: parsedReceipt,
+	                    onConfirm: { receipt, selectedItemIds in
+	                        handleReceiptConfirmed(receipt: receipt, selectedItemIds: selectedItemIds)
+	                    }
+	                )
+	            }
+	        }
+	    }
+	
+    @ViewBuilder
+    private var detailsSection: some View {
+        Section("Details") {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                Text("Payee")
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
+                TextField("Enter payee name", text: $payee)
+                    .accessibilityIdentifier("transactionForm.payee")
+                if !payeeSuggestions.isEmpty {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(payeeSuggestions, id: \.self) { suggestion in
+                            Button {
+                                payee = suggestion
+                                payeeSuggestions = []
+                            } label: {
+                                HStack {
+                                    Text(suggestion)
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, AppDesign.Theme.Spacing.compact)
+                                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
+                            }
+                        }
                     }
-                )
+                    .background(Color(.systemGray6))
+                    .cornerRadius(AppDesign.Theme.Radius.xSmall)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                Text("Amount")
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
+                HStack(spacing: AppDesign.Theme.Spacing.compact) {
+                    Text(currencySymbol)
+                        .appTitleText()
+                        .foregroundStyle(amountColor)
+                    TextField("", text: amountTextBinding, prompt: Text("0.00"))
+                        .keyboardType(.decimalPad)
+                        .focused($focusedField, equals: .amount)
+                        .foregroundStyle(amountColor)
+                        .accessibilityIdentifier("transactionForm.amount")
+
+                    if let indicator = amountIndicator {
+                        Text(indicator.text)
+                            .appCaptionText()
+                            .fontWeight(.semibold)
+                            .foregroundStyle(indicator.color)
+                            .padding(.horizontal, AppDesign.Theme.Spacing.small)
+                            .padding(.vertical, AppDesign.Theme.Spacing.micro)
+                            .background(indicator.color.opacity(0.15))
+                            .cornerRadius(AppDesign.Theme.Radius.button)
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                Text("Date")
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
+                DatePicker("Transaction Date", selection: $date, displayedComponents: .date)
+                    .labelsHidden()
+            }
+
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                Text("Memo")
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
+                TextField("Add notes...", text: $memo, axis: .vertical)
+                    .lineLimit(3, reservesSpace: true)
+                    .onChange(of: memo) { _, newValue in
+                        guard newValue.count > memoLimit else { return }
+                        memo = String(newValue.prefix(memoLimit))
+                    }
+
+                HStack {
+                    Spacer()
+                    Text("\(min(memo.count, memoLimit))/\(memoLimit)")
+                        .appCaption2Text()
+                        .foregroundStyle(memo.count >= memoLimit ? AppDesign.Colors.warning(for: appColorMode) : .secondary)
+                        .monospacedDigit()
+                }
             }
         }
     }
 
-    private func processReceipt(_ image: UIImage) async {
-        do {
-            let text = try await ReceiptOCRService.recognizeText(from: image)
-            parsedReceipt = ReceiptOCRService.parseReceipt(from: text)
+    @ViewBuilder
+    private var accountAndCategorySection: some View {
+        Section("Account & Category") {
+            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                Text("Account")
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
+                Menu {
+                    Button("Select") { selectedAccount = nil }
+                    Divider()
+                    ForEach(accounts) { account in
+                        Button(account.name) { selectedAccount = account }
+                    }
+                } label: {
+                    HStack {
+                        Text(selectedAccount?.name ?? "Select")
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.up.chevron.down")
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Account")
+                .accessibilityIdentifier("transactionForm.account")
+
+                Button {
+                    showingNewAccountSheet = true
+                } label: {
+                    Label("Create New Account", systemImage: "plus.circle")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, AppDesign.Theme.Spacing.micro)
+            }
+
+            if !isSplit {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                    Text("Category")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                    Menu {
+                        Button("Uncategorized") {
+                            // If switching from transfer to uncategorized, unmatch
+                            if transactionKind == .transfer, let transaction = transactionToEdit {
+                                unmatchTransfer(transaction)
+                            }
+                            transactionKind = .standard
+                            selectedCategory = nil
+                        }
+
+                        Divider()
+
+                        Button("Transfer") {
+                            if let transaction = transactionToEdit {
+                                // Convert to transfer but DON'T show picker
+                                if transaction.kind == .standard {
+                                    transaction.kind = .transfer
+                                    transaction.category = nil
+                                    transaction.transferID = nil
+                                    transaction.transferInboxDismissed = false
+
+                                    // Update state variables to match
+                                    transactionKind = .transfer
+                                    selectedCategory = nil
+
+                                    logHistory(for: transaction, detail: "Converted from Standard to Transfer.")
+                                    _ = modelContext.safeSave(context: "TransactionFormView.Transfer button")
+                                } else {
+                                    // Already a transfer, just update state
+                                    transactionKind = .transfer
+                                    selectedCategory = nil
+                                }
+                            } else {
+                                // For new transactions, just set the kind
+                                transactionKind = .transfer
+                                selectedCategory = nil
+                            }
+                        }
+
+                        Button("Ignore Transaction") {
+                            transactionKind = .ignored
+                            selectedCategory = nil
+                        }
+
+                        Divider()
+
+                        ForEach(categoryGroups.filter { $0.type != .transfer }) { group in
+                            Menu(group.name) {
+                                ForEach(selectableCategories(in: group)) { category in
+                                    Button(category.name) {
+                                        // If switching from transfer to regular category, unmatch
+                                        if transactionKind == .transfer, let transaction = transactionToEdit {
+                                            unmatchTransfer(transaction)
+                                        }
+                                        transactionKind = .standard
+                                        selectedCategory = category
+                                    }
+                                }
+                            }
+                        }
+
+                        if !selectableSavingsGoals.isEmpty {
+                            Divider()
+                            Menu("Savings Goals") {
+                                ForEach(selectableSavingsGoals) { goal in
+                                    Button(goal.name) {
+                                        if transactionKind == .transfer, let transaction = transactionToEdit {
+                                            unmatchTransfer(transaction)
+                                        }
+                                        transactionKind = .standard
+                                        selectedCategory = ensureEnvelopeCategory(for: goal)
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Text(categorySelectionLabel)
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.up.chevron.down")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Category")
+                    .accessibilityIdentifier("transactionForm.category")
+
+                    Button {
+                        if newCategoryGroup == nil {
+                            newCategoryGroup = selectedCategory?.group ?? categoryGroups.first
+                        }
+                        categoryCreationStep = .groupSelection
+                        showingNewCategorySheet = true
+                    } label: {
+                        Label("Create New Category", systemImage: "plus.circle")
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, AppDesign.Theme.Spacing.micro)
+
+                    if let provenance = autoRuleApplications.first(where: { AutoRuleFieldChange.fromStored($0.fieldChanged) == .category }) {
+                        HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
+                            Image(systemName: "wand.and.stars")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                            Text(provenance.wasOverridden ? "Category rule overridden" : "Category set by: \(provenance.rule?.name ?? "Deleted Rule")")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            if !provenance.wasOverridden, let rule = provenance.rule {
+                                Button("Edit") { autoRuleEditSheet = AutoRuleEditSheetItem(rule: rule) }
+                                    .appCaptionStrongText()
+                            }
+                        }
+                        .padding(.top, AppDesign.Theme.Spacing.micro)
+                    }
+
+                    if !categorySuggestions.isEmpty {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
+                            Text("Quick Categories")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: AppDesign.Theme.Spacing.compact) {
+                                    ForEach(categorySuggestions) { suggestion in
+                                        Button {
+                                            selectedCategory = suggestion
+                                        } label: {
+                                            Text(suggestion.name)
+                                                .appCaptionText()
+                                                .fontWeight(.semibold)
+                                                .padding(.horizontal, AppDesign.Theme.Spacing.tight)
+                                                .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
+                                                .background(
+                                                    Capsule()
+                                                        .fill((selectedCategory?.persistentModelID == suggestion.persistentModelID) ? AppDesign.Colors.tint(for: appColorMode).opacity(0.2) : Color(.systemGray6))
+                                                )
+                                                .overlay(
+                                                    Capsule()
+                                                        .stroke(selectedCategory?.persistentModelID == suggestion.persistentModelID ? AppDesign.Colors.tint(for: appColorMode) : Color(.systemGray4), lineWidth: 1)
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.top, AppDesign.Theme.Spacing.micro)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var transferInformationSection: some View {
+        // Transfer Information Section - only shown when transactionKind is .transfer
+        if transactionKind == .transfer {
+            if let transaction = transactionToEdit {
+                Section("Transfer Information") {
+                    transferInformationContent(for: transaction)
+                }
+            } else {
+                // For new transactions being created as transfers
+                Section("Transfer Information") {
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
+                        Text("Save this transaction first to match it with a transfer in another account.")
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var tagsSection: some View {
+        Section("Tags") {
+            if selectedTags.isEmpty {
+                Text("No tags")
+                    .foregroundStyle(.secondary)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: AppDesign.Theme.Spacing.compact) {
+                        ForEach(selectedTags) { tag in
+                            TransactionTagChip(tag: tag)
+                                .onTapGesture {
+                                    selectedTags.removeAll { $0.persistentModelID == tag.persistentModelID }
+                                }
+                        }
+                    }
+                    .padding(.vertical, AppDesign.Theme.Spacing.micro)
+                }
+            }
+
+            Button {
+                showingTagPicker = true
+            } label: {
+                Label(selectedTags.isEmpty ? "Add Tags" : "Edit Tags", systemImage: "tag")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var autoRulesSection: some View {
+        if let transaction = transactionToEdit, !autoRuleApplications.isEmpty {
+            Section("Auto Rules") {
+                ForEach(autoRuleApplications.prefix(6)) { application in
+                    HStack(alignment: .top, spacing: AppDesign.Theme.Spacing.compact) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
+                            Text(application.rule?.name ?? "Deleted Rule")
+                                .appSecondaryBodyText()
+                                .fontWeight(.medium)
+
+                            Text("\(AutoRuleFieldChange.fromStored(application.fieldChanged)?.displayName ?? application.fieldChanged): \(application.oldValue ?? "—") → \(application.newValue ?? "—")")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+
+                            Text(application.appliedAt, format: .dateTime.month().day().hour().minute())
+                                .appCaptionText()
+                                .foregroundStyle(.tertiary)
+                        }
+
+                        Spacer(minLength: 0)
+
+                        if application.wasOverridden {
+                            Text("Overridden")
+                                .appCaptionText()
+                                .fontWeight(.semibold)
+                                .foregroundStyle(AppDesign.Colors.warning(for: appColorMode))
+                        } else if let rule = application.rule {
+                            Menu {
+                                Button {
+                                    autoRuleEditSheet = AutoRuleEditSheetItem(rule: rule)
+                                } label: {
+                                    Label("Edit Rule", systemImage: "pencil")
+                                }
+
+                                Button(role: .destructive) {
+                                    let display = payeeExceptionCandidateDisplay(for: application)
+                                    payeeExceptionDisplay = display
+                                    payeeExceptionKey = PayeeNormalizer.normalizeForComparison(display)
+                                    payeeExceptionImpactCount = nil
+                                    computePayeeExceptionImpact(rule: rule, key: payeeExceptionKey)
+                                    ruleToExcludeFromPayee = rule
+                                } label: {
+                                    Label("Stop applying to this payee", systemImage: "hand.raised.fill")
+                                }
+                                .accessibilityIdentifier("transactionForm.stopApplyingMenuItem")
+                            } label: {
+                                Text("Actions")
+                            }
+                            .buttonStyle(.glass)
+                            .controlSize(.small)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        guard let rule = application.rule else { return }
+                        autoRuleEditSheet = AutoRuleEditSheetItem(rule: rule)
+                    }
+                }
+
+                if autoRuleApplications.count > 6 {
+                    Text("Showing the most recent 6 changes for this transaction.")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                }
+
+                Button("Refresh rule history") {
+                    refreshAutoRuleApplications(for: transaction)
+                }
+                .appCaptionText()
+                .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var splitTransactionSection: some View {
+        Section("Split Transaction") {
+            Toggle(isOn: $isSplit) {
+                VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.hairline) {
+                    Text("Enable Split")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                    Text("Divide this amount across multiple categories.")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .onChange(of: isSplit) { _, newValue in
+                if newValue {
+                    if subtransactions.isEmpty {
+                        subtransactions = [SubTransactionData(), SubTransactionData()]
+                    }
+                    selectedCategory = nil
+                    enforceSplitSigns()
+                } else {
+                    subtransactions.removeAll()
+                    focusedField = nil
+                }
+            }
+
+            if isSplit {
+                ForEach($subtransactions) { $sub in
+                    let subID = sub.id
+                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.compact) {
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                            Text("Split Amount")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                            HStack(spacing: AppDesign.Theme.Spacing.micro) {
+                                Text(amount < 0 ? "-\(currencySymbol)" : currencySymbol)
+                                    .font(AppDesign.Theme.Typography.body)
+                                    .foregroundStyle(.secondary)
+                                TextField("", text: splitAmountTextBinding(for: $sub), prompt: Text("0.00"))
+                                    .keyboardType(.decimalPad)
+                                    .focused($focusedField, equals: .splitAmount(subID))
+                                    .multilineTextAlignment(.leading)
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                            Text("Split Category")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                            Picker("Split Category", selection: $sub.category) {
+                                Text("Select").tag(nil as Category?)
+                                ForEach(categoryGroups.filter { $0.type != .transfer }) { group in
+                                    ForEach(group.sortedCategories.filter { $0.isActive(inMonthStart: transactionMonthStart) }) { category in
+                                        Text(category.name).tag(category as Category?)
+                                    }
+                                }
+                            }
+                            .labelsHidden()
+                        }
+
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                            Text("Split Memo")
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                            TextField("Optional note", text: $sub.memo)
+                                .appCaptionText()
+                                .onChange(of: sub.memo) { _, newValue in
+                                    guard newValue.count > memoLimit else { return }
+                                    sub.memo = String(newValue.prefix(memoLimit))
+                                }
+
+                            HStack {
+                                Spacer()
+                                Text("\(min(sub.memo.count, memoLimit))/\(memoLimit)")
+                                    .appCaption2Text()
+                                    .foregroundStyle(sub.memo.count >= memoLimit ? AppDesign.Colors.warning(for: appColorMode) : .secondary)
+                                    .monospacedDigit()
+                            }
+                        }
+                    }
+                    .padding(.vertical, AppDesign.Theme.Spacing.xSmall)
+                }
+                .onDelete { indexSet in
+                    subtransactions.remove(atOffsets: indexSet)
+                }
+
+                Button {
+                    subtransactions.append(SubTransactionData())
+                    enforceSplitSigns()
+                } label: {
+                    Label("Add Split", systemImage: "plus.circle")
+                }
+
+                VStack(spacing: AppDesign.Theme.Spacing.xSmall) {
+                    HStack {
+                        Text("Split Total")
+                        Spacer()
+                        Text(splitTotal, format: .currency(code: settings.currencyCode))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(splitTotal == amount ? .primary : AppDesign.Colors.warning(for: appColorMode))
+                    }
+
+                    HStack {
+                        Text("Remaining")
+                        Spacer()
+                        Text(splitRemaining, format: .currency(code: settings.currencyCode))
+                            .fontWeight(.semibold)
+                            .foregroundStyle(splitRemaining == 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
+                    }
+
+                    Text("Split amounts must equal the transaction total before saving.")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.top, AppDesign.Theme.Spacing.micro)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var splitOptionsSection: some View {
+        if let parentTransaction = transactionToEdit?.parentTransaction {
+            Section("Split Options") {
+                Text("This transaction is part of a split (\(parentTransaction.payee)). Removing the split will restore the original transaction.")
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
+
+                Button(role: .destructive) {
+                    showingRemoveSplitConfirmation = true
+                } label: {
+                    Label("Remove Split", systemImage: "link.badge.minus")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var historySection: some View {
+        if transactionToEdit != nil {
+            Section("History") {
+                if sortedHistoryEntries.isEmpty {
+                    Text("No history yet")
+                        .appCaptionText()
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, AppDesign.Theme.Spacing.micro)
+                } else {
+                    ForEach(sortedHistoryEntries) { entry in
+                        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
+                            Text(entry.detail)
+                                .appSecondaryBodyText()
+                            Text(entry.timestamp, format: .dateTime.month(.abbreviated).day().year().hour().minute())
+                                .appCaptionText()
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, AppDesign.Theme.Spacing.hairline)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var deleteSection: some View {
+        // Delete section - only show when editing
+        if transactionToEdit != nil {
+            Section {
+                Button(role: .destructive) {
+                    showingDeleteConfirmation = true
+                } label: {
+                    HStack {
+                        Spacer()
+                        Label("Delete Transaction", systemImage: "trash")
+                        Spacer()
+                    }
+                }
+            }
+        }
+    }
+
+	    private func processReceipt(_ image: UIImage) async {
+	        do {
+	            let text = try await ReceiptOCRService.recognizeText(from: image)
+	            parsedReceipt = ReceiptOCRService.parseReceipt(from: text)
             showingReceiptReview = true
         } catch {
             // OCR failed, show review with empty data
@@ -1731,7 +1813,7 @@ struct TransactionFormView: View {
         for item in receipt.items where selectedItemIds.contains(item.id) {
             if canAddPurchasedItem {
                 let totalPrice = item.price * Decimal(item.quantity)
-                let note = item.quantity > 1 ? "\(item.quantity)x @ \(item.price.formatted(.currency(code: currencyCode)))" : ""
+                let note = item.quantity > 1 ? "\(item.quantity)x @ \(item.price.formatted(.currency(code: settings.currencyCode)))" : ""
                 purchasedItems.append(PurchasedItemDraft(
                     id: UUID(),
                     name: item.name,
@@ -1817,6 +1899,44 @@ struct TransactionFormView: View {
         resetNewGroupForm()
     }
 
+    private func ensureEnvelopeCategory(for goal: SavingsGoal) -> Category {
+        if let existing = goal.category {
+            existing.budgetType = .monthlyRollover
+            existing.overspendHandling = .carryNegative
+            return existing
+        }
+
+        let currentMonthStart = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: date)) ?? date
+        let expenseGroup: CategoryGroup = {
+            if let existing = categoryGroups.first(where: { $0.type == .expense && $0.name == "Savings Goals" }) {
+                return existing
+            }
+            let nextOrder = (categoryGroups.map(\.order).max() ?? -1) + 1
+            let group = CategoryGroup(name: "Savings Goals", order: nextOrder, type: .expense, isDemoData: goal.isDemoData)
+            modelContext.insert(group)
+            return group
+        }()
+
+        let nextOrder = ((expenseGroup.categories ?? []).map(\.order).max() ?? -1) + 1
+        let category = Category(
+            name: goal.name,
+            assigned: goal.monthlyContribution ?? 0,
+            activity: 0,
+            order: nextOrder,
+            icon: "🎯",
+            memo: "Savings goal envelope",
+            isDemoData: goal.isDemoData
+        )
+        category.group = expenseGroup
+        category.budgetType = .monthlyRollover
+        category.overspendHandling = .carryNegative
+        category.createdAt = currentMonthStart
+        category.savingsGoal = goal
+        goal.category = category
+        modelContext.insert(category)
+        return category
+    }
+
     @ViewBuilder
     private func transferInformationContent(for transaction: Transaction) -> some View {
         // Check if transaction is marked as external transfer
@@ -1866,7 +1986,7 @@ struct TransactionFormView: View {
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Text(matched.amount, format: .currency(code: currencyCode))
+                        Text(matched.amount, format: .currency(code: settings.currencyCode))
                             .appSecondaryBodyText()
                             .fontWeight(.semibold)
                             .monospacedDigit()
@@ -2232,6 +2352,12 @@ struct TransactionFormView: View {
             return
         }
 
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            referenceDate: Date(),
+            saveContext: "TransactionFormView.syncSavingsGoals.afterSave"
+        )
+
         if savedTransaction.kind == .standard, savedTransaction.category != nil {
             AutoRulesService(modelContext: modelContext).learnFromCategorization(transaction: savedTransaction, wasAutoDetected: false)
         }
@@ -2260,6 +2386,12 @@ struct TransactionFormView: View {
         )
 
         guard postSaveSuccessful else { return }
+
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            referenceDate: Date(),
+            saveContext: "TransactionFormView.syncSavingsGoals.afterPostProcess"
+        )
 
         let events = processingResult.eventsByTransactionID[savedTransaction.persistentModelID] ?? []
         if events.isEmpty {
@@ -2623,6 +2755,7 @@ private struct DirectTransferLinkView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
 
     let base: Transaction
     let currencyCode: String
@@ -2674,7 +2807,7 @@ private struct DirectTransferLinkView: View {
             }
         } message: {
             if let transaction = pendingTransaction {
-                Text("Link this transaction as a transfer pair?\n\n\(transaction.payee)\n\(transaction.amount, format: .currency(code: currencyCode))")
+                Text("Link this transaction as a transfer pair?\n\n\(transaction.payee)\n\(transaction.amount, format: .currency(code: settings.currencyCode))")
             }
         }
         .alert("Link Account Only", isPresented: $showingAccountOnlyConfirm) {
@@ -2707,7 +2840,7 @@ private struct DirectTransferLinkView: View {
                         .foregroundStyle(.secondary)
                     Text(base.account?.name ?? "Unknown Account")
                         .appSectionTitleText()
-                    Text(base.amount, format: .currency(code: currencyCode))
+                    Text(base.amount, format: .currency(code: settings.currencyCode))
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
                 }
@@ -2749,7 +2882,7 @@ private struct DirectTransferLinkView: View {
         TransactionPickerListView(
             account: account,
             baseTransaction: base,
-            currencyCode: currencyCode,
+            currencyCode: settings.currencyCode,
             onSelect: { transaction in
                 pendingTransaction = transaction
                 showingConfirm = true
@@ -2786,6 +2919,7 @@ private struct DirectTransferLinkView: View {
 private struct TransactionPickerListView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
 
     let account: Account
     let baseTransaction: Transaction
@@ -2873,7 +3007,7 @@ private struct TransactionPickerListView: View {
                                     }
                                 }
                                 Spacer()
-                                Text(transaction.amount, format: .currency(code: currencyCode))
+                                Text(transaction.amount, format: .currency(code: settings.currencyCode))
                                     .appSecondaryBodyText()
                                     .monospacedDigit()
                             }

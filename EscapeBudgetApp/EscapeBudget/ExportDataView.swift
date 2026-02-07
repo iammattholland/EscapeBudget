@@ -33,10 +33,8 @@ enum ExportDateRange: String, CaseIterable, Identifiable {
 struct ExportDataView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("isDemoMode") private var isDemoMode = false
-    @AppStorage("export.encrypted") private var isEncryptedExport = true
-    @AppStorage("export.plaintextConfirmed") private var exportPlaintextConfirmed = false
-    @Environment(\.appColorMode) private var appColorMode
+                @Environment(\.appColorMode) private var appColorMode
+                @Environment(\.appSettings) private var settings
 
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
 
@@ -57,6 +55,8 @@ struct ExportDataView: View {
     @State private var pendingPlaintextAction: PendingPlaintextAction? = nil
     @State private var exportProgress: OperationProgressState? = nil
     @State private var currentExportTask: Task<Void, Never>? = nil
+    @State private var showingExportCompletedAlert = false
+    @State private var exportCompletedMessage = ""
 
     /// Filtered transactions excluding demo data
     private var exportableTransactions: [Transaction] {
@@ -92,7 +92,7 @@ struct ExportDataView: View {
     }
 
     private var isEncryptedExportReady: Bool {
-        guard isEncryptedExport else { return true }
+        guard settings.isEncryptedExport else { return true }
         guard exportPassword.count >= 8 else { return false }
         return exportPassword == exportPasswordConfirm
     }
@@ -104,7 +104,11 @@ struct ExportDataView: View {
     
     var body: some View {
         NavigationStack {
-            List {
+            Group {
+                if isExporting || exportProgress != nil {
+                    exportProgressView
+                } else {
+                    List {
 	                Section {
 	                    VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.medium) {
 	                        Text("Export Transactions")
@@ -120,7 +124,7 @@ struct ExportDataView: View {
 	                    .padding(.vertical, AppDesign.Theme.Spacing.compact)
 	                }
 
-	                if isDemoMode {
+	                if settings.isDemoMode {
 	                    Section {
 	                        HStack {
 	                            Image(systemName: "exclamationmark.triangle.fill")
@@ -168,7 +172,7 @@ struct ExportDataView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    if isEncryptedExport {
+                    if settings.isEncryptedExport {
                         SecureField("Password (min 8 characters)", text: $exportPassword)
                             .textContentType(.newPassword)
                         SecureField("Confirm password", text: $exportPasswordConfirm)
@@ -191,23 +195,15 @@ struct ExportDataView: View {
                 }
 
                 Section {
-                    if isExporting {
+                    Button(action: exportData) {
                         HStack {
-                            ProgressView()
-                            Text("Preparing export...")
-                                .foregroundStyle(.secondary)
+                            Image(systemName: "square.and.arrow.up")
+                            Text("Export \(exportableTransactions.count) Transactions")
                         }
-                    } else {
-                        Button(action: exportData) {
-                            HStack {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("Export \(exportableTransactions.count) Transactions")
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-                        .appPrimaryCTA()
-                        .disabled(exportableTransactions.isEmpty || !isEncryptedExportReady)
+                        .frame(maxWidth: .infinity)
                     }
+                    .appPrimaryCTA()
+                    .disabled(exportableTransactions.isEmpty || !isEncryptedExportReady)
                 }
 
 	                Section("Escape Budget Backup") {
@@ -229,7 +225,9 @@ struct ExportDataView: View {
                             Spacer()
                         }
                     }
-                    .disabled(isExporting || !isEncryptedExportReady)
+                    .disabled(!isEncryptedExportReady)
+                }
+            }
                 }
             }
             .navigationTitle("Export Data")
@@ -237,12 +235,16 @@ struct ExportDataView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
+                        .disabled(isExporting)
                 }
             }
             .sheet(isPresented: $showShareSheet) {
                 if let url = exportedFileURL {
                     ShareSheet(items: [url]) {
                         cleanupExportedFile()
+                        if !exportCompletedMessage.isEmpty {
+                            showingExportCompletedAlert = true
+                        }
                     }
                 }
             }
@@ -253,12 +255,12 @@ struct ExportDataView: View {
             }
             .alert("Password Protection", isPresented: $showingEncryptionWarning) {
                 Button("Cancel", role: .cancel) {
-                    isEncryptedExport = false
+                    settings.isEncryptedExport = false
                     exportPassword = ""
                     exportPasswordConfirm = ""
                 }
                 Button("Continue") {
-                    isEncryptedExport = true
+                    settings.isEncryptedExport = true
                 }
             } message: {
                 Text("If you forget this password, the export can’t be recovered.")
@@ -268,7 +270,7 @@ struct ExportDataView: View {
                     pendingPlaintextAction = nil
                 }
                 Button("Export Without Password", role: .destructive) {
-                    exportPlaintextConfirmed = true
+                    settings.exportPlaintextConfirmed = true
                     bypassPlaintextWarning = true
                     let action = pendingPlaintextAction
                     pendingPlaintextAction = nil
@@ -285,7 +287,12 @@ struct ExportDataView: View {
             } message: {
                 Text("This export won’t be password‑protected. Other apps and services may be able to read it once shared.")
             }
-            .onChange(of: isEncryptedExport) { _, newValue in
+            .alert("Export Completed", isPresented: $showingExportCompletedAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(exportCompletedMessage)
+            }
+            .onChange(of: settings.isEncryptedExport) { _, newValue in
                 if !newValue {
                     exportPassword = ""
                     exportPasswordConfirm = ""
@@ -295,9 +302,46 @@ struct ExportDataView: View {
                 exportPassword = ""
                 exportPasswordConfirm = ""
                 currentExportTask?.cancel()
+                exportCompletedMessage = ""
+                showingExportCompletedAlert = false
             }
-            .operationProgress(exportProgress, onCancel: cancelExport)
         }
+    }
+
+    private var exportProgressView: some View {
+        VStack(spacing: AppDesign.Theme.Spacing.xLarge) {
+            if let progress = exportProgress {
+                if let totalRaw = progress.total {
+                    let total = max(totalRaw, 1)
+                    let current = min(max(progress.current ?? 0, 0), total)
+                    ProgressView("Exporting…", value: Double(current), total: Double(total))
+                        .progressViewStyle(.circular)
+
+                    Text("\(current) of \(total)")
+                        .appSecondaryBodyText()
+                        .foregroundStyle(.secondary)
+                } else {
+                    ProgressView("Exporting…")
+                        .progressViewStyle(.circular)
+                }
+
+                Text(progress.message)
+                    .appSecondaryBodyText()
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, AppDesign.Theme.Spacing.relaxed)
+
+                if progress.cancellable {
+                    Button("Cancel", role: .cancel, action: cancelExport)
+                        .appSecondaryCTA()
+                }
+            } else {
+                ProgressView("Exporting…")
+                    .progressViewStyle(.circular)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemGroupedBackground))
     }
 
     private func cancelExport() {
@@ -309,14 +353,14 @@ struct ExportDataView: View {
 
     private var encryptedExportBinding: Binding<Bool> {
         Binding(
-            get: { isEncryptedExport },
+            get: { settings.isEncryptedExport },
             set: { newValue in
                 if newValue {
-                    if !isEncryptedExport {
+                    if !settings.isEncryptedExport {
                         showingEncryptionWarning = true
                     }
                 } else {
-                    isEncryptedExport = false
+                    settings.isEncryptedExport = false
                 }
             }
         )
@@ -329,13 +373,13 @@ struct ExportDataView: View {
     }
     
     private func exportData() {
-        if !isEncryptedExport, !exportPlaintextConfirmed, !bypassPlaintextWarning {
+        if !settings.isEncryptedExport, !settings.exportPlaintextConfirmed, !bypassPlaintextWarning {
             pendingPlaintextAction = .transactions
             showingPlaintextWarning = true
             return
         }
 
-        if isEncryptedExport {
+        if settings.isEncryptedExport {
             guard exportPassword.count >= 8 else {
                 errorMessage = "Please enter a password with at least 8 characters."
                 return
@@ -350,7 +394,7 @@ struct ExportDataView: View {
 
         let transactionsToExport = exportableTransactions
         let format = selectedFormat
-        let shouldEncrypt = isEncryptedExport
+        let shouldEncrypt = settings.isEncryptedExport
         let password = exportPassword
         let totalCount = transactionsToExport.count
 
@@ -414,6 +458,7 @@ struct ExportDataView: View {
                     isExporting = false
                     exportProgress = nil
                     showShareSheet = true
+                    exportCompletedMessage = "\(transactionsToExport.count) transactions exported (\(format.rawValue))\(shouldEncrypt ? ", encrypted" : "")."
 
                     InAppNotificationService.post(
                         title: "Export Ready",
@@ -444,13 +489,13 @@ struct ExportDataView: View {
     }
 
     private func exportBackup() {
-        if !isEncryptedExport, !exportPlaintextConfirmed, !bypassPlaintextWarning {
+        if !settings.isEncryptedExport, !settings.exportPlaintextConfirmed, !bypassPlaintextWarning {
             pendingPlaintextAction = .backup
             showingPlaintextWarning = true
             return
         }
 
-        if isEncryptedExport {
+        if settings.isEncryptedExport {
             guard exportPassword.count >= 8 else {
                 errorMessage = "Please enter a password with at least 8 characters."
                 return
@@ -463,7 +508,7 @@ struct ExportDataView: View {
 
         isExporting = true
 
-        let shouldEncrypt = isEncryptedExport
+        let shouldEncrypt = settings.isEncryptedExport
         let password = exportPassword
 
         currentExportTask = Task {
@@ -525,6 +570,7 @@ struct ExportDataView: View {
                     isExporting = false
                     exportProgress = nil
                     showShareSheet = true
+                    exportCompletedMessage = "Full backup exported (\(backup.transactions.count) transactions)\(shouldEncrypt ? ", encrypted" : "")."
 
                     InAppNotificationService.post(
                         title: "Backup Export Ready",

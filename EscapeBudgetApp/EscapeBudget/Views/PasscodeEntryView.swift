@@ -5,12 +5,14 @@ struct PasscodeEntryView: View {
     let subtitle: String?
     let showsBiometricButton: Bool
     let biometricTitle: String
+    let resetKey: Int
     let onBiometricTap: () -> Void
     let onComplete: (String) -> Void
     @Binding var showError: Bool
     let errorMessage: String
 
     @State private var code: String = ""
+    @State private var isCodeVisible = false
     @Environment(\.appColorMode) private var appColorMode
 
     private let codeLength = 4
@@ -32,15 +34,32 @@ struct PasscodeEntryView: View {
 
             HStack(spacing: AppDesign.Theme.Spacing.compact) {
                 ForEach(0..<codeLength, id: \.self) { index in
-                    Circle()
+                    RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.xSmall, style: .continuous)
                         .strokeBorder(.secondary.opacity(0.3), lineWidth: 1)
                         .background(
-                            Circle()
-                                .fill(index < code.count ? AppDesign.Colors.tint(for: appColorMode) : .clear)
+                            RoundedRectangle(cornerRadius: AppDesign.Theme.Radius.xSmall, style: .continuous)
+                                .fill(Color(.systemGray6))
                         )
-                        .frame(width: 14, height: 14)
+                        .frame(width: 44, height: 44)
+                        .overlay {
+                            if index < code.count {
+                                Text(isCodeVisible ? String(Array(code)[index]) : "•")
+                                    .appTitleText()
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
+                            }
+                        }
                 }
             }
+
+            Button {
+                isCodeVisible.toggle()
+            } label: {
+                Label(isCodeVisible ? "Hide Code" : "Show Code", systemImage: isCodeVisible ? "eye.slash" : "eye")
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
 
             if showError {
                 Text(errorMessage)
@@ -64,7 +83,7 @@ struct PasscodeEntryView: View {
                 }
 
                 keypadButton(label: "Clear", isSecondary: true) {
-                    clearCode()
+                    clearCode(keepError: false)
                 }
             }
             .padding(.horizontal, AppDesign.Theme.Spacing.xLarge)
@@ -79,8 +98,11 @@ struct PasscodeEntryView: View {
         .padding(.vertical, AppDesign.Theme.Spacing.large)
         .onChange(of: showError) { _, newValue in
             if newValue {
-                clearCode()
+                clearCode(keepError: true)
             }
+        }
+        .onChange(of: resetKey) { _, _ in
+            clearCode(keepError: true)
         }
     }
 
@@ -103,9 +125,12 @@ struct PasscodeEntryView: View {
         showError = false
     }
 
-    private func clearCode() {
+    private func clearCode(keepError: Bool) {
         code = ""
-        showError = false
+        isCodeVisible = false
+        if !keepError {
+            showError = false
+        }
     }
 
     @ViewBuilder

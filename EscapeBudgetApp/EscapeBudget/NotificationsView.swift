@@ -8,8 +8,8 @@ struct NotificationsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \AppNotification.date, order: .reverse) private var notifications: [AppNotification]
-    @AppStorage("hasNotifications") private var hasNotifications = false
-    @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
     @State private var showingDeleteAllConfirmFromMenu = false
     @State private var showingDeleteAllConfirmFromBottom = false
     
@@ -52,8 +52,7 @@ struct NotificationsView: View {
                                             Label("Delete All", systemImage: "trash")
                                         }
                                     } label: {
-                                        Image(systemName: "ellipsis")
-                                            .imageScale(.large)
+                                        Image(systemName: "ellipsis").appEllipsisIcon()
                                     }
                                     .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                                     .confirmationDialog("Delete all notifications?", isPresented: $showingDeleteAllConfirmFromMenu, titleVisibility: .visible) {
@@ -79,11 +78,29 @@ struct NotificationsView: View {
             }
 
             if notifications.isEmpty {
-                ContentUnavailableView(
-                    "No Notifications",
-                    systemImage: "bell.slash",
-                    description: Text("You're all caught up!")
+                VStack(spacing: AppDesign.Theme.Spacing.medium) {
+                    Image(systemName: "bell.slash")
+                        .appDisplayText(AppDesign.Theme.DisplaySize.xLarge, weight: .regular)
+                        .foregroundStyle(.secondary)
+                    Text("No Notifications")
+                        .appSectionTitleText()
+                    Text("You're all caught up!")
+                        .appSecondaryBodyText()
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .multilineTextAlignment(.center)
+                .appElevatedCardSurface()
+                .listRowSeparator(.hidden)
+                .listRowInsets(
+                    EdgeInsets(
+                        top: AppDesign.Theme.Spacing.medium,
+                        leading: AppDesign.Theme.Spacing.medium,
+                        bottom: AppDesign.Theme.Spacing.medium,
+                        trailing: AppDesign.Theme.Spacing.medium
+                    )
                 )
+                .listRowBackground(Color.clear)
             } else {
                 ForEach(notifications) { notification in
                     NotificationRow(notification: notification)
@@ -171,7 +188,7 @@ struct NotificationsView: View {
             for notification in notifications {
                 modelContext.delete(notification)
             }
-            hasNotifications = false
+            settings.hasNotifications = false
             modelContext.safeSave(context: "NotificationsView.clearAllNotifications", showErrorToUser: false)
         }
     }
@@ -181,7 +198,7 @@ struct NotificationsView: View {
             for notification in notifications {
                 notification.isRead = true
             }
-            hasNotifications = false
+            settings.hasNotifications = false
             modelContext.safeSave(context: "NotificationsView.markAllAsRead", showErrorToUser: false)
         }
     }
@@ -191,13 +208,14 @@ struct NotificationsView: View {
         // Note: This query might not reflect immediate changes in the context if not saved, 
         // but for UI responsiveness we can check the in-memory objects
         let hasUnread = notifications.contains { !$0.isRead }
-        hasNotifications = hasUnread
+        settings.hasNotifications = hasUnread
     }
 }
 
 struct NotificationRow: View {
     let notification: AppNotification
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
     
     var iconColor: Color {
         switch notification.type {

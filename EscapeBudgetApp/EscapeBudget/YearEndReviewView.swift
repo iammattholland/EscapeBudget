@@ -3,8 +3,8 @@ import SwiftData
 import Charts
 
 struct YearEndReviewView: View {
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Query(sort: \Transaction.date) private var allTransactions: [Transaction]
+    @Environment(\.appSettings) private var settings
+        @Query(sort: \Transaction.date) private var allTransactions: [Transaction]
 
     @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
     @State private var showingWrapped = false
@@ -50,7 +50,7 @@ struct YearEndReviewView: View {
 
                     YearEndReviewContentView(
                         year: effectiveYear,
-                        currencyCode: currencyCode,
+                        currencyCode: settings.currencyCode,
                         onShowWrapped: { showingWrapped = true }
                     )
                 }
@@ -70,7 +70,7 @@ struct YearEndReviewView: View {
             NavigationStack {
                 YearEndWrappedView(
                     year: effectiveYear,
-                    currencyCode: currencyCode
+                    currencyCode: settings.currencyCode
                 )
             }
         }
@@ -140,6 +140,7 @@ private struct YearEndHeaderCard: View {
 }
 
 private struct YearEndReviewContentView: View {
+    @Environment(\.appSettings) private var settings
     let year: Int
     let currencyCode: String
     let onShowWrapped: () -> Void
@@ -149,14 +150,9 @@ private struct YearEndReviewContentView: View {
     @Query private var accounts: [Account]
     @Query private var categories: [Category]
     @Query private var savingsGoals: [SavingsGoal]
+    @Query(sort: \MonthlyCategoryBudget.monthStart, order: .reverse) private var monthlyCategoryBudgets: [MonthlyCategoryBudget]
 
-    @AppStorage("retirement.isConfigured") private var retirementIsConfigured = false
-    @AppStorage("retirement.includeInvestmentAccounts") private var includeInvestmentAccounts = true
-    @AppStorage("retirement.includeSavingsAccounts") private var includeSavingsAccounts = false
-    @AppStorage("retirement.includeOtherPositiveAccounts") private var includeOtherPositiveAccounts = false
-    @AppStorage("retirement.externalAssets") private var externalAssetsText = ""
-    @AppStorage("retirement.safeWithdrawalRate") private var safeWithdrawalRate = 0.04
-
+                        
     init(year: Int, currencyCode: String, onShowWrapped: @escaping () -> Void) {
         self.year = year
         self.currencyCode = currencyCode
@@ -194,6 +190,16 @@ private struct YearEndReviewContentView: View {
 
     private var expenseTransactions: [Transaction] {
         standardTransactions.filter { $0.amount < 0 }
+    }
+
+    private var budgetingTransactions: [Transaction] {
+        (previousYearTransactions + yearTransactions).filter { tx in
+            tx.kind == .standard && tx.account?.isTrackingOnly != true
+        }
+    }
+
+    private var budgetCalculator: CategoryBudgetCalculator {
+        CategoryBudgetCalculator(transactions: budgetingTransactions, monthlyBudgets: monthlyCategoryBudgets)
     }
 
     private var transferTransactions: [Transaction] {
@@ -354,6 +360,19 @@ private struct YearEndReviewContentView: View {
             let name = tx.category?.name ?? "Uncategorized"
             bucket[monthStart, default: [:]][name, default: 0] += abs(tx.amount)
         }
+        return bucket
+    }
+
+    private var expenseByMonthByCategoryID: [Date: [PersistentIdentifier: Decimal]] {
+        let calendar = Calendar.current
+        var bucket: [Date: [PersistentIdentifier: Decimal]] = Dictionary(uniqueKeysWithValues: monthStarts.map { ($0, [:]) })
+
+        for tx in expenseTransactions {
+            let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: tx.date)) ?? tx.date
+            guard let categoryID = tx.category?.persistentModelID else { continue }
+            bucket[monthStart, default: [:]][categoryID, default: 0] += abs(tx.amount)
+        }
+
         return bucket
     }
 
@@ -570,40 +589,54 @@ private struct YearEndReviewContentView: View {
         return Decimal(Double(best) * bucketSize)
     }
 
-    private var monthlyExpenseBudgetTotal: Decimal {
-        categories
-            .filter { $0.group?.type == .expense }
-            .reduce(0) { $0 + max(0, $1.assigned) }
+    private var monthlyExpenseBudgetLimitByMonthStart: [Date: Decimal] {
+        let expenseCategories = categories.filter { $0.group?.type == .expense && $0.budgetType != .lumpSum }
+        var result: [Date: Decimal] = [:]
+        result.reserveCapacity(monthStarts.count)
+
+        for monthStart in monthStarts {
+            var total: Decimal = 0
+            for category in expenseCategories {
+                let limit = budgetCalculator.monthSummary(for: category, monthStart: monthStart).effectiveLimitThisMonth
+                total += max(0, limit)
+            }
+            result[monthStart] = total
+        }
+
+        return result
     }
 
     private var budgetAdherenceRate: Double? {
-        guard monthlyExpenseBudgetTotal > 0 else { return nil }
-        let under = monthlySummaries.filter { $0.expenses <= monthlyExpenseBudgetTotal }.count
-        return Double(under) / Double(max(1, monthlySummaries.count))
+        guard !monthStarts.isEmpty else { return nil }
+        let under = monthStarts.reduce(0) { partial, monthStart in
+            let expenses = monthlySummaries.first(where: { $0.monthStart == monthStart })?.expenses ?? 0
+            let limit = monthlyExpenseBudgetLimitByMonthStart[monthStart] ?? 0
+            return partial + (limit > 0 && expenses <= limit ? 1 : 0)
+        }
+        return Double(under) / Double(max(1, monthStarts.count))
     }
 
     private var biggestBudgetOverrun: YearEndBudgetOverrun? {
-        guard monthlyExpenseBudgetTotal > 0 else { return nil }
-
-        let assignedByCategory: [String: Decimal] = categories
-            .filter { $0.group?.type == .expense }
-            .reduce(into: [:]) { partial, category in
-                partial[category.name] = max(0, category.assigned)
-            }
+        let expenseCategories = categories.filter { $0.group?.type == .expense && $0.budgetType != .lumpSum }
+        guard !expenseCategories.isEmpty else { return nil }
 
         var best: YearEndBudgetOverrun? = nil
         for monthStart in monthStarts {
-            let monthTotals = expenseByMonthByCategory[monthStart] ?? [:]
-            for (name, spent) in monthTotals {
-                let budget = assignedByCategory[name] ?? 0
+            let monthTotals = expenseByMonthByCategoryID[monthStart] ?? [:]
+            for category in expenseCategories {
+                let spent = monthTotals[category.persistentModelID] ?? 0
+                guard spent > 0 else { continue }
+                let budget = max(0, budgetCalculator.monthSummary(for: category, monthStart: monthStart).effectiveLimitThisMonth)
+                guard budget > 0 else { continue }
                 let overrun = spent - budget
                 guard overrun > 0 else { continue }
-                let candidate = YearEndBudgetOverrun(monthStart: monthStart, categoryName: name, overrun: overrun)
+                let candidate = YearEndBudgetOverrun(monthStart: monthStart, categoryName: category.name, overrun: overrun)
                 if best == nil || candidate.overrun > (best?.overrun ?? 0) {
                     best = candidate
                 }
             }
         }
+
         return best
     }
 
@@ -625,7 +658,7 @@ private struct YearEndReviewContentView: View {
     }
 
     private var retirementSummary: YearEndRetirementSummary? {
-        guard retirementIsConfigured else { return nil }
+        guard settings.retirementIsConfigured else { return nil }
         let calendar = Calendar.current
         guard let start = calendar.date(from: DateComponents(year: year, month: 1, day: 1)),
               let end = calendar.date(from: DateComponents(year: year + 1, month: 1, day: 1)) else { return nil }
@@ -634,16 +667,16 @@ private struct YearEndReviewContentView: View {
             if account.balance <= 0 { return false }
             switch account.type {
             case .investment:
-                return includeInvestmentAccounts
+                return settings.retirementIncludeInvestmentAccounts
             case .savings:
-                return includeSavingsAccounts
+                return settings.retirementIncludeSavingsAccounts
             case .chequing, .creditCard, .lineOfCredit, .mortgage, .loans, .other:
-                return includeOtherPositiveAccounts
+                return settings.retirementIncludeOtherPositiveAccounts
             }
         }
 
         let includedAccountIDs = Set(includedAccounts.map(\.persistentModelID))
-        let externalAssets = max(0, ImportParser.parseAmount(externalAssetsText) ?? 0)
+        let externalAssets = max(0, ImportParser.parseAmount(settings.retirementExternalAssets) ?? 0)
         let currentPortfolio = includedAccounts.reduce(0) { $0 + max(0, $1.balance) } + externalAssets
 
         let transferPairs = Dictionary(grouping: yearTransactions.compactMap { tx -> Transaction? in
@@ -684,7 +717,7 @@ private struct YearEndReviewContentView: View {
         }
 
         let annualSpending = totalExpenses
-        let requiredPortfolio: Decimal = safeWithdrawalRate > 0 ? (annualSpending / Decimal(safeWithdrawalRate)) : 0
+        let requiredPortfolio: Decimal = settings.retirementSafeWithdrawalRate > 0 ? (annualSpending / Decimal(settings.retirementSafeWithdrawalRate)) : 0
         let fundedFraction: Double? = requiredPortfolio > 0 ? min(1, NSDecimalNumber(decimal: currentPortfolio / requiredPortfolio).doubleValue) : nil
 
         return YearEndRetirementSummary(
@@ -699,7 +732,7 @@ private struct YearEndReviewContentView: View {
         VStack(spacing: AppDesign.Theme.Spacing.cardGap) {
             YearEndHeroCard(
                 year: year,
-                currencyCode: currencyCode,
+                currencyCode: settings.currencyCode,
                 income: totalIncome,
                 expenses: totalExpenses,
                 net: netSavings,
@@ -711,44 +744,44 @@ private struct YearEndReviewContentView: View {
             if #available(iOS 16.0, *) {
                 YearEndCashflowChartCard(
                     summaries: monthlySummaries,
-                    currencyCode: currencyCode
+                    currencyCode: settings.currencyCode
                 )
 
                 YearEndTopCategoriesChartCard(
                     categories: Array(topCategories.prefix(6)),
-                    currencyCode: currencyCode
+                    currencyCode: settings.currencyCode
                 )
 
                 YearEndSpendingByMonthChartCard(
                     points: spendingStackedPoints,
-                    currencyCode: currencyCode
+                    currencyCode: settings.currencyCode
                 )
 
                 YearEndIncomeByMonthChartCard(
                     points: incomeStackedPoints,
-                    currencyCode: currencyCode
+                    currencyCode: settings.currencyCode
                 )
 
                 YearEndSpendingHeatmapCard(
                     year: year,
                     points: spendingHeatmapPoints,
-                    currencyCode: currencyCode
+                    currencyCode: settings.currencyCode
                 )
 
                 YearEndCategoryYoYDeltaChartCard(
                     increases: topCategoryDeltaIncreases,
                     decreases: topCategoryDeltaDecreases,
-                    currencyCode: currencyCode
+                    currencyCode: settings.currencyCode
                 )
 
                 YearEndMerchantInsightsCard(
                     pareto: merchantParetoPoints,
                     scatter: merchantScatterPoints,
-                    currencyCode: currencyCode
+                    currencyCode: settings.currencyCode
                 )
 
                 YearEndBehaviorMetricsCard(
-                    currencyCode: currencyCode,
+                    currencyCode: settings.currencyCode,
                     monthlySpendingMedian: monthlySpendingMedian,
                     monthlySpendingVolatility: monthlySpendingVolatility,
                     mostStableCategory: mostStableCategory,
@@ -762,13 +795,13 @@ private struct YearEndReviewContentView: View {
                 YearEndSavingsGoalsCard(
                     summary: savingsGoalsSummary,
                     goals: Array(savingsGoals.prefix(6)),
-                    currencyCode: currencyCode
+                    currencyCode: settings.currencyCode
                 )
 
                 if let retirementSummary {
                     YearEndRetirementCard(
                         summary: retirementSummary,
-                        currencyCode: currencyCode
+                        currencyCode: settings.currencyCode
                     )
                 }
             }
@@ -777,14 +810,14 @@ private struct YearEndReviewContentView: View {
                 MetricCard(
                     title: "Top Category",
                     value: topCategory?.name ?? "—",
-                    subtitle: topCategory.map { $0.total.formatted(.currency(code: currencyCode)) } ?? "No expenses",
+                    subtitle: topCategory.map { $0.total.formatted(.currency(code: settings.currencyCode)) } ?? "No expenses",
                     systemImage: "chart.pie.fill",
                     tint: .orange
                 )
                 MetricCard(
                     title: "Top Merchant",
                     value: topMerchant?.name ?? "—",
-                    subtitle: topMerchant.map { $0.total.formatted(.currency(code: currencyCode)) } ?? "No expenses",
+                    subtitle: topMerchant.map { $0.total.formatted(.currency(code: settings.currencyCode)) } ?? "No expenses",
                     systemImage: "building.2.fill",
                     tint: .indigo
                 )
@@ -794,14 +827,14 @@ private struct YearEndReviewContentView: View {
                 MetricCard(
                     title: "Biggest Expense",
                     value: biggestExpense?.payee.trimmingCharacters(in: .whitespacesAndNewlines).nonEmptyOrDash ?? "—",
-                    subtitle: biggestExpense.map { abs($0.amount).formatted(.currency(code: currencyCode)) } ?? "No expenses",
+                    subtitle: biggestExpense.map { abs($0.amount).formatted(.currency(code: settings.currencyCode)) } ?? "No expenses",
                     systemImage: "arrow.up.right.circle.fill",
                     tint: .red
                 )
                 MetricCard(
                     title: "Biggest Income",
                     value: biggestIncome?.payee.trimmingCharacters(in: .whitespacesAndNewlines).nonEmptyOrDash ?? "—",
-                    subtitle: biggestIncome.map { $0.amount.formatted(.currency(code: currencyCode)) } ?? "No income",
+                    subtitle: biggestIncome.map { $0.amount.formatted(.currency(code: settings.currencyCode)) } ?? "No income",
                     systemImage: "arrow.down.left.circle.fill",
                     tint: .green
                 )
@@ -811,7 +844,7 @@ private struct YearEndReviewContentView: View {
                 YearEndMonthHighlightsCard(
                     best: bestMonth,
                     worst: worstMonth,
-                    currencyCode: currencyCode
+                    currencyCode: settings.currencyCode
                 )
             }
 
@@ -819,7 +852,7 @@ private struct YearEndReviewContentView: View {
                 title: "Top Spending Categories",
                 subtitle: "Where your money went",
                 items: Array(topCategories.prefix(8)),
-                currencyCode: currencyCode,
+                currencyCode: settings.currencyCode,
                 systemImage: "list.bullet.rectangle.portrait",
                 emptyMessage: "No expenses recorded for this year."
             )
@@ -828,7 +861,7 @@ private struct YearEndReviewContentView: View {
                 title: "Top Merchants",
                 subtitle: "Who you paid most often",
                 items: Array(topMerchants.prefix(8)),
-                currencyCode: currencyCode,
+                currencyCode: settings.currencyCode,
                 systemImage: "cart.fill",
                 emptyMessage: "No expenses recorded for this year."
             )
@@ -836,7 +869,7 @@ private struct YearEndReviewContentView: View {
             YearEndTransfersCard(
                 transfersCount: transferTransactions.count,
                 pairedTransfersCount: Set(transferTransactions.compactMap(\.transferID)).count,
-                currencyCode: currencyCode,
+                currencyCode: settings.currencyCode,
                 totalTransferVolume: transferTransactions.reduce(0) { $0 + abs($1.amount) }
             )
         }
@@ -845,6 +878,7 @@ private struct YearEndReviewContentView: View {
 
 @available(iOS 16.0, *)
 private struct YearEndCashflowChartCard: View {
+    @Environment(\.appSettings) private var settings
     let summaries: [YearEndMonthlySummary]
     let currencyCode: String
 
@@ -971,7 +1005,7 @@ private struct YearEndCashflowChartCard: View {
                             .foregroundStyle(Color.primary.opacity(0.06))
                         AxisValueLabel {
                             if let y = value.as(Double.self) {
-                                Text(YearEndChartFormat.compactCurrency(y, currencyCode: currencyCode))
+                                Text(YearEndChartFormat.compactCurrency(y, currencyCode: settings.currencyCode))
                                     .appCaption2Text()
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.8)
@@ -998,6 +1032,7 @@ private struct YearEndCashflowChartCard: View {
 
 @available(iOS 16.0, *)
 private struct YearEndTopCategoriesChartCard: View {
+    @Environment(\.appSettings) private var settings
     let categories: [YearEndGroupTotal]
     let currencyCode: String
 
@@ -1031,7 +1066,7 @@ private struct YearEndTopCategoriesChartCard: View {
                             .foregroundStyle(Color.primary.opacity(0.06))
                         AxisValueLabel {
                             if let x = value.as(Double.self) {
-                                Text(YearEndChartFormat.compactCurrency(x, currencyCode: currencyCode))
+                                Text(YearEndChartFormat.compactCurrency(x, currencyCode: settings.currencyCode))
                                     .appCaption2Text()
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.8)
@@ -1062,6 +1097,7 @@ private struct YearEndTopCategoriesChartCard: View {
 
 @available(iOS 16.0, *)
 private struct YearEndSpendingByMonthChartCard: View {
+    @Environment(\.appSettings) private var settings
     let points: [YearEndStackedPoint]
     let currencyCode: String
 
@@ -1153,7 +1189,7 @@ private struct YearEndSpendingByMonthChartCard: View {
                         AxisGridLine().foregroundStyle(Color.primary.opacity(0.06))
                         AxisValueLabel {
                             if let y = value.as(Double.self) {
-                                Text(YearEndChartFormat.compactCurrency(y, currencyCode: currencyCode))
+                                Text(YearEndChartFormat.compactCurrency(y, currencyCode: settings.currencyCode))
                                     .appCaption2Text()
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.8)
@@ -1170,6 +1206,7 @@ private struct YearEndSpendingByMonthChartCard: View {
 
 @available(iOS 16.0, *)
 private struct YearEndIncomeByMonthChartCard: View {
+    @Environment(\.appSettings) private var settings
     let points: [YearEndStackedPoint]
     let currencyCode: String
 
@@ -1261,7 +1298,7 @@ private struct YearEndIncomeByMonthChartCard: View {
                         AxisGridLine().foregroundStyle(Color.primary.opacity(0.06))
                         AxisValueLabel {
                             if let y = value.as(Double.self) {
-                                Text(YearEndChartFormat.compactCurrency(y, currencyCode: currencyCode))
+                                Text(YearEndChartFormat.compactCurrency(y, currencyCode: settings.currencyCode))
                                     .appCaption2Text()
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.8)
@@ -1278,6 +1315,7 @@ private struct YearEndIncomeByMonthChartCard: View {
 
 @available(iOS 16.0, *)
 private struct YearEndSpendingHeatmapCard: View {
+    @Environment(\.appSettings) private var settings
     let year: Int
     let points: [YearEndHeatmapPoint]
     let currencyCode: String
@@ -1357,6 +1395,7 @@ private struct YearEndSpendingHeatmapCard: View {
 
 @available(iOS 16.0, *)
 private struct YearEndCategoryYoYDeltaChartCard: View {
+    @Environment(\.appSettings) private var settings
     let increases: [YearEndDeltaItem]
     let decreases: [YearEndDeltaItem]
     let currencyCode: String
@@ -1415,7 +1454,7 @@ private struct YearEndCategoryYoYDeltaChartCard: View {
                         AxisGridLine().foregroundStyle(Color.primary.opacity(0.06))
                         AxisValueLabel {
                             if let x = value.as(Double.self) {
-                                Text(YearEndChartFormat.compactCurrency(x, currencyCode: currencyCode))
+                                Text(YearEndChartFormat.compactCurrency(x, currencyCode: settings.currencyCode))
                                     .appCaption2Text()
                             }
                         }
@@ -1451,6 +1490,7 @@ private struct YearEndCategoryYoYDeltaChartCard: View {
 
 @available(iOS 16.0, *)
 private struct YearEndMerchantInsightsCard: View {
+    @Environment(\.appSettings) private var settings
     let pareto: [YearEndParetoPoint]
     let scatter: [YearEndMerchantPoint]
     let currencyCode: String
@@ -1583,7 +1623,7 @@ private struct YearEndMerchantInsightsCard: View {
                         AxisGridLine().foregroundStyle(Color.primary.opacity(0.06))
                         AxisValueLabel {
                             if let y = value.as(Double.self) {
-                                Text(YearEndChartFormat.compactCurrency(y, currencyCode: currencyCode))
+                                Text(YearEndChartFormat.compactCurrency(y, currencyCode: settings.currencyCode))
                                     .appCaption2Text()
                             }
                         }
@@ -1597,6 +1637,7 @@ private struct YearEndMerchantInsightsCard: View {
 
 @available(iOS 16.0, *)
 private struct YearEndBehaviorMetricsCard: View {
+    @Environment(\.appSettings) private var settings
     let currencyCode: String
     let monthlySpendingMedian: Double?
     let monthlySpendingVolatility: Double?
@@ -1619,7 +1660,7 @@ private struct YearEndBehaviorMetricsCard: View {
             VStack(spacing: AppDesign.Theme.Spacing.small) {
                 metricRow(
                     title: "Median monthly spending",
-                    value: monthlySpendingMedian.map { YearEndChartFormat.compactCurrency($0, currencyCode: currencyCode) } ?? "—"
+                    value: monthlySpendingMedian.map { YearEndChartFormat.compactCurrency($0, currencyCode: settings.currencyCode) } ?? "—"
                 )
                 metricRow(
                     title: "Spending volatility",
@@ -1635,11 +1676,11 @@ private struct YearEndBehaviorMetricsCard: View {
                 )
                 metricRow(
                     title: "Biggest spending day",
-                    value: biggestSpendingDay.map { "\($0.date.formatted(.dateTime.month(.abbreviated).day())) · \($0.amount.formatted(.currency(code: currencyCode)))" } ?? "—"
+                    value: biggestSpendingDay.map { "\($0.date.formatted(.dateTime.month(.abbreviated).day())) · \($0.amount.formatted(.currency(code: settings.currencyCode)))" } ?? "—"
                 )
                 metricRow(
                     title: "Most common purchase",
-                    value: mostCommonPurchaseBucket.map { $0.formatted(.currency(code: currencyCode)) } ?? "—"
+                    value: mostCommonPurchaseBucket.map { $0.formatted(.currency(code: settings.currencyCode)) } ?? "—"
                 )
 
                 if let budgetAdherenceRate {
@@ -1652,7 +1693,7 @@ private struct YearEndBehaviorMetricsCard: View {
                 if let biggestBudgetOverrun {
                     metricRow(
                         title: "Biggest budget overrun",
-                        value: "\(biggestBudgetOverrun.categoryName) · \(biggestBudgetOverrun.overrun.formatted(.currency(code: currencyCode)))"
+                        value: "\(biggestBudgetOverrun.categoryName) · \(biggestBudgetOverrun.overrun.formatted(.currency(code: settings.currencyCode)))"
                     )
                 }
             }
@@ -1679,6 +1720,7 @@ private struct YearEndBehaviorMetricsCard: View {
 
 @available(iOS 16.0, *)
 private struct YearEndSavingsGoalsCard: View {
+    @Environment(\.appSettings) private var settings
     let summary: YearEndSavingsGoalsSummary
     let goals: [SavingsGoal]
     let currencyCode: String
@@ -1715,7 +1757,7 @@ private struct YearEndSavingsGoalsCard: View {
                         .appCaptionText()
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Text(summary.totalSaved.formatted(.currency(code: currencyCode)))
+                    Text(summary.totalSaved.formatted(.currency(code: settings.currencyCode)))
                         .appCalloutStrongText()
                         .monospacedDigit()
                         .lineLimit(1)
@@ -1780,6 +1822,7 @@ private struct YearEndSavingsGoalsCard: View {
 }
 
 private struct YearEndRetirementCard: View {
+    @Environment(\.appSettings) private var settings
     let summary: YearEndRetirementSummary
     let currencyCode: String
 
@@ -1801,13 +1844,13 @@ private struct YearEndRetirementCard: View {
 	            }
 
             HStack {
-                stat(title: "Contributions", value: summary.contributions.formatted(.currency(code: currencyCode)))
+                stat(title: "Contributions", value: summary.contributions.formatted(.currency(code: settings.currencyCode)))
                 Spacer()
-                stat(title: "Portfolio", value: summary.currentPortfolio.formatted(.currency(code: currencyCode)))
+                stat(title: "Portfolio", value: summary.currentPortfolio.formatted(.currency(code: settings.currencyCode)))
             }
 
             HStack {
-                stat(title: "Target", value: summary.requiredPortfolio > 0 ? summary.requiredPortfolio.formatted(.currency(code: currencyCode)) : "—")
+                stat(title: "Target", value: summary.requiredPortfolio > 0 ? summary.requiredPortfolio.formatted(.currency(code: settings.currencyCode)) : "—")
                 Spacer()
                 stat(title: "Funded", value: fundedText)
             }
@@ -1908,6 +1951,7 @@ private enum YearEndChartFormat {
 }
 
 private struct YearEndHeroCard: View {
+    @Environment(\.appSettings) private var settings
     let year: Int
     let currencyCode: String
     let income: Decimal
@@ -1925,7 +1969,7 @@ private struct YearEndHeroCard: View {
     }
 
     private var netValue: String {
-        abs(net).formatted(.currency(code: currencyCode))
+        abs(net).formatted(.currency(code: settings.currencyCode))
     }
 
     private var savingsRateText: String {
@@ -1981,7 +2025,7 @@ private struct YearEndHeroCard: View {
                             Text("Income")
                                 .appCaption2Text()
                                 .foregroundStyle(.secondary)
-                            Text(income.formatted(.currency(code: currencyCode)))
+                            Text(income.formatted(.currency(code: settings.currencyCode)))
                                 .appCalloutStrongText()
                                 .monospacedDigit()
                                 .lineLimit(1)
@@ -1992,7 +2036,7 @@ private struct YearEndHeroCard: View {
                             Text("Spent")
                                 .appCaption2Text()
                                 .foregroundStyle(.secondary)
-                            Text(expenses.formatted(.currency(code: currencyCode)))
+                            Text(expenses.formatted(.currency(code: settings.currencyCode)))
                                 .appCalloutStrongText()
                                 .monospacedDigit()
                                 .lineLimit(1)
@@ -2060,6 +2104,7 @@ private struct MetricCard: View {
 }
 
 private struct YearEndMonthHighlightsCard: View {
+    @Environment(\.appSettings) private var settings
     let best: YearEndMonthlySummary
     let worst: YearEndMonthlySummary
     let currencyCode: String
@@ -2074,7 +2119,7 @@ private struct YearEndMonthHighlightsCard: View {
     }
 
     private func netValue(_ value: Decimal) -> String {
-        abs(value).formatted(.currency(code: currencyCode))
+        abs(value).formatted(.currency(code: settings.currencyCode))
     }
 
 	    var body: some View {
@@ -2147,6 +2192,7 @@ private struct YearEndMonthHighlightsCard: View {
 	}
 
 private struct YearEndTopListCard: View {
+    @Environment(\.appSettings) private var settings
     let title: String
     let subtitle: String
     let items: [YearEndGroupTotal]
@@ -2179,7 +2225,7 @@ private struct YearEndTopListCard: View {
 
                             Spacer()
 
-                            Text(item.total.formatted(.currency(code: currencyCode)))
+                            Text(item.total.formatted(.currency(code: settings.currencyCode)))
                                 .appSecondaryBodyStrongText()
                                 .monospacedDigit()
                                 .foregroundStyle(.primary)
@@ -2196,6 +2242,7 @@ private struct YearEndTopListCard: View {
 }
 
 private struct YearEndTransfersCard: View {
+    @Environment(\.appSettings) private var settings
     let transfersCount: Int
     let pairedTransfersCount: Int
     let currencyCode: String
@@ -2218,7 +2265,7 @@ private struct YearEndTransfersCard: View {
                 Spacer()
                 stat(title: "Linked pairs", value: "\(pairedTransfersCount)")
                 Spacer()
-                stat(title: "Total volume", value: totalTransferVolume.formatted(.currency(code: currencyCode)))
+                stat(title: "Total volume", value: totalTransferVolume.formatted(.currency(code: settings.currencyCode)))
             }
 	            .appSecondaryBodyText()
 	        }
@@ -2347,6 +2394,7 @@ private struct YearEndWrappedView: View {
 }
 
 private struct YearEndWrappedStoriesOverlay: View {
+    @Environment(\.appSettings) private var settings
     let year: Int
     let currencyCode: String
     @Binding var page: Int
@@ -2432,7 +2480,7 @@ private struct YearEndWrappedStoriesOverlay: View {
         items.append(
             WrappedStory(
                 title: "You spent",
-                headline: totalExpenses.formatted(.currency(code: currencyCode)),
+                headline: totalExpenses.formatted(.currency(code: settings.currencyCode)),
                 caption: "Total expenses (excluding transfers).",
                 gradient: [.pink, .red]
             )
@@ -2440,7 +2488,7 @@ private struct YearEndWrappedStoriesOverlay: View {
         items.append(
             WrappedStory(
                 title: net >= 0 ? "You saved" : "You overspent",
-                headline: abs(net).formatted(.currency(code: currencyCode)),
+                headline: abs(net).formatted(.currency(code: settings.currencyCode)),
                 caption: "Income minus expenses for the year.",
                 gradient: [.green, .teal]
             )
@@ -2450,7 +2498,7 @@ private struct YearEndWrappedStoriesOverlay: View {
                 WrappedStory(
                     title: "Top category",
                     headline: topCategory.name,
-                    caption: topCategory.total.formatted(.currency(code: currencyCode)),
+                    caption: topCategory.total.formatted(.currency(code: settings.currencyCode)),
                     gradient: [.orange, .yellow]
                 )
             )
@@ -2460,7 +2508,7 @@ private struct YearEndWrappedStoriesOverlay: View {
                 WrappedStory(
                     title: "Top merchant",
                     headline: topMerchant.name,
-                    caption: topMerchant.total.formatted(.currency(code: currencyCode)),
+                    caption: topMerchant.total.formatted(.currency(code: settings.currencyCode)),
                     gradient: [.indigo, .cyan]
                 )
             )
@@ -2470,7 +2518,7 @@ private struct YearEndWrappedStoriesOverlay: View {
                 WrappedStory(
                     title: "Biggest expense",
                     headline: biggestExpense.payee.trimmingCharacters(in: .whitespacesAndNewlines).nonEmptyOrDash ?? "—",
-                    caption: abs(biggestExpense.amount).formatted(.currency(code: currencyCode)),
+                    caption: abs(biggestExpense.amount).formatted(.currency(code: settings.currencyCode)),
                     gradient: [.gray, .black]
                 )
             )
@@ -2480,7 +2528,7 @@ private struct YearEndWrappedStoriesOverlay: View {
                 WrappedStory(
                     title: "Biggest income",
                     headline: biggestIncome.payee.trimmingCharacters(in: .whitespacesAndNewlines).nonEmptyOrDash ?? "—",
-                    caption: biggestIncome.amount.formatted(.currency(code: currencyCode)),
+                    caption: biggestIncome.amount.formatted(.currency(code: settings.currencyCode)),
                     gradient: [.mint, .blue]
                 )
             )

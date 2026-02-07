@@ -4,9 +4,8 @@ import SwiftData
 struct DebtPayoffPlannerView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \DebtAccount.sortOrder) private var debts: [DebtAccount]
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @AppStorage("isDemoMode") private var isDemoMode = false
-    @Environment(\.appColorMode) private var appColorMode
+            @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
 
     @State private var showingAddDebt = false
     @State private var showingQuickPayment = false
@@ -57,7 +56,7 @@ struct DebtPayoffPlannerView: View {
                                     Text("Total Debt")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
-                                    Text(totalDebt, format: .currency(code: currencyCode))
+                                    Text(totalDebt, format: .currency(code: settings.currencyCode))
                                         .appTitleText()
                                         .fontWeight(.bold)
                                         .foregroundStyle(AppDesign.Colors.danger(for: appColorMode))
@@ -69,7 +68,7 @@ struct DebtPayoffPlannerView: View {
                                     Text("Monthly Payment")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
-                                    Text(totalMonthlyPayment, format: .currency(code: currencyCode))
+                                    Text(totalMonthlyPayment, format: .currency(code: settings.currencyCode))
                                         .appTitleText()
                                 }
                             }
@@ -233,7 +232,7 @@ struct DebtPayoffPlannerView: View {
     }
 
     private func seedDemoDataIfNeeded() {
-        guard isDemoMode, !hasCheckedDemoData else { return }
+        guard settings.isDemoMode, !hasCheckedDemoData else { return }
         hasCheckedDemoData = true
         DemoDataService.ensureDemoDebtAccounts(modelContext: modelContext)
         try? modelContext.save()
@@ -244,8 +243,8 @@ struct DebtPayoffPlannerView: View {
 
 struct DebtRow: View {
     let debt: DebtAccount
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appSettings) private var settings
 
     private var color: Color {
         Color(hex: debt.colorHex) ?? AppDesign.Colors.danger(for: appColorMode)
@@ -291,7 +290,7 @@ struct DebtRow: View {
                     }
 
                     HStack(spacing: AppDesign.Theme.Spacing.xSmall) {
-                        Text(debt.effectiveBalance, format: .currency(code: currencyCode))
+                        Text(debt.effectiveBalance, format: .currency(code: settings.currencyCode))
                             .appSecondaryBodyText()
                             .foregroundStyle(.secondary)
 

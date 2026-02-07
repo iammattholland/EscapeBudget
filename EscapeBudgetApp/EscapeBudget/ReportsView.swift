@@ -68,9 +68,9 @@ struct ReportsView: View {
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     @Query(sort: \Account.name) private var accounts: [Account]
     @Query(sort: \Category.name) private var categories: [Category]
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
-    
+        @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appSettings) private var settings
+
     // Date range state
     @State private var selectedDateRange: DateRangeType = .thisMonth
     @State private var customStartDate = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
@@ -314,7 +314,7 @@ struct ReportsView: View {
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
                     
-                    Text(totalSpending, format: .currency(code: currencyCode))
+                    Text(totalSpending, format: .currency(code: settings.currencyCode))
                         .appDisplayText(
                             AppDesign.Theme.DisplaySize.xxxxLarge,
                             weight: .bold,
@@ -401,7 +401,7 @@ struct ReportsView: View {
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
                     
-                    Text(totalIncome, format: .currency(code: currencyCode))
+                    Text(totalIncome, format: .currency(code: settings.currencyCode))
                         .appDisplayText(
                             AppDesign.Theme.DisplaySize.xxxxLarge,
                             weight: .bold,
@@ -436,7 +436,7 @@ struct ReportsView: View {
                             AxisMarks(values: .automatic(desiredCount: 4)) { value in
                                 AxisValueLabel {
                                     if let amount = value.as(Double.self) {
-                                        Text(Decimal(amount), format: .currency(code: currencyCode).precision(.fractionLength(0)))
+                                        Text(Decimal(amount), format: .currency(code: settings.currencyCode).precision(.fractionLength(0)))
                                             .appCaption2Text()
                                     }
                                 }
@@ -592,7 +592,7 @@ struct ReportsView: View {
                         .appSecondaryBodyText()
                         .foregroundStyle(.secondary)
                     
-                    Text(totalBalance, format: .currency(code: currencyCode))
+                    Text(totalBalance, format: .currency(code: settings.currencyCode))
                         .appDisplayText(
                             AppDesign.Theme.DisplaySize.xxxxLarge,
                             weight: .bold,
@@ -785,8 +785,8 @@ private struct SummaryCard: View {
     let icon: String
     let color: Color
     let animate: Bool
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    
+    @Environment(\.appSettings) private var settings
+
     var body: some View {
         VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
             HStack {
@@ -801,7 +801,7 @@ private struct SummaryCard: View {
                     .appCaptionText()
                     .foregroundStyle(.secondary)
                 
-                Text(value, format: .currency(code: currencyCode))
+                Text(value, format: .currency(code: settings.currencyCode))
                     .appDisplayText(
                         AppDesign.Theme.DisplaySize.medium,
                         weight: .bold,
@@ -828,8 +828,8 @@ struct LegendItem: View {
     let color: Color
     let label: String
     let value: Decimal
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    
+    @Environment(\.appSettings) private var settings
+
     var body: some View {
         HStack(spacing: AppDesign.Theme.Spacing.compact) {
             Circle()
@@ -840,7 +840,7 @@ struct LegendItem: View {
                 Text(label)
                     .appCaptionText()
                     .foregroundStyle(.secondary)
-                Text(value, format: .currency(code: currencyCode))
+                Text(value, format: .currency(code: settings.currencyCode))
                     .appCaptionText()
                     .fontWeight(.semibold)
             }
@@ -851,9 +851,9 @@ struct LegendItem: View {
 struct TransactionRowView: View {
     let transaction: Transaction
     var showRank: Int? = nil
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appColorMode) private var appColorMode
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.appSettings) private var settings
     @State private var showingRuleWhy = false
     @State private var ruleApplications: [AutoRuleApplication] = []
     @State private var editingRule: AutoRule?
@@ -892,7 +892,7 @@ struct TransactionRowView: View {
             
             Spacer()
             
-            Text(transaction.amount, format: .currency(code: currencyCode))
+            Text(transaction.amount, format: .currency(code: settings.currencyCode))
                 .appSecondaryBodyText()
                 .fontWeight(.semibold)
                 .foregroundStyle(transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)
@@ -917,7 +917,7 @@ struct TransactionRowView: View {
             TransactionRuleProvenanceSheet(
                 transaction: transaction,
                 applications: ruleApplications,
-                currencyCode: currencyCode
+                currencyCode: settings.currencyCode
             )
         }
         .sheet(item: $editingRule) { rule in
@@ -1026,8 +1026,8 @@ struct CategoryRow: View {
     let total: Decimal
     let color: Color
     let animate: Bool
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    
+    @Environment(\.appSettings) private var settings
+
     private var percentage: Double {
         guard total > 0 else { return 0 }
         return Double(truncating: amount as NSNumber) / Double(truncating: total as NSNumber)
@@ -1046,7 +1046,7 @@ struct CategoryRow: View {
                 
                 Spacer()
                 
-                Text(amount, format: .currency(code: currencyCode))
+                Text(amount, format: .currency(code: settings.currencyCode))
                     .appSecondaryBodyText()
                     .fontWeight(.medium)
             }
@@ -1071,8 +1071,8 @@ struct StatRow: View {
     let label: String
     var value: Decimal? = nil
     var count: Int? = nil
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    
+    @Environment(\.appSettings) private var settings
+
     var body: some View {
         VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
             Text(label)
@@ -1080,7 +1080,7 @@ struct StatRow: View {
                 .foregroundStyle(.secondary)
             
             if let value = value {
-                Text(value, format: .currency(code: currencyCode))
+                Text(value, format: .currency(code: settings.currencyCode))
                     .appSectionTitleText()
                     .fontWeight(.semibold)
             } else if let count = count {
@@ -1103,8 +1103,8 @@ struct AccountRowView: View {
     let color: Color
     let animate: Bool
     let delay: Double
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appSettings) private var settings
     
     var body: some View {
         HStack(spacing: AppDesign.Theme.Spacing.cardGap) {
@@ -1129,7 +1129,7 @@ struct AccountRowView: View {
             
             Spacer()
             
-            Text(account.balance, format: .currency(code: currencyCode))
+            Text(account.balance, format: .currency(code: settings.currencyCode))
                 .appSecondaryBodyText()
                 .fontWeight(.semibold)
                 .foregroundStyle(account.balance >= 0 ? .primary : AppDesign.Colors.danger(for: appColorMode))

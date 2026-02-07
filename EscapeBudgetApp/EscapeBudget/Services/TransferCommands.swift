@@ -32,6 +32,10 @@ final class DeleteTransferCommand: Command {
             modelContext.delete(transaction)
         }
         try modelContext.save()
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            saveContext: "DeleteTransferCommand.execute"
+        )
         DataChangeTracker.bump()
     }
 
@@ -69,6 +73,10 @@ final class DeleteTransferCommand: Command {
         }
 
         try modelContext.save()
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            saveContext: "DeleteTransferCommand.undo"
+        )
         DataChangeTracker.bump()
     }
 }

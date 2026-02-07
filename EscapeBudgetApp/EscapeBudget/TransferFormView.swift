@@ -5,8 +5,8 @@ struct TransferFormView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Account.name) private var accounts: [Account]
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appSettings) private var settings
 
     let transferID: UUID?
     private let sourceTransactionID: PersistentIdentifier?
@@ -30,8 +30,8 @@ struct TransferFormView: View {
     private var currencySymbol: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = currencyCode
-        return formatter.currencySymbol ?? currencyCode
+        formatter.currencyCode = settings.currencyCode
+        return formatter.currencySymbol ?? settings.currencyCode
     }
 
     var body: some View {
@@ -100,7 +100,7 @@ struct TransferFormView: View {
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                Text(other.amount, format: .currency(code: currencyCode))
+                                Text(other.amount, format: .currency(code: settings.currencyCode))
                                     .foregroundStyle(other.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.danger(for: appColorMode))
                                 Image(systemName: "chevron.right")
                                     .appCaptionText()

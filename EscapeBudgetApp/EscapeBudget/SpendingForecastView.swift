@@ -6,11 +6,10 @@ import UserNotifications
 struct SpendingForecastView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var navigator: AppNavigator
+    @Environment(\.appSettings) private var settings
     @Query(sort: \RecurringPurchase.nextDate) private var recurringPurchases: [RecurringPurchase]
     @Query(sort: \PurchasePlan.purchaseDate) private var purchasePlans: [PurchasePlan]
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @AppStorage("billReminders") private var billReminders = true
-    @Environment(\.appColorMode) private var appColorMode
+            @Environment(\.appColorMode) private var appColorMode
 
     @State private var viewMode: ViewMode = .list
     @State private var showingAddRecurring = false
@@ -85,7 +84,7 @@ struct SpendingForecastView: View {
                                 title: "Next 7 Days",
                                 amount: next7DaysTotal,
                                 count: upcomingInNext7Days.count,
-                                currencyCode: currencyCode,
+                                currencyCode: settings.currencyCode,
                                 color: AppDesign.Colors.danger(for: appColorMode)
                             )
 
@@ -93,7 +92,7 @@ struct SpendingForecastView: View {
                                 title: "Next 30 Days",
                                 amount: next30DaysTotal,
                                 count: upcomingInNext30Days.count,
-                                currencyCode: currencyCode,
+                                currencyCode: settings.currencyCode,
                                 color: AppDesign.Colors.warning(for: appColorMode)
                             )
 
@@ -101,7 +100,7 @@ struct SpendingForecastView: View {
                                 title: "All Upcoming",
                                 amount: totalForecast,
                                 count: upcomingPurchases.count,
-                                currencyCode: currencyCode,
+                                currencyCode: settings.currencyCode,
                                 color: AppDesign.Colors.tint(for: appColorMode)
                             )
                         }
@@ -110,7 +109,7 @@ struct SpendingForecastView: View {
                     .padding(.vertical, AppDesign.Theme.Spacing.tight)
                     .background(Color(.systemGroupedBackground))
 
-                    if billReminders && !notificationService.notificationsEnabled {
+                    if settings.billReminders && !notificationService.notificationsEnabled {
                         NotificationPromptBanner(onEnable: {
                             Task {
                                 _ = await notificationService.requestAuthorization()
@@ -165,8 +164,9 @@ struct SpendingForecastView: View {
                             Label("Notification Settings", systemImage: "bell.badge")
                         }
                     } label: {
-                        Image(systemName: "ellipsis")
+                        Image(systemName: "ellipsis").appEllipsisIcon()
                     }
+                    .tint(.primary)
                 }
             }
         }
@@ -180,14 +180,14 @@ struct SpendingForecastView: View {
             await syncBillReminderScheduling()
             postUpcomingBillsInboxNotificationIfNeeded()
         }
-        .onChange(of: billReminders) { _, _ in
+        .onChange(of: settings.billReminders) { _, _ in
             Task { await syncBillReminderScheduling() }
         }
     }
 
     @MainActor
     private func syncBillReminderScheduling() async {
-        guard billReminders else {
+        guard settings.billReminders else {
             notificationService.cancelAllRecurringBillNotifications()
             return
         }
@@ -201,7 +201,7 @@ struct SpendingForecastView: View {
     }
 
     private func postUpcomingBillsInboxNotificationIfNeeded() {
-        guard billReminders else { return }
+        guard settings.billReminders else { return }
 
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
@@ -219,7 +219,7 @@ struct SpendingForecastView: View {
 
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = currencyCode
+        formatter.currencyCode = settings.currencyCode
 
         let nextAmount = formatter.string(from: next.0.amount as NSDecimalNumber) ?? "\(next.0.amount)"
         let title: String
@@ -292,7 +292,7 @@ struct SpendingForecastView: View {
                     Spacer()
 
 	                    VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.micro) {
-	                        Text(item.amount, format: .currency(code: currencyCode))
+	                        Text(item.amount, format: .currency(code: settings.currencyCode))
 	                            .appSecondaryBodyText()
 	                            .fontWeight(.semibold)
                         Text(item.type)
@@ -366,7 +366,7 @@ struct SpendingForecastView: View {
 	                            Text(month, format: .dateTime.month(.wide).year())
 	                                .appSectionTitleText()
 	                            Spacer()
-                            Text(items.reduce(Decimal(0)) { $0 + $1.amount }, format: .currency(code: currencyCode))
+                            Text(items.reduce(Decimal(0)) { $0 + $1.amount }, format: .currency(code: settings.currencyCode))
                                 .appSecondaryBodyText()
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.secondary)
@@ -410,7 +410,7 @@ struct SpendingForecastView: View {
 
                                 Spacer()
 
-	                                Text(item.amount, format: .currency(code: currencyCode))
+	                                Text(item.amount, format: .currency(code: settings.currencyCode))
 	                                    .appSecondaryBodyText()
 	                                    .fontWeight(.semibold)
 	                            }
@@ -476,7 +476,7 @@ struct SpendingForecastView: View {
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
-                                Text(item.amount, format: .currency(code: currencyCode))
+                                Text(item.amount, format: .currency(code: settings.currencyCode))
                                     .appSecondaryBodyText()
                                     .fontWeight(.bold)
                             }
@@ -600,9 +600,9 @@ struct NotificationPromptBanner: View {
 struct RecurringBillSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.appSettings) private var settings
     @StateObject private var notificationService = NotificationService.shared
-    @AppStorage("billReminderDays") private var reminderDays = 1
-
+    
     var body: some View {
         NavigationStack {
             Form {
@@ -615,7 +615,7 @@ struct RecurringBillSettingsView: View {
                                     if granted {
                                         await notificationService.scheduleAllRecurringBillNotifications(
                                             modelContext: modelContext,
-                                            daysBefore: reminderDays
+                                            daysBefore: settings.billReminderDays
                                         )
                                     }
                                 }
@@ -631,8 +631,15 @@ struct RecurringBillSettingsView: View {
 
                 if notificationService.notificationsEnabled {
                     Section {
-                        Stepper("Remind me \(reminderDays) day\(reminderDays == 1 ? "" : "s") before", value: $reminderDays, in: 0...7)
-                            .onChange(of: reminderDays) { _, newValue in
+                        Stepper(
+                            "Remind me \(settings.billReminderDays) day\(settings.billReminderDays == 1 ? "" : "s") before",
+                            value: Binding(
+                                get: { settings.billReminderDays },
+                                set: { settings.billReminderDays = $0 }
+                            ),
+                            in: 0...7
+                        )
+                            .onChange(of: settings.billReminderDays) { _, newValue in
                                 notificationService.reminderDaysBefore = newValue
                                 Task {
                                     await notificationService.scheduleAllRecurringBillNotifications(
@@ -644,10 +651,10 @@ struct RecurringBillSettingsView: View {
                     } header: {
                         Text("Reminder Timing")
                     } footer: {
-                        if reminderDays == 0 {
+                        if settings.billReminderDays == 0 {
                             Text("You will be notified on the day bills are due")
                         } else {
-                            Text("You will be notified \(reminderDays) day\(reminderDays == 1 ? "" : "s") before bills are due")
+                            Text("You will be notified \(settings.billReminderDays) day\(settings.billReminderDays == 1 ? "" : "s") before bills are due")
                         }
                     }
                 }
@@ -669,6 +676,7 @@ struct RecurringBillSettingsView: View {
 struct AddRecurringPurchaseView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.appSettings) private var settings
     
     @State private var name = ""
     @State private var amount = ""

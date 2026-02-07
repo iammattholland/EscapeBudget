@@ -2,11 +2,11 @@ import SwiftUI
 import SwiftData
 
 struct BillsDashboardView: View {
+
+    @Environment(\.appSettings) private var appSettings
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \RecurringPurchase.nextDate) private var bills: [RecurringPurchase]
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @AppStorage("isDemoMode") private var isDemoMode = false
-    @Environment(\.appColorMode) private var appColorMode
+            @Environment(\.appColorMode) private var appColorMode
 
     @State private var showingAddBill = false
     @State private var billToDelete: RecurringPurchase?
@@ -61,7 +61,7 @@ struct BillsDashboardView: View {
                                     Text("Monthly Total")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
-                                    Text(monthlyTotal, format: .currency(code: currencyCode))
+                                    Text(monthlyTotal, format: .currency(code: appSettings.currencyCode))
                                         .appTitleText()
                                         .fontWeight(.bold)
                                 }
@@ -86,7 +86,7 @@ struct BillsDashboardView: View {
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
                                     Spacer()
-                                    Text(upcomingThisWeekTotal, format: .currency(code: currencyCode))
+                                    Text(upcomingThisWeekTotal, format: .currency(code: appSettings.currencyCode))
                                         .appSecondaryBodyText()
                                         .fontWeight(.medium)
                                 }
@@ -253,7 +253,7 @@ struct BillsDashboardView: View {
     }
 
     private func seedDemoDataIfNeeded() {
-        guard isDemoMode, !hasCheckedDemoData else { return }
+        guard appSettings.isDemoMode, !hasCheckedDemoData else { return }
         hasCheckedDemoData = true
         // Demo data for RecurringPurchase is already seeded in DemoDataService
     }
@@ -262,9 +262,11 @@ struct BillsDashboardView: View {
 // MARK: - Bill Row
 
 struct BillRow: View {
+
+    @Environment(\.appSettings) private var appSettings
     let bill: RecurringPurchase
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appSettings) private var settings
 
     @State private var showingEditSheet = false
 
@@ -350,12 +352,12 @@ struct BillRow: View {
 
                 // Amount
                 VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.micro) {
-                    Text(bill.amount, format: .currency(code: currencyCode))
+                    Text(bill.amount, format: .currency(code: appSettings.currencyCode))
                         .appSectionTitleText()
                         .foregroundStyle(bill.isActive ? .primary : .secondary)
 
                     if bill.recurrenceFrequency != .monthly {
-                        Text("\(bill.monthlyEquivalent, format: .currency(code: currencyCode))/mo")
+                        Text("\(bill.monthlyEquivalent, format: .currency(code: appSettings.currencyCode))/mo")
                             .appCaptionText()
                             .foregroundStyle(.secondary)
                     }

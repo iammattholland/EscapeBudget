@@ -6,8 +6,8 @@ struct BulkEditTransactionsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Account.name) private var accounts: [Account]
     @Query(sort: \CategoryGroup.order) private var categoryGroups: [CategoryGroup]
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appSettings) private var settings
 
     let transactionIDs: [PersistentIdentifier]
 
@@ -126,8 +126,15 @@ struct BulkEditTransactionsView: View {
                             Picker("Category", selection: $category) {
                                 Text("Select").tag(Optional<Category>.none)
                                 ForEach(categoryGroups.filter { $0.type != .transfer }) { group in
-                                    ForEach(group.sortedCategories) { category in
-                                        Text(category.name).tag(Optional(category))
+                                    let selectedID = category?.persistentModelID
+                                    let candidates = group.sortedCategories.filter { cat in
+                                        isCategoryEligibleForSelection(cat) || cat.persistentModelID == selectedID
+                                    }
+
+                                    ForEach(candidates) { category in
+                                        let isInactive = !isCategoryEligibleForSelection(category)
+                                        Text(isInactive ? "\(category.name) (Archived)" : category.name)
+                                            .tag(Optional(category))
                                     }
                                 }
                             }
@@ -215,6 +222,29 @@ struct BulkEditTransactionsView: View {
         selectedTransactions.contains(where: { $0.kind == .standard })
     }
 
+    private var categoryEligibilityMonthStarts: [Date] {
+        let calendar = Calendar.current
+        if changeDate {
+            let month = calendar.date(from: calendar.dateComponents([.year, .month], from: date)) ?? date
+            return [month]
+        }
+
+        let months = Set(
+            selectedTransactions
+                .filter { $0.kind == .standard }
+                .map { tx in
+                    calendar.date(from: calendar.dateComponents([.year, .month], from: tx.date)) ?? tx.date
+                }
+        )
+        return Array(months)
+    }
+
+    private func isCategoryEligibleForSelection(_ category: Category) -> Bool {
+        let months = categoryEligibilityMonthStarts
+        guard !months.isEmpty else { return true }
+        return months.allSatisfy { category.isActive(inMonthStart: $0) }
+    }
+
     private var supportsConvertToTransfer: Bool {
         standardTransactionCount > 0
     }
@@ -237,6 +267,11 @@ struct BulkEditTransactionsView: View {
 
         if changeAmount && parseAmount() == nil {
             errorMessage = "Enter a valid amount."
+            return
+        }
+
+        if changeCategory, !setUncategorized, let category, !isCategoryEligibleForSelection(category) {
+            errorMessage = "Selected category is archived for at least one of the selected transaction months."
             return
         }
 
@@ -313,6 +348,10 @@ struct BulkEditTransactionsView: View {
 
         do {
             try modelContext.save()
+            SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+                modelContext: modelContext,
+                saveContext: "BulkEditTransactionsView.applyChanges"
+            )
             for transaction in selectedTransactions {
                 TransactionStatsUpdateCoordinator.markDirty(transaction: transaction)
             }

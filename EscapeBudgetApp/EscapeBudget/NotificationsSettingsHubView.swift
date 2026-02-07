@@ -10,8 +10,9 @@ struct NotificationsSettingsHubView: View {
     }
 
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("notificationsHub.selectedTab") private var selectedTabRawValue = Tab.notifications.rawValue
-    @State private var demoPillVisible = true
+
+    @Environment(\.appSettings) private var settings
+        @State private var demoPillVisible = true
     private let maxContentWidth: CGFloat = 560
 
     var body: some View {
@@ -56,13 +57,13 @@ struct NotificationsSettingsHubView: View {
     }
 
     private var selectedTab: Tab {
-        Tab(rawValue: selectedTabRawValue) ?? .notifications
+        Tab(rawValue: settings.notificationsHubSelectedTab) ?? .notifications
     }
 
     private var selectedTabBinding: Binding<Tab> {
         Binding(
             get: { selectedTab },
-            set: { selectedTabRawValue = $0.rawValue }
+            set: { settings.notificationsHubSelectedTab = $0.rawValue }
         )
     }
 

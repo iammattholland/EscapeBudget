@@ -8,15 +8,8 @@ struct ImportDataViewImpl: View {
     @Environment(\.modelContext) var modelContext
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var navigator: AppNavigator
-    @AppStorage("currencyCode") var currencyCode = "USD"
-    @AppStorage("hasNotifications") var hasNotifications = false
-    @AppStorage("transactions.normalizePayeeOnImport") var normalizePayeeOnImport = true
-    @AppStorage("transactions.applyAutoRulesOnImport") var applyAutoRulesOnImport = true
-    @AppStorage("transactions.detectDuplicatesOnImport") var detectDuplicatesOnImport = true
-    @AppStorage("transactions.suggestTransfersOnImport") var suggestTransfersOnImport = true
-    @AppStorage("transactions.saveProcessingHistory") var saveProcessingHistory = false
-    @AppStorage("import.lastUsedSource") var lastUsedSourceRaw: String?
-    @Environment(\.appColorMode) var appColorMode
+                                    @Environment(\.appColorMode) var appColorMode
+                                    @Environment(\.appSettings) var settings
     @Query(sort: \Account.name) var accounts: [Account]
 
     let initialAccount: Account?
@@ -152,12 +145,41 @@ struct ImportDataViewImpl: View {
     }
 
     var lastUsedSource: ImportSource? {
-        guard let rawValue = lastUsedSourceRaw else { return nil }
+        guard let rawValue = settings.lastUsedImportSource else { return nil }
         return ImportSource.allCases.first { $0.rawValue == rawValue }
     }
 
+    var currencyCode: String {
+        settings.currencyCode
+    }
+
+    var lastUsedSourceRaw: String? {
+        get { settings.lastUsedImportSource }
+        nonmutating set { settings.lastUsedImportSource = newValue }
+    }
+
+    var normalizePayeeOnImport: Bool {
+        settings.normalizePayeeOnImport
+    }
+
+    var applyAutoRulesOnImport: Bool {
+        settings.applyAutoRulesOnImport
+    }
+
+    var detectDuplicatesOnImport: Bool {
+        settings.detectDuplicatesOnImport
+    }
+
+    var suggestTransfersOnImport: Bool {
+        settings.suggestTransfersOnImport
+    }
+
+    var saveProcessingHistory: Bool {
+        settings.saveProcessingHistory
+    }
+
     var sortedImportSources: [ImportSource] {
-        ImportSource.sortedSources(currencyCode: currencyCode, lastUsed: lastUsedSource)
+        ImportSource.sortedSources(currencyCode: settings.currencyCode, lastUsed: lastUsedSource)
     }
 
 	var currentWizardStep: WizardStep {
@@ -305,11 +327,11 @@ struct ImportDataViewImpl: View {
                         // Prompt for processing options here (instead of Settings).
                         if !hasConfiguredImportOptionsThisRun {
                             importOptions = ImportProcessingOptions(
-                                normalizePayee: normalizePayeeOnImport,
-                                applyAutoRules: applyAutoRulesOnImport,
-                                detectDuplicates: detectDuplicatesOnImport,
-                                suggestTransfers: suggestTransfersOnImport,
-                                saveProcessingHistory: saveProcessingHistory
+                                normalizePayee: settings.normalizePayeeOnImport,
+                                applyAutoRules: settings.applyAutoRulesOnImport,
+                                detectDuplicates: settings.detectDuplicatesOnImport,
+                                suggestTransfers: settings.suggestTransfersOnImport,
+                                saveProcessingHistory: settings.saveProcessingHistory
                             )
                         }
                         showingImportOptionsSheet = true
@@ -332,11 +354,11 @@ struct ImportDataViewImpl: View {
                     requestImportConfirmation()
                 },
                 onMakeDefault: {
-                    normalizePayeeOnImport = importOptions.normalizePayee
-                    applyAutoRulesOnImport = importOptions.applyAutoRules
-                    detectDuplicatesOnImport = importOptions.detectDuplicates
-                    suggestTransfersOnImport = importOptions.suggestTransfers
-                    saveProcessingHistory = importOptions.saveProcessingHistory
+                    settings.normalizePayeeOnImport = importOptions.normalizePayee
+                    settings.applyAutoRulesOnImport = importOptions.applyAutoRules
+                    settings.detectDuplicatesOnImport = importOptions.detectDuplicates
+                    settings.suggestTransfersOnImport = importOptions.suggestTransfers
+                    settings.saveProcessingHistory = importOptions.saveProcessingHistory
                     hasConfiguredImportOptionsThisRun = true
                     showingImportOptionsSheet = false
                     requestImportConfirmation()
@@ -371,7 +393,7 @@ struct ImportDataViewImpl: View {
                             .appCaptionText()
                             .foregroundStyle(.secondary)
                         HStack(spacing: AppDesign.Theme.Spacing.compact) {
-                            Text(currencySymbol(for: currencyCode))
+                            Text(currencySymbol(for: settings.currencyCode))
                                 .foregroundStyle(.secondary)
                             TextField("0", text: $newAccountBalanceInput)
                                 .keyboardType(.decimalPad)

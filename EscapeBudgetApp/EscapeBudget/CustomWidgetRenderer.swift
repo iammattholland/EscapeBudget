@@ -3,13 +3,16 @@ import SwiftData
 import Charts
 
 struct CustomWidgetRenderer: View {
+
+    @Environment(\.appSettings) private var appSettings
     let widget: CustomDashboardWidget
     @Environment(\.modelContext) private var modelContext
     @Query private var categoryGroups: [CategoryGroup]
     @Query private var accounts: [Account]
     @Query(sort: \RecurringPurchase.nextDate) private var recurringPurchases: [RecurringPurchase]
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
+    @Query(sort: \MonthlyCategoryBudget.monthStart, order: .reverse) private var monthlyCategoryBudgets: [MonthlyCategoryBudget]
+        @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appSettings) private var settings
 
     @State private var transactionsCache: [Transaction] = []
     @State private var filteredTransactionsCache: [Transaction] = []
@@ -309,7 +312,7 @@ struct CustomWidgetRenderer: View {
     private func renderAverageTransactionChart() -> some View {
         let avg = calculateAverageTransaction()
         VStack(spacing: AppDesign.Theme.Spacing.tight) {
-            Text(avg, format: .currency(code: currencyCode))
+            Text(avg, format: .currency(code: appSettings.currencyCode))
                 .appDisplayText(AppDesign.Theme.DisplaySize.xxxxLarge, weight: .bold)
                 .foregroundStyle(.primary)
             Text("Average Transaction")
@@ -363,7 +366,7 @@ struct CustomWidgetRenderer: View {
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Text(transaction.amount, format: .currency(code: currencyCode))
+                        Text(transaction.amount, format: .currency(code: appSettings.currencyCode))
                             .appSecondaryBodyText()
                             .foregroundStyle(transaction.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)
                     }
@@ -384,7 +387,7 @@ struct CustomWidgetRenderer: View {
                     HStack {
                         Text(item.name)
                         Spacer()
-                        Text(item.amount, format: .currency(code: currencyCode))
+                        Text(item.amount, format: .currency(code: appSettings.currencyCode))
                     }
                     .padding(.vertical, AppDesign.Theme.Spacing.compact)
                     Divider()
@@ -642,10 +645,12 @@ struct CustomWidgetRenderer: View {
 
     private func buildBudgetPerformance() -> [ComparisonData] {
         var data: [ComparisonData] = []
+        let (start, end) = widget.dateRange.dateRange()
+        let calculator = CategoryBudgetCalculator(transactions: transactionsCache, monthlyBudgets: monthlyCategoryBudgets)
 
         for group in categoryGroups where group.type == .expense {
             for category in group.sortedCategories {
-                let budgeted = category.assigned
+                let budgeted = max(0, calculator.periodSummary(for: category, start: start, end: end).effectiveLimitForPeriod)
                 let spent = filteredTransactions.filter {
                     $0.category?.persistentModelID == category.persistentModelID && $0.amount < 0
                 }.reduce(Decimal.zero) { $0 + abs($1.amount) }
@@ -761,7 +766,7 @@ struct CustomWidgetRenderer: View {
         } else {
             VStack(spacing: AppDesign.Theme.Spacing.compact) {
                 ForEach(Array(upcomingBills), id: \.id) { bill in
-                    UpcomingBillRow(bill: bill, currencyCode: currencyCode, appColorMode: appColorMode)
+                    UpcomingBillRow(bill: bill, currencyCode: appSettings.currencyCode, appColorMode: appColorMode)
                 }
             }
             .padding(.vertical, AppDesign.Theme.Spacing.micro)
@@ -770,6 +775,8 @@ struct CustomWidgetRenderer: View {
 }
 
 struct UpcomingBillRow: View {
+
+    @Environment(\.appSettings) private var appSettings
     let bill: RecurringPurchase
     let currencyCode: String
     let appColorMode: AppColorMode
@@ -827,7 +834,7 @@ struct UpcomingBillRow: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: AppDesign.Theme.Spacing.hairline) {
-                Text(bill.amount, format: .currency(code: currencyCode))
+                Text(bill.amount, format: .currency(code: appSettings.currencyCode))
                     .appCaptionText()
                     .fontWeight(.semibold)
 
@@ -844,6 +851,8 @@ struct UpcomingBillRow: View {
 }
 
 struct WidgetEmptyStateView: View {
+
+    @Environment(\.appSettings) private var appSettings
     let message: String
     
     var body: some View {

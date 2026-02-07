@@ -98,7 +98,7 @@ struct CustomWidgetContainer: View {
                         Label("Delete", systemImage: "trash")
                     }
                 } label: {
-                    Image(systemName: "ellipsis")
+                    Image(systemName: "ellipsis").appEllipsisIcon()
                         .appCaptionText()
                         .foregroundStyle(.secondary)
                 }

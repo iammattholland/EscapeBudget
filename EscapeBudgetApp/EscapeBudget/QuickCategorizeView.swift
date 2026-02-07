@@ -155,15 +155,20 @@ struct QuickCategorizeView: View {
             return
         }
 
-        let flatCategories = categoryGroups
+        let txMonthStart = Calendar.current.date(
+            from: Calendar.current.dateComponents([.year, .month], from: transaction.date)
+        ) ?? transaction.date
+
+        let eligibleCategories = categoryGroups
             .filter { $0.type != .transfer }
             .flatMap { $0.categories ?? [] }
+            .filter { $0.isActive(inMonthStart: txMonthStart) }
 
         // Try ML-based prediction first
         let predictor = CategoryPredictor(modelContext: modelContext)
         if let mlPrediction = predictor.predictCategory(for: transaction),
            mlPrediction.confidence > 0.6,
-           flatCategories.contains(where: { $0.persistentModelID == mlPrediction.category.persistentModelID }) {
+           eligibleCategories.contains(where: { $0.persistentModelID == mlPrediction.category.persistentModelID }) {
             // Use ML prediction as primary suggestion
             suggestions = (nil, mlPrediction.category)
             return
@@ -199,11 +204,11 @@ struct QuickCategorizeView: View {
         var bottom: Category? = nil
 
         if let first = sorted.first {
-            bottom = flatCategories.first { $0.persistentModelID == first.key }
+            bottom = eligibleCategories.first { $0.persistentModelID == first.key }
         }
 
         if sorted.count > 1 {
-            top = flatCategories.first { $0.persistentModelID == sorted[1].key }
+            top = eligibleCategories.first { $0.persistentModelID == sorted[1].key }
         }
 
         suggestions = (top, bottom)
@@ -263,16 +268,18 @@ struct SwipeOptionLabel: View {
 struct QuickCategorizeSessionView: View {
     @Binding var transactions: [Transaction]
     @Query private var categoryGroups: [CategoryGroup]
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    
+    @Query(sort: \SavingsGoal.createdDate, order: .reverse) private var savingsGoals: [SavingsGoal]
+        
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
+    @Environment(\.appSettings) private var settings
     
     @State private var currentIndex = 0
     @State private var showingManualPicker = false
     @State private var showingNewCategorySheet = false
     @State private var newCategoryInitialGroup: CategoryGroup?
+    @State private var newCategoryCreatedAtMonthStart: Date?
     @State private var showingTransferMatchPicker = false
     @State private var sortedTransactions: [Transaction] = []
     @State private var transferBaseTransaction: Transaction?
@@ -290,7 +297,7 @@ struct QuickCategorizeSessionView: View {
                 if currentIndex < sortedTransactions.count {
                     QuickCategorizeView(
                         transaction: sortedTransactions[currentIndex],
-                        currencyCode: currencyCode,
+                        currencyCode: settings.currencyCode,
                         categoryGroups: categoryGroups,
                         onCategorize: { category in
                             categorizeAndNext(category)
@@ -337,12 +344,55 @@ struct QuickCategorizeSessionView: View {
             .sheet(isPresented: $showingManualPicker) {
                 NavigationStack {
                     List {
+                        let activeMonthStart: Date? = {
+                            guard currentIndex < sortedTransactions.count else { return nil }
+                            let date = sortedTransactions[currentIndex].date
+                            return Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: date)) ?? date
+                        }()
+                        let currentSelectedCategoryID = (currentIndex < sortedTransactions.count)
+                            ? sortedTransactions[currentIndex].category?.persistentModelID
+                            : nil
+
                         ForEach(categoryGroups.filter { $0.type != .transfer }) { group in
                             Section(header: Text(group.name)) {
-                                ForEach(group.sortedCategories) { category in
-                                    Button(category.name) {
+                                let candidates = group.sortedCategories.filter { category in
+                                    guard let activeMonthStart else { return true }
+                                    return category.isActive(inMonthStart: activeMonthStart)
+                                        || category.persistentModelID == currentSelectedCategoryID
+                                }
+
+                                ForEach(candidates) { category in
+                                    Button {
                                         categorizeAndNext(category)
                                         showingManualPicker = false
+                                    } label: {
+                                        let isInactive: Bool = {
+                                            guard let activeMonthStart else { return false }
+                                            return !category.isActive(inMonthStart: activeMonthStart)
+                                        }()
+                                        Text(isInactive ? "\(category.name) (Archived)" : category.name)
+                                    }
+                                }
+                            }
+                        }
+
+                        let savingsGoalCandidates = savingsGoals.filter { goal in
+                            guard let activeMonthStart else { return true }
+                            guard let category = goal.category else { return true }
+                            return category.isActive(inMonthStart: activeMonthStart)
+                                || category.persistentModelID == currentSelectedCategoryID
+                        }
+
+                        if !savingsGoalCandidates.isEmpty {
+                            Section("Savings Goals") {
+                                ForEach(savingsGoalCandidates) { goal in
+                                    Button {
+                                        let monthStart = activeMonthStart ?? Date()
+                                        let category = ensureEnvelopeCategory(for: goal, monthStart: monthStart)
+                                        categorizeAndNext(category)
+                                        showingManualPicker = false
+                                    } label: {
+                                        Text(goal.name)
                                     }
                                 }
                             }
@@ -371,6 +421,12 @@ struct QuickCategorizeSessionView: View {
                         Section {
                             Button {
                                 newCategoryInitialGroup = categoryGroups.first(where: { $0.type != .transfer })
+                                if currentIndex < sortedTransactions.count {
+                                    let date = sortedTransactions[currentIndex].date
+                                    newCategoryCreatedAtMonthStart = Calendar.current.date(
+                                        from: Calendar.current.dateComponents([.year, .month], from: date)
+                                    ) ?? date
+                                }
                                 showingNewCategorySheet = true
                             } label: {
                                 Label("Create New Category", systemImage: "plus.circle")
@@ -386,9 +442,16 @@ struct QuickCategorizeSessionView: View {
                             }
                         }
                     }
-                    .sheet(isPresented: $showingNewCategorySheet, onDismiss: { newCategoryInitialGroup = nil }) {
-                        NewBudgetCategorySheet(initialGroup: newCategoryInitialGroup) { _ in
+                    .sheet(isPresented: $showingNewCategorySheet, onDismiss: {
+                        newCategoryInitialGroup = nil
+                        newCategoryCreatedAtMonthStart = nil
+                    }) {
+                        NewBudgetCategorySheet(
+                            initialGroup: newCategoryInitialGroup,
+                            createdAtMonthStart: newCategoryCreatedAtMonthStart
+                        ) { _ in
                             newCategoryInitialGroup = nil
+                            newCategoryCreatedAtMonthStart = nil
                         }
                     }
                 }
@@ -398,7 +461,7 @@ struct QuickCategorizeSessionView: View {
                     if let base = transferBaseTransaction {
                         TransferMatchPickerView(
                             base: base,
-                            currencyCode: currencyCode,
+                            currencyCode: settings.currencyCode,
                             onLinked: { candidate in
                                 removeFromSession(base)
                                 removeFromSession(candidate)
@@ -441,6 +504,12 @@ struct QuickCategorizeSessionView: View {
             _ = undoStack.popLast()
             return
         }
+
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            referenceDate: Date(),
+            saveContext: "QuickCategorizeView.categorizeAndNext.syncSavingsGoals"
+        )
         
         removeFromSession(tx)
     }
@@ -472,6 +541,12 @@ struct QuickCategorizeSessionView: View {
             }
         }
 
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            referenceDate: Date(),
+            saveContext: "QuickCategorizeView.beginTransferMatch.syncSavingsGoals"
+        )
+
         transferBaseTransaction = transaction
         showingTransferMatchPicker = true
     }
@@ -493,6 +568,12 @@ struct QuickCategorizeSessionView: View {
         guard modelContext.safeSave(context: "QuickCategorizeView.ignoreCurrentTransaction") else {
             return
         }
+
+        SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+            modelContext: modelContext,
+            referenceDate: Date(),
+            saveContext: "QuickCategorizeView.ignoreCurrentTransaction.syncSavingsGoals"
+        )
 
         removeFromSession(transaction)
     }
@@ -530,6 +611,12 @@ struct QuickCategorizeSessionView: View {
                 return
             }
 
+            SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+                modelContext: modelContext,
+                referenceDate: Date(),
+                saveContext: "QuickCategorizeView.undoLastAction.syncSavingsGoals"
+            )
+
             if !sortedTransactions.contains(where: { $0.persistentModelID == tx.persistentModelID }) {
                 let insertIndex = max(0, min(removedIndex, sortedTransactions.count))
                 sortedTransactions.insert(tx, at: insertIndex)
@@ -540,5 +627,47 @@ struct QuickCategorizeSessionView: View {
                 transactions.insert(tx, at: 0)
             }
         }
+    }
+
+    @discardableResult
+    private func ensureEnvelopeCategory(for goal: SavingsGoal, monthStart: Date) -> Category {
+        let normalizedMonthStart = Calendar.current.date(
+            from: Calendar.current.dateComponents([.year, .month], from: monthStart)
+        ) ?? monthStart
+
+        if let existing = goal.category {
+            existing.budgetType = .monthlyRollover
+            existing.overspendHandling = .carryNegative
+            return existing
+        }
+
+        let expenseGroup: CategoryGroup = {
+            if let existing = categoryGroups.first(where: { $0.type == .expense && $0.name == "Savings Goals" }) {
+                return existing
+            }
+            let nextOrder = (categoryGroups.map(\.order).max() ?? -1) + 1
+            let group = CategoryGroup(name: "Savings Goals", order: nextOrder, type: .expense, isDemoData: goal.isDemoData)
+            modelContext.insert(group)
+            return group
+        }()
+
+        let nextOrder = ((expenseGroup.categories ?? []).map(\.order).max() ?? -1) + 1
+        let category = Category(
+            name: goal.name,
+            assigned: goal.monthlyContribution ?? 0,
+            activity: 0,
+            order: nextOrder,
+            icon: "🎯",
+            memo: "Savings goal envelope",
+            isDemoData: goal.isDemoData
+        )
+        category.group = expenseGroup
+        category.budgetType = .monthlyRollover
+        category.overspendHandling = .carryNegative
+        category.createdAt = normalizedMonthStart
+        category.savingsGoal = goal
+        goal.category = category
+        modelContext.insert(category)
+        return category
     }
 }

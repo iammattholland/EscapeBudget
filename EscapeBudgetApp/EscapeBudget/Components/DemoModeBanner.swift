@@ -1,12 +1,12 @@
 import SwiftUI
 
 struct DemoModeBanner: View {
-    @AppStorage("isDemoMode") private var isDemoMode = false
-    @State private var showingTurnOffConfirm = false
+    @Environment(\.appSettings) private var settings
+        @State private var showingTurnOffConfirm = false
     var isVisible: Bool = true
 
     var body: some View {
-        if isDemoMode, isVisible {
+        if settings.isDemoMode, isVisible {
             Button {
                 showingTurnOffConfirm = true
             } label: {
@@ -35,7 +35,7 @@ struct DemoModeBanner: View {
             .transition(.opacity.combined(with: .move(edge: .top)))
             .confirmationDialog("Turn off Demo Mode?", isPresented: $showingTurnOffConfirm, titleVisibility: .visible) {
                 Button("Turn Off Demo Mode", role: .destructive) {
-                    isDemoMode = false
+                    settings.isDemoMode = false
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {

@@ -17,24 +17,7 @@ struct SettingsView: View {
     @EnvironmentObject private var authService: AuthenticationService
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.appColorMode) private var appColorMode
-    @AppStorage("userAppearance") private var userAppearanceString = "System"
-    @AppStorage("appIconMode") private var appIconModeRawValue = AppIconMode.system.rawValue
-    @AppStorage("appColorMode") private var appColorModeRawValue = AppColorMode.standard.rawValue
-    @AppStorage("isDemoMode") private var isDemoMode = false
-    @AppStorage("shouldShowWelcome") private var shouldShowWelcome = true
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @AppStorage("appLanguage") private var appLanguage = "English"
-    @AppStorage("weekStartDay") private var weekStartDay = "Sunday"
-    @AppStorage("sync.icloud.enabled") private var iCloudSyncEnabled = false
-	@AppStorage("budgetAlerts") private var budgetAlerts = true
-	@AppStorage("billReminders") private var billReminders = true
-	@AppStorage("notifications.transfersInbox") private var transfersInboxNotifications = true
-	@AppStorage("notifications.importComplete") private var importCompleteNotifications = true
-	@AppStorage("notifications.exportStatus") private var exportStatusNotifications = true
-	@AppStorage("notifications.backupRestore") private var backupRestoreNotifications = true
-	@AppStorage("notifications.ruleApplied") private var ruleAppliedNotifications = true
-	@AppStorage("notifications.badges") private var badgeAchievementNotifications = true
-    @AppStorage("notifications.showSensitiveContent") private var showSensitiveNotificationContent = false
+    @Environment(\.appSettings) private var settings
 
     @StateObject private var notificationService = NotificationService.shared
     @StateObject private var userAccountService = UserAccountService.shared
@@ -54,11 +37,13 @@ struct SettingsView: View {
     @State private var passcodeDraft = ""
     @State private var passcodeError = false
     @State private var passcodeErrorMessage = "Passcodes didn't match. Try again."
+    @State private var passcodeResetKey = 0
     @State private var appearanceMode: String = "System"
     @State private var showingNotificationOptions = false
     @State private var hasInitializedServices = false
 
     private enum PasscodeSetupStage {
+        case verifyCurrent
         case create
         case confirm
     }
@@ -153,9 +138,9 @@ struct SettingsView: View {
             preferencesSection
             appearanceSection
             notificationsSection
-            demoModeToggleSection
             privacySecuritySection
             dataManagementSection
+            demoModeToggleSection
             aboutSection
         }
     }
@@ -209,6 +194,7 @@ struct SettingsView: View {
                     passcodeDraft = ""
                     passcodeError = false
                     passcodeErrorMessage = "Passcodes didn't match. Try again."
+                    passcodeResetKey += 1
                 }
             }) {
                 NavigationStack {
@@ -222,6 +208,7 @@ struct SettingsView: View {
                                     passcodeDraft = ""
                                     passcodeError = false
                                     passcodeErrorMessage = "Passcodes didn't match. Try again."
+                                    passcodeResetKey += 1
                                     showingPasscodeSetup = false
                                 }
                             }
@@ -229,7 +216,7 @@ struct SettingsView: View {
                 }
             }
             .onAppear {
-                appearanceMode = userAppearanceString
+                appearanceMode = settings.userAppearance
 
                 guard !hasInitializedServices else { return }
                 hasInitializedServices = true
@@ -241,7 +228,7 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var demoModeActiveSection: some View {
-        if isDemoMode {
+        if settings.isDemoMode {
             Section {
                 VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                     HStack(spacing: AppDesign.Theme.Spacing.compact) {
@@ -251,7 +238,7 @@ struct SettingsView: View {
                             .appSectionTitleText()
                         Spacer()
                         Button("Turn Off") {
-                            isDemoMode = false
+                            settings.isDemoMode = false
                         }
                         .appSecondaryCTA()
                         .controlSize(.small)
@@ -346,17 +333,23 @@ struct SettingsView: View {
     }
 
     private var preferencesSection: some View {
-        Section("Preferences") {
-            Picker(selection: $appLanguage) {
+        @Bindable var settings = settings
+        return Section("Preferences") {
+            Picker(selection: $settings.appLanguage) {
                 ForEach(languages, id: \.self) { language in
                     Text(language).tag(language)
                 }
             } label: {
-                Label("Language", systemImage: "globe")
+                Label {
+                    Text("Language")
+                } icon: {
+                    Image(systemName: "globe")
+                        .foregroundStyle(.primary)
+                }
             }
 
             NavigationLink {
-                CurrencySelectionView(selectedCurrency: $currencyCode, currencies: currencies)
+                CurrencySelectionView(selectedCurrency: $settings.currencyCode, currencies: currencies)
             } label: {
                 HStack {
                     Label {
@@ -364,11 +357,12 @@ struct SettingsView: View {
                             .fontWeight(.regular)
                     } icon: {
                         Image(systemName: "dollarsign.circle")
+                            .foregroundStyle(.primary)
                     }
                     Spacer()
-                    if let currency = currencies.first(where: { $0.0 == currencyCode }) {
+                    if let currency = currencies.first(where: { $0.0 == settings.currencyCode }) {
                         Text(currency.0)
-                            .foregroundStyle(.tint)
+                            .foregroundStyle(.primary)
                     }
                 }
             }
@@ -376,7 +370,8 @@ struct SettingsView: View {
     }
 
     private var appearanceSection: some View {
-        Section("Appearance") {
+        @Bindable var settings = settings
+        return Section("Appearance") {
             VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                 HStack {
                     Image(systemName: "moon")
@@ -394,9 +389,6 @@ struct SettingsView: View {
                         Text("Dark").tag("Dark")
                     }
                 }
-                Text("Choose whether the app follows your system appearance or stays in light/dark mode.")
-                    .appCaptionText()
-                    .foregroundStyle(.secondary)
             }
 
             VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
@@ -405,9 +397,9 @@ struct SettingsView: View {
                         .foregroundStyle(.primary)
                         .frame(width: 20)
                     Picker("App Icon", selection: Binding(
-                        get: { appIconModeRawValue },
+                        get: { settings.appIconModeRawValue },
                         set: { newValue in
-                            appIconModeRawValue = newValue
+                            settings.appIconModeRawValue = newValue
                             Task {
                                 await AppIconController.apply(modeRawValue: newValue)
                             }
@@ -418,9 +410,6 @@ struct SettingsView: View {
                         Text("Light").tag("Light")
                     }
                 }
-                Text("Choose whether the icon follows your appearance or stays light/dark.")
-                    .appCaptionText()
-                    .foregroundStyle(.secondary)
             }
 
             VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
@@ -428,21 +417,19 @@ struct SettingsView: View {
                     Image(systemName: "paintpalette")
                         .foregroundStyle(.primary)
                         .frame(width: 20)
-                    Picker("App Colours", selection: $appColorModeRawValue) {
+                    Picker("App Colours", selection: $settings.appColorModeRawValue) {
                         ForEach(AppColorMode.allCases) { mode in
                             Text(mode.rawValue).tag(mode.rawValue)
                         }
                     }
                 }
-                Text("Choose the color scheme for the app.")
-                    .appCaptionText()
-                    .foregroundStyle(.secondary)
             }
         }
     }
 
     private var notificationsSection: some View {
-        Section("Notifications") {
+        @Bindable var settings = settings
+        return Section("Notifications") {
             VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
                 HStack {
                     Label {
@@ -450,27 +437,12 @@ struct SettingsView: View {
                             .fontWeight(.regular)
                     } icon: {
                         Image(systemName: "bell")
+                            .foregroundStyle(.primary)
                     }
                     Spacer()
                     Text(notificationService.notificationsEnabled ? "Enabled" : "Off")
                         .foregroundStyle(.secondary)
                 }
-                Button("Enable System Notifications") {
-                    Task {
-                        _ = await notificationService.requestAuthorization()
-                        if notificationService.notificationsEnabled, billReminders {
-                            await notificationService.scheduleAllRecurringBillNotifications(
-                                modelContext: modelContext,
-                                daysBefore: notificationService.reminderDaysBefore
-                            )
-                        }
-                    }
-                }
-                .buttonStyle(.borderless)
-
-                Text("iOS notifications require permission. In-app notifications always appear in your Notifications feed.")
-                    .appCaptionText()
-                    .foregroundStyle(.secondary)
             }
 
             DisclosureGroup(
@@ -478,14 +450,14 @@ struct SettingsView: View {
                 content: {
                     VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
                         VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                            Toggle("Show details in iOS notifications", isOn: $showSensitiveNotificationContent)
+                            Toggle("Show details in iOS notifications", isOn: $settings.showSensitiveNotificationContent)
                             Text("When off, notifications hide amounts, filenames, and other details on your lock screen.")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
-                        .onChange(of: showSensitiveNotificationContent) { _, _ in
+                        .onChange(of: settings.showSensitiveNotificationContent) { _, _ in
                             Task {
-                                if notificationService.notificationsEnabled, billReminders {
+                                if notificationService.notificationsEnabled, settings.billReminders {
                                     await notificationService.scheduleAllRecurringBillNotifications(
                                         modelContext: modelContext,
                                         daysBefore: notificationService.reminderDaysBefore
@@ -495,56 +467,56 @@ struct SettingsView: View {
                         }
 
                         VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                            Toggle("Budget Alerts", isOn: $budgetAlerts)
+                            Toggle("Budget Alerts", isOn: $settings.budgetAlerts)
                             Text("Get notified when approaching budget limits")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
 
                         VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                            Toggle("Bill Reminders", isOn: $billReminders)
+                            Toggle("Bill Reminders", isOn: $settings.billReminders)
                             Text("Receive reminders for upcoming recurring bills")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
 
                         VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                            Toggle("Transfers Inbox", isOn: $transfersInboxNotifications)
+                            Toggle("Transfers Inbox", isOn: $settings.transfersInboxNotifications)
                             Text("Get notified when transfers need review")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
 
                         VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                            Toggle("Import Complete", isOn: $importCompleteNotifications)
+                            Toggle("Import Complete", isOn: $settings.importCompleteNotifications)
                             Text("Get notified when data imports finish")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
 
                         VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                            Toggle("Export Status", isOn: $exportStatusNotifications)
+                            Toggle("Export Status", isOn: $settings.exportStatusNotifications)
                             Text("Get notified when exports are ready or fail")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
 
                         VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                            Toggle("Backup & Restore", isOn: $backupRestoreNotifications)
+                            Toggle("Backup & Restore", isOn: $settings.backupRestoreNotifications)
                             Text("Get notified when backups restore successfully or fail")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
 
                         VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                            Toggle("Rule Applied", isOn: $ruleAppliedNotifications)
+                            Toggle("Rule Applied", isOn: $settings.ruleAppliedNotifications)
                             Text("Get notified when retroactive rules complete")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
                         }
 
                         VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                            Toggle("Badge Achievements", isOn: $badgeAchievementNotifications)
+                            Toggle("Badge Achievements", isOn: $settings.badgeAchievementNotifications)
                             Text("Get notified when you earn a badge")
                                 .appCaptionText()
                                 .foregroundStyle(.secondary)
@@ -566,10 +538,11 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var demoModeToggleSection: some View {
-        if !isDemoMode {
+        if !settings.isDemoMode {
+            @Bindable var settings = settings
             Section("Demo") {
                 VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
-                    Toggle(isOn: $isDemoMode) {
+                    Toggle(isOn: $settings.isDemoMode) {
                         Label("Try Demo Mode", systemImage: "sparkles")
                     }
                     Text("Explore with sample data without affecting your real information")
@@ -581,73 +554,76 @@ struct SettingsView: View {
         }
     }
 
+    @ViewBuilder
     private var privacySecuritySection: some View {
-        Section("Privacy & Security") {
-            VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.micro) {
-                Toggle(isOn: Binding(
-                    get: { authService.isPasscodeEnabled },
-                    set: { newValue in
-                        if newValue {
-                            passcodeStage = .create
-                            passcodeDraft = ""
-                            passcodeError = false
-                            passcodeErrorMessage = "Passcodes didn't match. Try again."
-                            showingPasscodeSetup = true
-                        } else {
-                            authService.disablePasscode()
-                        }
-                    }
-                )) {
-                    Label("Passcode Lock", systemImage: "number.circle")
-                }
-
-                if authService.isPasscodeEnabled {
-                    Button("Change Passcode") {
+        Section {
+            Toggle(isOn: Binding(
+                get: { authService.isPasscodeEnabled },
+                set: { newValue in
+                    if newValue {
                         passcodeStage = .create
                         passcodeDraft = ""
                         passcodeError = false
                         passcodeErrorMessage = "Passcodes didn't match. Try again."
+                        passcodeResetKey += 1
                         showingPasscodeSetup = true
+                    } else {
+                        authService.disablePasscode()
                     }
-                    .font(AppDesign.Theme.Typography.secondaryBody.weight(.semibold))
-                    .foregroundStyle(AppDesign.Colors.tint(for: appColorMode))
                 }
+            )) {
+                Label("Passcode Lock", systemImage: "number.circle")
+            }
+            .tint(AppDesign.Colors.tint(for: appColorMode))
 
-                if authService.isPasscodeEnabled {
-                    Toggle(isOn: Binding(
-                        get: { authService.isBiometricsEnabled },
-                        set: { newValue in
-                            if newValue {
-                                enableBiometrics()
-                            } else {
-                                authService.disableBiometrics()
-                            }
-                        }
-                    )) {
-                        HStack {
-                            Label("\(authService.biometricType.displayName) Lock", systemImage: authService.biometricType.systemImage)
-                            if isEnablingBiometrics {
-                                Spacer()
-                                ProgressView()
-                            }
+            if authService.isPasscodeEnabled {
+                Toggle(isOn: Binding(
+                    get: { authService.isBiometricsEnabled },
+                    set: { newValue in
+                        if newValue {
+                            enableBiometrics()
+                        } else {
+                            authService.disableBiometrics()
                         }
                     }
-                    .disabled(isEnablingBiometrics || authService.biometricType == .none)
+                )) {
+                    HStack {
+                        Label("\(authService.biometricType.displayName) Lock", systemImage: authService.biometricType.systemImage)
+                        if isEnablingBiometrics {
+                            Spacer()
+                            ProgressView()
+                        }
+                    }
                 }
+                .disabled(isEnablingBiometrics || authService.biometricType == .none)
+                .tint(AppDesign.Colors.tint(for: appColorMode))
 
-                if authService.biometricType == .none {
-                    Text("Biometric authentication is not available on this device")
-                        .appCaptionText()
-                        .foregroundStyle(.secondary)
-                } else if !authService.isPasscodeEnabled {
-                    Text("Set a passcode to enable \(authService.biometricType.displayName)")
-                        .appCaptionText()
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("Unlock with your passcode or \(authService.biometricType.displayName)")
-                        .appCaptionText()
-                        .foregroundStyle(.secondary)
+                Button {
+                    passcodeStage = .verifyCurrent
+                    passcodeDraft = ""
+                    passcodeError = false
+                    passcodeErrorMessage = "Current passcode is incorrect. Try again."
+                    passcodeResetKey += 1
+                    showingPasscodeSetup = true
+                } label: {
+                    HStack {
+                        Text("Change Passcode")
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .appCaptionText()
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .buttonStyle(.plain)
+            }
+        } header: {
+            Text("Privacy & Security")
+        } footer: {
+            if authService.biometricType == .none {
+                Text("Biometric authentication is not available on this device")
+                    .appCaptionText()
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -660,7 +636,7 @@ struct SettingsView: View {
                 HStack {
                     Label("Data Health", systemImage: "heart.text.square")
                     Spacer()
-                    Text(iCloudSyncEnabled ? "iCloud Sync On" : "Local")
+                    Text(settings.iCloudSyncEnabled ? "iCloud Sync On" : "Local")
                         .appCaptionText()
                         .foregroundStyle(.secondary)
                 }
@@ -831,7 +807,7 @@ struct SettingsView: View {
     }
     
     private func updateAppearance(_ mode: String) {
-        userAppearanceString = mode
+        settings.userAppearance = mode
 
         // Force-update all windows immediately so the change is visible without leaving Settings.
         let style: UIUserInterfaceStyle = mode == "Dark" ? .dark : (mode == "Light" ? .light : .unspecified)
@@ -856,17 +832,49 @@ struct SettingsView: View {
 
     private var passcodeSetupSheet: some View {
         PasscodeEntryView(
-            title: passcodeStage == .create ? "Create Passcode" : "Confirm Passcode",
-            subtitle: passcodeStage == .create ? "Choose a 4-digit passcode" : "Re-enter your passcode",
+            title: {
+                switch passcodeStage {
+                case .verifyCurrent:
+                    return "Current Passcode"
+                case .create:
+                    return "Create Passcode"
+                case .confirm:
+                    return "Confirm Passcode"
+                }
+            }(),
+            subtitle: {
+                switch passcodeStage {
+                case .verifyCurrent:
+                    return "Enter your current passcode to continue"
+                case .create:
+                    return "Choose a 4-digit passcode"
+                case .confirm:
+                    return "Re-enter your passcode"
+                }
+            }(),
             showsBiometricButton: false,
             biometricTitle: "",
+            resetKey: passcodeResetKey,
             onBiometricTap: {},
             onComplete: { code in
                 switch passcodeStage {
+                case .verifyCurrent:
+                    if authService.verifyAppPasscode(code) {
+                        passcodeStage = .create
+                        passcodeDraft = ""
+                        passcodeError = false
+                        passcodeErrorMessage = "Passcodes didn't match. Try again."
+                        passcodeResetKey += 1
+                    } else {
+                        passcodeErrorMessage = "Current passcode is incorrect. Try again."
+                        passcodeError = true
+                        passcodeResetKey += 1
+                    }
                 case .create:
                     passcodeDraft = code
                     passcodeStage = .confirm
                     passcodeError = false
+                    passcodeResetKey += 1
                 case .confirm:
                     if code == passcodeDraft {
                         if authService.setPasscode(code) {
@@ -880,6 +888,7 @@ struct SettingsView: View {
                         passcodeError = true
                         passcodeDraft = ""
                         passcodeStage = .create
+                        passcodeResetKey += 1
                     }
                 }
             },
@@ -891,12 +900,12 @@ struct SettingsView: View {
     
     @MainActor
     private func resetDemoData() {
-        guard isDemoMode else { return }
+        guard settings.isDemoMode else { return }
 
         // Toggle demo mode off and back on to trigger fresh demo data generation
-        isDemoMode = false
+        settings.isDemoMode = false
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            isDemoMode = true
+            settings.isDemoMode = true
         }
     }
 
@@ -961,8 +970,8 @@ struct SettingsView: View {
             BadgeService.shared.resetAll()
 
             // Show startup flow again
-            shouldShowWelcome = true
-            isDemoMode = false
+            settings.shouldShowWelcome = true
+            settings.isDemoMode = false
 
             // Ensure the user lands on Home after the welcome flow.
             navigator.selectedTab = .home

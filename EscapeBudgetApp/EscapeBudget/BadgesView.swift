@@ -173,7 +173,11 @@ private struct BadgeCardView: View {
                 .appSecondaryBodyText()
                 .fontWeight(.semibold)
                 .foregroundStyle(.primary)
-                .lineLimit(1)
+                .lineLimit(3)
+                .minimumScaleFactor(0.85)
+                .allowsTightening(true)
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.leading)
 
             Text(subtitle)
                 .appCaptionText()
@@ -181,7 +185,7 @@ private struct BadgeCardView: View {
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .appElevatedCardSurface(stroke: Color.primary.opacity(0.05))
+        .appCardSurface(fill: Color(.systemBackground), stroke: Color.primary.opacity(0.05))
         .opacity(isEarned ? 1 : 0.75)
     }
 }

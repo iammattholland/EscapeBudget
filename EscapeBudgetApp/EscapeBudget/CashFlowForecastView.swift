@@ -5,14 +5,7 @@ import Charts
 struct CashFlowForecastView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.appColorMode) private var appColorMode
-
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @AppStorage("cashflow.horizonDays") private var horizonDays = 90
-    @AppStorage("cashflow.includeIncome") private var includeIncome = true
-    @AppStorage("cashflow.monthlyIncome") private var monthlyIncomeDouble: Double = 0
-    @AppStorage("cashflow.includeChequing") private var includeChequing = true
-    @AppStorage("cashflow.includeSavings") private var includeSavings = true
-    @AppStorage("cashflow.includeOtherCash") private var includeOtherCash = true
+    @Environment(\.appSettings) private var settings
 
     @Query(sort: \Account.name) private var accounts: [Account]
     @Query(sort: \RecurringPurchase.nextDate) private var recurringPurchases: [RecurringPurchase]
@@ -28,18 +21,18 @@ struct CashFlowForecastView: View {
     private var horizonEnd: Date {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        return calendar.date(byAdding: .day, value: max(1, horizonDays), to: today) ?? today
+        return calendar.date(byAdding: .day, value: max(1, settings.cashflowHorizonDays), to: today) ?? today
     }
 
     private var includedCashAccounts: [Account] {
         accounts.filter { account in
             switch account.type {
             case .chequing:
-                return includeChequing
+                return settings.cashflowIncludeChequing
             case .savings:
-                return includeSavings
+                return settings.cashflowIncludeSavings
             case .other:
-                return includeOtherCash
+                return settings.cashflowIncludeOtherCash
             case .creditCard, .investment, .lineOfCredit, .mortgage, .loans:
                 return false
             }
@@ -55,14 +48,14 @@ struct CashFlowForecastView: View {
     }
 
     private var monthlyIncome: Decimal {
-        Decimal(monthlyIncomeDouble)
+        Decimal(settings.cashflowMonthlyIncome)
     }
 
     private var monthlyIncomeBinding: Binding<Decimal> {
         Binding(
-            get: { Decimal(monthlyIncomeDouble) },
+            get: { Decimal(settings.cashflowMonthlyIncome) },
             set: { newValue in
-                monthlyIncomeDouble = NSDecimalNumber(decimal: max(0, newValue)).doubleValue
+                settings.cashflowMonthlyIncome = NSDecimalNumber(decimal: max(0, newValue)).doubleValue
             }
         )
     }
@@ -147,7 +140,7 @@ struct CashFlowForecastView: View {
         }
 
         // Income estimate (monthly, 1st of month)
-        if includeIncome, monthlyIncome > 0 {
+        if settings.cashflowIncludeIncome, monthlyIncome > 0 {
             var cursor = calendar.date(from: calendar.dateComponents([.year, .month], from: start)) ?? start
             if cursor < start {
                 cursor = calendar.date(byAdding: .month, value: 1, to: cursor) ?? start
@@ -249,8 +242,8 @@ struct CashFlowForecastView: View {
                 await MonthlyCashflowTotalsService.ensureUpToDateAsync(modelContext: modelContext)
             }
             suggestedMonthlyIncomeFromStats = computeSuggestedMonthlyIncome()
-            if monthlyIncomeDouble == 0, suggestedMonthlyIncome > 0 {
-                monthlyIncomeDouble = NSDecimalNumber(decimal: suggestedMonthlyIncome).doubleValue
+            if settings.cashflowMonthlyIncome == 0, suggestedMonthlyIncome > 0 {
+                settings.cashflowMonthlyIncome = NSDecimalNumber(decimal: suggestedMonthlyIncome).doubleValue
             }
         }
     }
@@ -292,25 +285,26 @@ struct CashFlowForecastView: View {
             MetricCard(
                 title: "Start",
                 value: startingCash,
-                currencyCode: currencyCode,
+                currencyCode: settings.currencyCode,
                 tint: AppDesign.Colors.tint(for: appColorMode)
             )
             MetricCard(
-                title: "End (\(horizonDays)d)",
+                title: "End (\(settings.cashflowHorizonDays)d)",
                 value: totals.projectedEnd,
-                currencyCode: currencyCode,
+                currencyCode: settings.currencyCode,
                 tint: totals.projectedEnd >= startingCash ? AppDesign.Colors.success(for: appColorMode) : AppDesign.Colors.warning(for: appColorMode)
             )
         }
     }
 
 	    private var chartCard: some View {
-	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
+	        @Bindable var settings = settings
+	        return VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.small) {
 	            HStack {
 	                Text("Cash Flow Forecast")
 	                    .appSectionTitleText()
 	                Spacer()
-	                Picker("Range", selection: $horizonDays) {
+	                Picker("Range", selection: $settings.cashflowHorizonDays) {
 	                    Text("30d").tag(30)
                     Text("60d").tag(60)
                     Text("90d").tag(90)
@@ -358,7 +352,7 @@ struct CashFlowForecastView: View {
                         AxisTick()
                         AxisValueLabel {
                             if let number = value.as(Double.self) {
-                                Text(number, format: .currency(code: currencyCode))
+                                Text(number, format: .currency(code: settings.currencyCode))
                                     .appCaption2Text()
                             }
                         }
@@ -375,9 +369,9 @@ struct CashFlowForecastView: View {
                 .frame(height: 220)
 
                 HStack(spacing: AppDesign.Theme.Spacing.tight) {
-                    MetricPill(label: "In", value: totals.inflows, currencyCode: currencyCode, tint: AppDesign.Colors.success(for: appColorMode))
-                    MetricPill(label: "Out", value: totals.outflows, currencyCode: currencyCode, tint: AppDesign.Colors.danger(for: appColorMode))
-                    MetricPill(label: "Lowest", value: totals.lowest, currencyCode: currencyCode, tint: AppDesign.Colors.warning(for: appColorMode))
+                    MetricPill(label: "In", value: totals.inflows, currencyCode: settings.currencyCode, tint: AppDesign.Colors.success(for: appColorMode))
+                    MetricPill(label: "Out", value: totals.outflows, currencyCode: settings.currencyCode, tint: AppDesign.Colors.danger(for: appColorMode))
+                    MetricPill(label: "Lowest", value: totals.lowest, currencyCode: settings.currencyCode, tint: AppDesign.Colors.warning(for: appColorMode))
                 }
                 .padding(.top, AppDesign.Theme.Spacing.hairline)
 
@@ -390,24 +384,25 @@ struct CashFlowForecastView: View {
     }
 
 	    private var assumptionsCard: some View {
-	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
+	        @Bindable var settings = settings
+	        return VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
 	            Text("Assumptions")
 	                .appSectionTitleText()
 
-	            Toggle("Include income estimate", isOn: $includeIncome)
+	            Toggle("Include income estimate", isOn: $settings.cashflowIncludeIncome)
 
-            if includeIncome {
+            if settings.cashflowIncludeIncome {
                 VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.xSmall) {
                     Text("Estimated monthly income")
                         .appCaptionText()
                         .foregroundStyle(.secondary)
 
-                    TextField("Monthly income", value: monthlyIncomeBinding, format: .currency(code: currencyCode))
+                    TextField("Monthly income", value: monthlyIncomeBinding, format: .currency(code: settings.currencyCode))
                         .keyboardType(.decimalPad)
 
                     Button("Use last 3 months average") {
                         let suggested = suggestedMonthlyIncome
-                        monthlyIncomeDouble = NSDecimalNumber(decimal: max(0, suggested)).doubleValue
+                        settings.cashflowMonthlyIncome = NSDecimalNumber(decimal: max(0, suggested)).doubleValue
                     }
                     .appSecondaryCTA()
                     .disabled(suggestedMonthlyIncome <= 0)
@@ -418,13 +413,14 @@ struct CashFlowForecastView: View {
     }
 
 	    private var accountsCard: some View {
-	        VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
+	        @Bindable var settings = settings
+	        return VStack(alignment: .leading, spacing: AppDesign.Theme.Spacing.tight) {
 	            Text("Starting Cash")
 	                .appSectionTitleText()
 
-            Toggle("Chequing", isOn: $includeChequing)
-            Toggle("Savings", isOn: $includeSavings)
-            Toggle("Other cash accounts", isOn: $includeOtherCash)
+            Toggle("Chequing", isOn: $settings.cashflowIncludeChequing)
+            Toggle("Savings", isOn: $settings.cashflowIncludeSavings)
+            Toggle("Other cash accounts", isOn: $settings.cashflowIncludeOtherCash)
 
             if includedCashAccounts.isEmpty {
                 Text("No cash accounts selected.")
@@ -436,7 +432,7 @@ struct CashFlowForecastView: View {
 	                        Label(account.name, systemImage: account.type.icon)
 	                            .foregroundStyle(.primary)
 	                        Spacer()
-	                        Text(account.balance, format: .currency(code: currencyCode))
+	                        Text(account.balance, format: .currency(code: settings.currencyCode))
 	                            .foregroundStyle(.secondary)
 	                    }
 	                    .font(AppDesign.Theme.Typography.secondaryBody)
@@ -491,7 +487,7 @@ struct CashFlowForecastView: View {
 
                         Spacer()
 
-	                        Text(event.amount, format: .currency(code: currencyCode))
+	                        Text(event.amount, format: .currency(code: settings.currencyCode))
 	                            .appSecondaryBodyText()
 	                            .fontWeight(.semibold)
 	                            .foregroundStyle(event.amount >= 0 ? AppDesign.Colors.success(for: appColorMode) : .primary)

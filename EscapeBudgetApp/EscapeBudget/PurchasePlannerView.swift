@@ -2,11 +2,13 @@ import SwiftUI
 import SwiftData
 
 struct PurchasePlannerView: View {
+
+    @Environment(\.appSettings) private var appSettings
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.appSettings) private var settings
     @Query(sort: \PurchasePlan.purchaseDate) private var allPurchases: [PurchasePlan]
     @Query private var transactions: [Transaction]
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-
+    
     @State private var showingAddPurchase = false
     @State private var selectedFilter: FilterOption = .upcoming
     @State private var showingMarkPurchased = false
@@ -73,7 +75,7 @@ struct PurchasePlannerView: View {
                                     Text("Total Planned")
                                         .appCaptionText()
                                         .foregroundStyle(.secondary)
-                                    Text(totalPlanned, format: .currency(code: currencyCode))
+                                    Text(totalPlanned, format: .currency(code: appSettings.currencyCode))
                                         .appTitleText()
                                         .fontWeight(.bold)
                                 }
@@ -147,10 +149,9 @@ struct PurchasePlannerView: View {
                         Label("Add Purchase", systemImage: "plus")
                     }
                 } label: {
-                    Image(systemName: "ellipsis")
-                        .imageScale(.large)
+                    Image(systemName: "ellipsis").appEllipsisIcon()
                 }
-                .tint(.black)
+                .tint(.primary)
                 .accessibilityLabel("Purchase Planner Menu")
                 .accessibilityIdentifier("purchasePlanner.menu")
             }
@@ -170,7 +171,7 @@ struct PurchasePlannerView: View {
             }
         } message: {
             if let purchase = selectedPurchaseForMark {
-                Text("Expected: \(purchase.expectedPrice.formatted(.currency(code: currencyCode)))")
+                Text("Expected: \(purchase.expectedPrice.formatted(.currency(code: appSettings.currencyCode)))")
             }
         }
     }
@@ -235,11 +236,12 @@ struct PurchasePlannerView: View {
 // MARK: - Purchase Plan Row
 
 struct PurchasePlanRow: View {
+
+    @Environment(\.appSettings) private var appSettings
     let purchase: PurchasePlan
     let savingsRate: Double
     let monthlyIncome: Decimal
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appColorMode) private var appColorMode
 
     private var categoryIcon: String {
         switch purchase.category {
@@ -356,7 +358,7 @@ struct PurchasePlanRow: View {
                         }
                     }
 
-                    Text(purchase.expectedPrice, format: .currency(code: currencyCode))
+                    Text(purchase.expectedPrice, format: .currency(code: appSettings.currencyCode))
                         .appSecondaryBodyText()
                         .fontWeight(.semibold)
                         .foregroundStyle(categoryColor)
@@ -385,10 +387,11 @@ struct PurchasePlanRow: View {
 // MARK: - Add/Edit View
 
 struct AddPurchasePlanView: View {
+
+    @Environment(\.appSettings) private var appSettings
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    
+        
     @State private var itemName = ""
     @State private var expectedPrice = ""
     @State private var category = "Other"
@@ -490,10 +493,12 @@ struct AddPurchasePlanView: View {
 // MARK: - Detail View
 
 struct PurchasePlanDetailView: View {
+
+    @Environment(\.appSettings) private var appSettings
     @Environment(\.modelContext) private var modelContext
     let purchase: PurchasePlan
-    @AppStorage("currencyCode") private var currencyCode = "USD"
-    @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appColorMode) private var appColorMode
+        @Environment(\.appSettings) private var settings
     
     @State private var showingMarkPurchased = false
     @State private var actualPrice = ""
@@ -502,7 +507,7 @@ struct PurchasePlanDetailView: View {
         List {
             Section("Item Information") {
                 LabeledContent("Item", value: purchase.itemName)
-                LabeledContent("Expected Price", value: purchase.expectedPrice, format: .currency(code: currencyCode))
+                LabeledContent("Expected Price", value: purchase.expectedPrice, format: .currency(code: appSettings.currencyCode))
                 LabeledContent("Category", value: purchase.category)
                 
                 HStack {
@@ -551,7 +556,7 @@ struct PurchasePlanDetailView: View {
             if purchase.isPurchased {
                 Section("Purchase Details") {
                     if let actualPrice = purchase.actualPrice {
-                        LabeledContent("Actual Price", value: actualPrice, format: .currency(code: currencyCode))
+                        LabeledContent("Actual Price", value: actualPrice, format: .currency(code: appSettings.currencyCode))
                     }
                     if let actualDate = purchase.actualPurchaseDate {
                         LabeledContent("Purchase Date", value: actualDate, format: .dateTime.day().month().year())

@@ -4,8 +4,8 @@ import SwiftData
 struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject private var navigator: AppNavigator
-    @AppStorage("isDemoMode") private var isDemoMode = false
-
+    @Environment(\.appSettings) private var settings
+    
     var body: some View {
         Group {
             if horizontalSizeClass == .regular {

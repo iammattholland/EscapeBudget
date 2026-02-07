@@ -115,6 +115,11 @@ struct UncategorizedTransactionsView: View {
                                 }
                                 
                                 Menu {
+                                    let txMonthStart = Calendar.current.date(
+                                        from: Calendar.current.dateComponents([.year, .month], from: transaction.date)
+                                    ) ?? transaction.date
+                                    let selectedID = transaction.category?.persistentModelID
+
                                     Button {
                                         beginTransferMatch(for: transaction)
                                     } label: {
@@ -132,11 +137,14 @@ struct UncategorizedTransactionsView: View {
                                     }
                                     ForEach(categoryGroups.filter { $0.type != .transfer }) { group in
                                         Section(header: Text(group.name)) {
-                                            if let categories = group.categories {
-                                                ForEach(categories) { category in
-                                                    Button(category.name) {
-                                                        applyCategory(category, to: transaction)
-                                                    }
+                                            let candidates = group.sortedCategories.filter { category in
+                                                category.isActive(inMonthStart: txMonthStart) || category.persistentModelID == selectedID
+                                            }
+
+                                            ForEach(candidates) { category in
+                                                let isInactive = !category.isActive(inMonthStart: txMonthStart)
+                                                Button(isInactive ? "\(category.name) (Archived)" : category.name) {
+                                                    applyCategory(category, to: transaction)
                                                 }
                                             }
                                         }
@@ -239,7 +247,16 @@ struct UncategorizedTransactionsView: View {
             AutoRulesService(modelContext: modelContext).learnFromCategorization(transaction: transaction, wasAutoDetected: false)
         }
 
-        _ = modelContext.safeSave(context: "UncategorizedTransactionsView.applyCategory", showErrorToUser: false)
+        let saveSuccessful = modelContext.safeSave(
+            context: "UncategorizedTransactionsView.applyCategory",
+            showErrorToUser: false
+        )
+        if saveSuccessful {
+            SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+                modelContext: modelContext,
+                saveContext: "UncategorizedTransactionsView.applyCategory"
+            )
+        }
         removeTransaction(transaction)
     }
 
@@ -256,9 +273,14 @@ struct UncategorizedTransactionsView: View {
 
             TransactionStatsUpdateCoordinator.markDirty(transaction: transaction)
 
-            guard modelContext.safeSave(context: "UncategorizedTransactionsView.beginTransferMatch") else {
+            let saveSuccessful = modelContext.safeSave(context: "UncategorizedTransactionsView.beginTransferMatch")
+            guard saveSuccessful else {
                 return
             }
+            SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+                modelContext: modelContext,
+                saveContext: "UncategorizedTransactionsView.beginTransferMatch"
+            )
         }
 
         transferBaseTransaction = transaction
@@ -274,7 +296,16 @@ struct UncategorizedTransactionsView: View {
         transaction.transferID = nil
         transaction.transferInboxDismissed = false
         TransactionStatsUpdateCoordinator.markDirty(transaction: transaction)
-        modelContext.safeSave(context: "UncategorizedTransactionsView.ignoreTransaction", showErrorToUser: false)
+        let saveSuccessful = modelContext.safeSave(
+            context: "UncategorizedTransactionsView.ignoreTransaction",
+            showErrorToUser: false
+        )
+        if saveSuccessful {
+            SavingsGoalEnvelopeSyncService.syncCurrentBalances(
+                modelContext: modelContext,
+                saveContext: "UncategorizedTransactionsView.ignoreTransaction"
+            )
+        }
         removeTransaction(transaction)
     }
     

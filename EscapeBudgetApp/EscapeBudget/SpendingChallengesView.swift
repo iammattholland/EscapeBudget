@@ -7,6 +7,7 @@ struct SpendingChallengesView: View {
     @Query(filter: #Predicate<Transaction> { !$0.isDemoData }, sort: \Transaction.date, order: .reverse)
     private var transactions: [Transaction]
     @Query private var categories: [Category]
+    @Query(sort: \MonthlyCategoryBudget.monthStart, order: .reverse) private var monthlyCategoryBudgets: [MonthlyCategoryBudget]
 
     @State private var selectedTab: ChallengeTab = .active
     @State private var showingNewChallenge = false
@@ -165,7 +166,8 @@ struct SpendingChallengesView: View {
                         result: ChallengeVerificationService.verify(
                             challenge: challenge,
                             transactions: Array(transactions),
-                            categories: Array(categories)
+                            categories: Array(categories),
+                            monthlyBudgets: Array(monthlyCategoryBudgets)
                         )
                     )
                 }
@@ -259,7 +261,8 @@ struct SpendingChallengesView: View {
                 let result = ChallengeVerificationService.verify(
                     challenge: challenge,
                     transactions: Array(transactions),
-                    categories: Array(categories)
+                    categories: Array(categories),
+                    monthlyBudgets: Array(monthlyCategoryBudgets)
                 )
                 challenge.currentProgress = result.progress
                 challenge.status = result.passed ? .completed : .failed
